@@ -1,19 +1,20 @@
 import tkinter as tk
-from screens.home_screen import HomeScreen
+from screens.login_screen import LoginScreen  # Importar la pantalla de login
 
 def main():
     # Crear la instancia de la aplicación
     app = tk.Tk()
     
     # Configurar el título de la ventana
-    app.title("My Tkinter App")
+    app.title("Sistema automatizado de ventas")
     
-    # Configurar el tamaño de la ventana
-    app.geometry("800x600")
+    # Configuración principal de la ventana (puede ser sobrescrita por cada pantalla)
+    app.geometry("800x600")  # Tamaño inicial
+    app.resizable(True, True)  # Redimensionable por defecto
     
-    # Crear la instancia de la pantalla principal
-    home_screen = HomeScreen(app)
-    home_screen.pack(fill=tk.BOTH, expand=True)
+    # Crear la instancia de la pantalla de login
+    login_screen = LoginScreen(app)
+    login_screen.pack(fill=tk.BOTH, expand=True)
     
     # Iniciar el bucle principal de la aplicación
     app.mainloop()
