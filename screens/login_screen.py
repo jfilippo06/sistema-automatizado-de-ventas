@@ -19,7 +19,7 @@ class LoginScreen(tk.Frame):
         """
         Configura el tamaño y el comportamiento de redimensionamiento para esta pantalla.
         """
-        self.parent.geometry("600x400")  # Tamaño específico para el login
+        self.parent.geometry("600x500")  # Tamaño específico para el login
         self.parent.resizable(False, False)  # No redimensionable
 
     def configure_ui(self):
