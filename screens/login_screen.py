@@ -45,7 +45,7 @@ class LoginScreen(tk.Frame):
 
         # Añadir un botón personalizado para iniciar sesión
         login_button = CustomButton(self, text="Iniciar sesión", command=self.open_home_screen)
-        login_button.place(x=240, y=310)  # Posicionar el botón
+        login_button.place(x=260, y=310)  # Posicionar el botón
 
     def open_home_screen(self):
         """
