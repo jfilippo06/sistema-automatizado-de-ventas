@@ -2,25 +2,23 @@ import tkinter as tk
 from widgets.custom_text import CustomText  # Importar el widget personalizado de texto
 from widgets.custom_button import CustomButton  # Importar el widget personalizado de botón
 from widgets.custom_label import CustomLabel  # Importar el widget personalizado de label
-from screens.home_screen import HomeScreen  # Importar la pantalla de inicio
 
 class LoginScreen(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, open_home_screen_callback):
         super().__init__(parent)
         self.parent = parent  # Guardar referencia a la ventana principal
-        
-        # Configurar la ventana para esta pantalla
-        self.configure_window()
+        self.open_home_screen_callback = open_home_screen_callback  # Callback para abrir HomeScreen
         
         # Configurar la interfaz de usuario
         self.configure_ui()
 
-    def configure_window(self):
+    def pack(self, **kwargs):
         """
-        Configura el tamaño y el comportamiento de redimensionamiento para esta pantalla.
+        Configura la ventana principal cuando se muestra la pantalla de login.
         """
         self.parent.geometry("600x500")  # Tamaño específico para el login
         self.parent.resizable(False, False)  # No redimensionable
+        super().pack(**kwargs)  # Mostrar la pantalla
 
     def configure_ui(self):
         # Añadir un título con CustomLabel
@@ -51,6 +49,4 @@ class LoginScreen(tk.Frame):
         """
         Método para cerrar la pantalla de login y abrir la pantalla de inicio.
         """
-        self.pack_forget()  # Ocultar la pantalla de login
-        home_screen = HomeScreen(self.parent)  # Crear la pantalla de inicio
-        home_screen.pack(fill=tk.BOTH, expand=True)  # Mostrar la pantalla de inicio
+        self.open_home_screen_callback()  # Llamar al callback para abrir HomeScreen
