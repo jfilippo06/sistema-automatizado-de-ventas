@@ -3,10 +3,11 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel  # Importar el widget personalizado de label
 
 class HomeScreen(tk.Frame):
-    def __init__(self, parent, open_login_screen_callback):
+    def __init__(self, parent, open_login_screen_callback, open_inventory_callback):
         super().__init__(parent)
         self.parent = parent  # Guardar referencia a la ventana principal
         self.open_login_screen_callback = open_login_screen_callback  # Callback para abrir LoginScreen
+        self.open_inventory_callback = open_inventory_callback  # Callback para abrir Inventory
         
         # Configurar la interfaz de usuario
         self.configure_ui()
@@ -86,7 +87,11 @@ class HomeScreen(tk.Frame):
         print("Function: Control de proveedores")
 
     def inventory_control(self):
+        """
+        Método para abrir la pantalla de inventario.
+        """
         print("Function: Inventario de productos")
+        self.open_inventory_callback()  # Llamar al callback para abrir Inventory
 
     def purchases_module(self):
         print("Function: Módulo de compras")
