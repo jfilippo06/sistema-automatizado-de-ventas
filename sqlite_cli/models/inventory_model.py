@@ -1,11 +1,14 @@
-# models/inventory_model.py
-from database.database import get_db_connection
+from sqlite_cli.database.database import get_db_connection
 
 class InventoryItem:
     @staticmethod
-    def create(name, quantity, price):
+    def create(name: str, quantity: int, price: float) -> None:
         """
         Crea un nuevo ítem en la tabla `inventory`.
+
+        :param name: Nombre del ítem.
+        :param quantity: Cantidad del ítem.
+        :param price: Precio del ítem.
         """
         conn = get_db_connection()
         cursor = conn.cursor()
