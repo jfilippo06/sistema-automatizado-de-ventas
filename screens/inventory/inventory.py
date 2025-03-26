@@ -1,121 +1,131 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import Callable, List, Tuple, Any
-from sqlite_cli.models.inventory_model import InventoryItem  # Importar el modelo de inventario
+from tkinter import messagebox
+from typing import Callable, List, Dict, Any, Optional
+from screens.inventory.crud_inventory import CrudInventory
+from sqlite_cli.models.inventory_model import InventoryItem
+from sqlite_cli.models.supplier_model import Supplier
+from sqlite_cli.models.status_model import Status
 
 class Inventory(tk.Frame):
     def __init__(self, parent: tk.Widget, open_previous_screen_callback: Callable[[], None]) -> None:
-        """
-        Inicializa la pantalla de inventario.
-
-        :param parent: El widget padre al que pertenece esta pantalla.
-        :param open_previous_screen_callback: Función para regresar a la pantalla anterior.
-        """
         super().__init__(parent)
-        self.parent: tk.Widget = parent  # Guardar referencia a la ventana principal
-        self.open_previous_screen_callback: Callable[[], None] = open_previous_screen_callback  # Callback para regresar a la pantalla anterior
-
-        # Configurar la interfaz de usuario
+        self.parent = parent
+        self.open_previous_screen_callback = open_previous_screen_callback
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        """
-        Configura la ventana principal cuando se muestra la pantalla de inventario.
-        """
-        self.parent.geometry("800x600")  # Tamaño específico para el inventario
-        self.parent.resizable(False, False)  # No redimensionable
-        super().pack(fill=tk.BOTH, expand=True)  # Mostrar la pantalla
+        self.parent.geometry("1200x800")
+        self.parent.resizable(True, True)
+        super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        """
-        Configura la interfaz de usuario de la pantalla de inventario.
-        """
-        # Crear un Frame para los botones superiores
-        button_frame: tk.Frame = tk.Frame(self)
+        button_frame = tk.Frame(self)
         button_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
-        # Botón para regresar a la pantalla anterior (izquierda)
-        btn_back: tk.Button = tk.Button(
-            button_frame,
-            text="Regresar",
-            command=self.go_back
-        )
+        btn_back = tk.Button(button_frame, text="Regresar", command=self.go_back)
         btn_back.pack(side=tk.LEFT, padx=5)
 
-        # Botones adicionales (derecha)
-        btn_add: tk.Button = tk.Button(
-            button_frame,
-            text="Agregar",
-            command=self.add_item
-        )
+        btn_add = tk.Button(button_frame, text="Agregar", command=self.add_item)
         btn_add.pack(side=tk.RIGHT, padx=5)
 
-        btn_edit: tk.Button = tk.Button(
-            button_frame,
-            text="Editar",
-            command=self.edit_item
-        )
+        btn_edit = tk.Button(button_frame, text="Editar", command=self.edit_item)
         btn_edit.pack(side=tk.RIGHT, padx=5)
 
-        btn_disable: tk.Button = tk.Button(
-            button_frame,
-            text="Deshabilitar",
-            command=self.disable_item
-        )
+        btn_disable = tk.Button(button_frame, text="Deshabilitar", command=self.disable_item)
         btn_disable.pack(side=tk.RIGHT, padx=5)
 
-        # Crear un Treeview (tabla)
-        self.tree: ttk.Treeview = ttk.Treeview(self, columns=("ID", "Nombre", "Cantidad", "Precio"), show="headings")
-        
-        # Configurar las columnas
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("Nombre", text="Nombre")
-        self.tree.heading("Cantidad", text="Cantidad")
-        self.tree.heading("Precio", text="Precio")
-        
-        # Ajustar el ancho de las columnas
-        self.tree.column("ID", width=100, anchor=tk.CENTER)
-        self.tree.column("Nombre", width=200, anchor=tk.W)
-        self.tree.column("Cantidad", width=150, anchor=tk.CENTER)
-        self.tree.column("Precio", width=150, anchor=tk.E)
-        
-        # Cargar datos desde la base de datos
-        self.load_data()
-        
-        # Posicionar el Treeview en la pantalla
+        # Treeview
+        self.tree = ttk.Treeview(self, columns=(
+            "ID", "Código", "Producto", "Cantidad", "Stock", 
+            "Precio", "Creación", "Modificación", "Estado", "Proveedor"
+        ), show="headings")
+
+        columns = [
+            ("ID", 50, tk.CENTER),
+            ("Código", 100, tk.CENTER),
+            ("Producto", 200, tk.W),
+            ("Cantidad", 80, tk.CENTER),
+            ("Stock", 80, tk.CENTER),
+            ("Precio", 100, tk.E),
+            ("Creación", 120, tk.CENTER),
+            ("Modificación", 120, tk.CENTER),
+            ("Estado", 100, tk.CENTER),
+            ("Proveedor", 150, tk.W)
+        ]
+
+        for col, width, anchor in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=width, anchor=anchor)
+
+        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    def load_data(self) -> None:
-        """
-        Carga los datos desde la base de datos y los inserta en la tabla.
-        """
-        # Obtener todos los ítems de la base de datos
-        items: List[Tuple[int, str, int, float]] = InventoryItem.all()
-        
-        # Insertar los datos en la tabla
+        self.refresh_data()
+
+    def refresh_data(self) -> None:
+        """Actualiza los datos en la tabla."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+            
+        items = InventoryItem.all()
         for item in items:
-            self.tree.insert("", tk.END, values=(item['id'], item['name'], item['quantity'], item['price']))
+            self.tree.insert("", tk.END, values=(
+                item['id'],
+                item['code'],
+                item['product'],
+                item['quantity'],
+                item['stock'],
+                f"${item['price']:.2f}",
+                item['created_at'],
+                item['updated_at'],
+                item['status_name'],
+                item.get('supplier_company', 'N/A')
+            ))
 
     def go_back(self) -> None:
-        """
-        Método para regresar a la pantalla anterior.
-        """
-        self.open_previous_screen_callback()  # Llamar al callback para regresar
+        self.open_previous_screen_callback()
 
     def add_item(self) -> None:
-        """
-        Método para agregar un nuevo ítem al inventario.
-        """
-        print("Función: Agregar ítem")
+        """Abre el formulario para agregar un nuevo producto."""
+        CrudInventory(self, mode="create", refresh_callback=self.refresh_data)
 
     def edit_item(self) -> None:
-        """
-        Método para editar un ítem del inventario.
-        """
-        print("Función: Editar ítem")
+        """Abre el formulario para editar un producto existente."""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione un producto")
+            return
+            
+        item_id = self.tree.item(selected[0])['values'][0]
+        CrudInventory(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
 
     def disable_item(self) -> None:
-        """
-        Método para deshabilitar un ítem del inventario.
-        """
-        print("Función: Deshabilitar ítem")
+        """Muestra un diálogo de confirmación para deshabilitar un producto."""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione un producto")
+            return
+            
+        item_id = self.tree.item(selected[0])['values'][0]
+        product_name = self.tree.item(selected[0])['values'][2]
+        
+        response = messagebox.askyesno(
+            "Confirmar", 
+            f"¿Está seguro que desea deshabilitar el producto '{product_name}'?"
+        )
+        
+        if response:
+            try:
+                # Cambiar el estado a inactivo
+                status_inactive = next((s for s in Status.all() if s['name'] == 'inactive'), None)
+                if status_inactive:
+                    InventoryItem.update_status(item_id, status_inactive['id'])
+                    messagebox.showinfo("Éxito", "Producto deshabilitado correctamente")
+                    self.refresh_data()
+                else:
+                    messagebox.showerror("Error", "No se encontró el estado 'inactivo'")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo deshabilitar el producto: {str(e)}")
