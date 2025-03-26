@@ -1,29 +1,46 @@
-from sqlite_cli.database.database import get_db_connection
+# models/inventory_model.py
+from database.database import get_db_connection
+from typing import List, Dict, Optional
 
 class InventoryItem:
     @staticmethod
-    def create(name: str, quantity: int, price: float) -> None:
+    def create(
+        code: str,
+        product: str,
+        quantity: int,
+        stock: int,
+        price: float,
+        status_id: int,
+        supplier_id: Optional[int] = None
+    ) -> None:
         """
         Crea un nuevo ítem en la tabla `inventory`.
-
-        :param name: Nombre del ítem.
-        :param quantity: Cantidad del ítem.
-        :param price: Precio del ítem.
         """
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO inventory (name, quantity, price) VALUES (?, ?, ?)', (name, quantity, price))
+        cursor.execute('''
+            INSERT INTO inventory (
+                code, product, quantity, stock, price, status_id, supplier_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (code, product, quantity, stock, price, status_id, supplier_id))
         conn.commit()
         conn.close()
 
     @staticmethod
-    def all():
+    def all() -> List[Dict]:
         """
         Obtiene todos los ítems de la tabla `inventory`.
+        
+        :return: Lista de diccionarios con los ítems de inventario
         """
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM inventory')
-        items = cursor.fetchall()
+        cursor.execute('''
+            SELECT i.*, s.name as status_name, sp.company as supplier_company
+            FROM inventory i
+            LEFT JOIN status s ON i.status_id = s.id
+            LEFT JOIN suppliers sp ON i.supplier_id = sp.id
+        ''')
+        items = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return items
