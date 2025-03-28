@@ -35,7 +35,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create suppliers table
+    # Create suppliers table (MODIFICADA para incluir status_id)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS suppliers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +47,11 @@ def init_db() -> None:
             phone TEXT,
             email TEXT,
             tax_id TEXT,
-            company TEXT
+            company TEXT,
+            status_id INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (status_id) REFERENCES status(id)
         )
     ''')
     

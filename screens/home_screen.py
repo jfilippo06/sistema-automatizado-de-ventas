@@ -1,6 +1,6 @@
 import tkinter as tk
 from widgets.custom_button import CustomButton
-from widgets.custom_label import CustomLabel  # Importar el widget personalizado de label
+from widgets.custom_label import CustomLabel
 from typing import Any, Callable
 
 class HomeScreen(tk.Frame):
@@ -8,7 +8,8 @@ class HomeScreen(tk.Frame):
         self,
         parent: tk.Widget,
         open_login_screen_callback: Callable[[], None],
-        open_inventory_callback: Callable[[], None]
+        open_inventory_callback: Callable[[], None],
+        open_suppliers_callback: Callable[[], None]  # Nuevo callback para proveedores
     ) -> None:
         """
         Inicializa la pantalla de inicio.
@@ -16,11 +17,13 @@ class HomeScreen(tk.Frame):
         :param parent: El widget padre al que pertenece esta pantalla.
         :param open_login_screen_callback: Función para abrir la pantalla de login.
         :param open_inventory_callback: Función para abrir la pantalla de inventario.
+        :param open_suppliers_callback: Función para abrir la pantalla de proveedores.
         """
         super().__init__(parent)
-        self.parent: tk.Widget = parent  # Guardar referencia a la ventana principal
-        self.open_login_screen_callback: Callable[[], None] = open_login_screen_callback  # Callback para abrir LoginScreen
-        self.open_inventory_callback: Callable[[], None] = open_inventory_callback  # Callback para abrir Inventory
+        self.parent: tk.Widget = parent
+        self.open_login_screen_callback: Callable[[], None] = open_login_screen_callback
+        self.open_inventory_callback: Callable[[], None] = open_inventory_callback
+        self.open_suppliers_callback: Callable[[], None] = open_suppliers_callback  # Guardamos el callback
         
         # Configurar la interfaz de usuario
         self.configure_ui()
@@ -48,64 +51,129 @@ class HomeScreen(tk.Frame):
         button_height: int = 100  # Alto de los botones
         padding: int = 30  # Espaciado entre botones
 
-        # Botón 1: Control de proveedores
-        btn_suppliers: CustomButton = CustomButton(self, text="Control de proveedores", padding=padding, command=self.suppliers_control)
+        # Botón 1: Control de proveedores (MODIFICADO para usar el nuevo callback)
+        btn_suppliers: CustomButton = CustomButton(
+            self, 
+            text="Control de proveedores", 
+            padding=padding, 
+            command=self.suppliers_control
+        )
         btn_suppliers.place(x=start_x, y=start_y, width=button_width, height=button_height)
 
         # Botón 2: Inventario de productos
-        btn_inventory: CustomButton = CustomButton(self, text="Inventario de productos", padding=padding, command=self.inventory_control)
+        btn_inventory: CustomButton = CustomButton(
+            self, 
+            text="Inventario de productos", 
+            padding=padding, 
+            command=self.inventory_control
+        )
         btn_inventory.place(x=start_x + (button_width + padding) * 1, y=start_y, width=button_width, height=button_height)
 
         # Botón 3: Módulo de compras
-        btn_purchases: CustomButton = CustomButton(self, text="Módulo de compras", padding=padding, command=self.purchases_module)
+        btn_purchases: CustomButton = CustomButton(
+            self, 
+            text="Módulo de compras", 
+            padding=padding, 
+            command=self.purchases_module
+        )
         btn_purchases.place(x=start_x + (button_width + padding) * 2, y=start_y, width=button_width, height=button_height)
 
         # Botón 4: Reportes
-        btn_reports: CustomButton = CustomButton(self, text="Reportes", padding=padding, command=self.reports)
+        btn_reports: CustomButton = CustomButton(
+            self, 
+            text="Reportes", 
+            padding=padding, 
+            command=self.reports
+        )
         btn_reports.place(x=start_x, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
 
         # Botón 5: Control de facturación
-        btn_billing: CustomButton = CustomButton(self, text="Control de facturación", padding=padding, command=self.billing_control)
+        btn_billing: CustomButton = CustomButton(
+            self, 
+            text="Control de facturación", 
+            padding=padding, 
+            command=self.billing_control
+        )
         btn_billing.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
 
         # Botón 6: Control de clientes
-        btn_customers: CustomButton = CustomButton(self, text="Control de clientes", padding=padding, command=self.customers_control)
+        btn_customers: CustomButton = CustomButton(
+            self, 
+            text="Control de clientes", 
+            padding=padding, 
+            command=self.customers_control
+        )
         btn_customers.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
 
         # Botón 7: Control de servicios
-        btn_services: CustomButton = CustomButton(self, text="Control de servicios", padding=padding, command=self.services_control)
+        btn_services: CustomButton = CustomButton(
+            self, 
+            text="Control de servicios", 
+            padding=padding, 
+            command=self.services_control
+        )
         btn_services.place(x=start_x, y=start_y + (button_height + padding) * 2, width=button_width, height=button_height)
 
         # Botón 8: Catálogo de productos y servicios
-        btn_catalog: CustomButton = CustomButton(self, text="Catálogo de productos y servicios", padding=10, command=self.catalog, wraplength=150)
+        btn_catalog: CustomButton = CustomButton(
+            self, 
+            text="Catálogo de productos y servicios", 
+            padding=10, 
+            command=self.catalog, 
+            wraplength=150
+        )
         btn_catalog.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 2, width=button_width, height=button_height)
 
         # Botón 9: Tipos de pagos
-        btn_payments: CustomButton = CustomButton(self, text="Tipos de pagos", padding=padding, command=self.payments)
+        btn_payments: CustomButton = CustomButton(
+            self, 
+            text="Tipos de pagos", 
+            padding=padding, 
+            command=self.payments
+        )
         btn_payments.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 2, width=button_width, height=button_height)
 
         # Botón 10: Usuarios
-        btn_users: CustomButton = CustomButton(self, text="Usuarios", padding=padding, command=self.users)
+        btn_users: CustomButton = CustomButton(
+            self, 
+            text="Usuarios", 
+            padding=padding, 
+            command=self.users
+        )
         btn_users.place(x=start_x, y=start_y + (button_height + padding) * 3, width=button_width, height=button_height)
 
         # Botón 11: Configuración del sistema
-        btn_config: CustomButton = CustomButton(self, text="Configuración del sistema", padding=padding, command=self.system_config)
+        btn_config: CustomButton = CustomButton(
+            self, 
+            text="Configuración del sistema", 
+            padding=padding, 
+            command=self.system_config
+        )
         btn_config.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 3, width=button_width, height=button_height)
 
         # Botón 12: Salir
-        btn_exit: CustomButton = CustomButton(self, text="Salir", padding=padding, command=self.exit)
+        btn_exit: CustomButton = CustomButton(
+            self, 
+            text="Salir", 
+            padding=padding, 
+            command=self.exit
+        )
         btn_exit.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 3, width=button_width, height=button_height)
 
     # Funciones para cada botón
     def suppliers_control(self) -> None:
+        """
+        Método para abrir la pantalla de proveedores.
+        """
         print("Function: Control de proveedores")
+        self.open_suppliers_callback()  # Llama al callback para abrir Suppliers
 
     def inventory_control(self) -> None:
         """
         Método para abrir la pantalla de inventario.
         """
         print("Function: Inventario de productos")
-        self.open_inventory_callback()  # Llamar al callback para abrir Inventory
+        self.open_inventory_callback()
 
     def purchases_module(self) -> None:
         print("Function: Módulo de compras")
@@ -139,4 +207,4 @@ class HomeScreen(tk.Frame):
         Cierra la pantalla actual (HomeScreen) y abre la pantalla de inicio de sesión (LoginScreen).
         """
         print("Function: Salir")
-        self.open_login_screen_callback()  # Llamar al callback para abrir LoginScreen
+        self.open_login_screen_callback()
