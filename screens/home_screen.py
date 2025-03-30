@@ -51,10 +51,10 @@ class HomeScreen(tk.Frame):
         button_height: int = 100  # Alto de los botones
         padding: int = 30  # Espaciado entre botones
 
-        # Botón 1: Control de proveedores (MODIFICADO para usar el nuevo callback)
+        # Botón 1: Gestión de proveedores (MODIFICADO para usar el nuevo callback)
         btn_suppliers: CustomButton = CustomButton(
             self, 
-            text="Control de proveedores", 
+            text="Gestión de proveedores", 
             padding=padding, 
             command=self.suppliers_control
         )
@@ -69,10 +69,10 @@ class HomeScreen(tk.Frame):
         )
         btn_inventory.place(x=start_x + (button_width + padding) * 1, y=start_y, width=button_width, height=button_height)
 
-        # Botón 3: Módulo de compras
+        # Botón 3: Gestión de ventas
         btn_purchases: CustomButton = CustomButton(
             self, 
-            text="Módulo de compras", 
+            text="Gestión de ventas", 
             padding=padding, 
             command=self.purchases_module
         )
@@ -87,28 +87,28 @@ class HomeScreen(tk.Frame):
         )
         btn_reports.place(x=start_x, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
 
-        # Botón 5: Control de facturación
+        # Botón 5: Facturación
         btn_billing: CustomButton = CustomButton(
             self, 
-            text="Control de facturación", 
+            text="Facturación", 
             padding=padding, 
             command=self.billing_control
         )
         btn_billing.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
 
-        # Botón 6: Control de clientes
+        # Botón 6: Gestión de clientes
         btn_customers: CustomButton = CustomButton(
             self, 
-            text="Control de clientes", 
+            text="Gestión de clientes", 
             padding=padding, 
             command=self.customers_control
         )
         btn_customers.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
 
-        # Botón 7: Control de servicios
+        # Botón 7: Gestión de servicios
         btn_services: CustomButton = CustomButton(
             self, 
-            text="Control de servicios", 
+            text="Gestión de servicios", 
             padding=padding, 
             command=self.services_control
         )

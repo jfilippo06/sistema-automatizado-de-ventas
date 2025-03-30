@@ -6,7 +6,7 @@ from screens.supplier.supplier import Suppliers  # Import the new Suppliers scre
 
 def main() -> None:
     app = tk.Tk()
-    app.title("Sistema automatizado de ventas")
+    app.title("Sistema automatizado de ventas y servicios")
     app.geometry("800x600")
     app.resizable(True, True)
     
