@@ -4,6 +4,10 @@ from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.supplier_model import Supplier
 from sqlite_cli.models.status_model import Status
+from widgets.custom_button import CustomButton
+from widgets.custom_label import CustomLabel
+from widgets.custom_text import CustomText
+from widgets.custom_entry import CustomEntry  # Assuming you have this similar to CustomText
 
 class CrudInventory(tk.Toplevel):
     def __init__(
@@ -27,7 +31,7 @@ class CrudInventory(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Agregar Producto" if mode == "create" else "Editar Producto")
-        self.geometry("500x600")
+        self.geometry("500x650")
         self.resizable(False, False)
         
         # Variables para los campos
@@ -49,6 +53,16 @@ class CrudInventory(tk.Toplevel):
         main_frame = tk.Frame(self, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Title
+        title_text = "Nuevo Producto" if self.mode == "create" else "Editar Producto"
+        title_label = CustomLabel(
+            main_frame,
+            text=title_text,
+            font=("Arial", 14, "bold"),
+            fg="#333"
+        )
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        
         # Campos del formulario
         fields = [
             ("Código:", self.code_var),
@@ -60,51 +74,72 @@ class CrudInventory(tk.Toplevel):
             ("Proveedor:", self.supplier_var)
         ]
         
-        for i, (label, var) in enumerate(fields):
-            tk.Label(main_frame, text=label).grid(row=i, column=0, sticky="w", pady=5)
+        for i, (label, var) in enumerate(fields, start=1):
+            field_label = CustomLabel(
+                main_frame,
+                text=label,
+                font=("Arial", 10),
+                fg="#555"
+            )
+            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            
             if label == "Estado:":
                 self.status_combobox = ttk.Combobox(
                     main_frame, 
                     textvariable=var,
-                    values=[status['name'] for status in Status.all()]
+                    values=[status['name'] for status in Status.all()],
+                    font=("Arial", 10),
+                    state="readonly"
                 )
-                self.status_combobox.grid(row=i, column=1, sticky="ew", pady=5)
+                self.status_combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
             elif label == "Proveedor:":
                 self.supplier_combobox = ttk.Combobox(
                     main_frame, 
                     textvariable=var,
-                    values=[f"{supplier['company']} ({supplier['code']})" for supplier in Supplier.all()]
+                    values=[f"{supplier['company']} ({supplier['code']})" for supplier in Supplier.all()],
+                    font=("Arial", 10)
                 )
-                self.supplier_combobox.grid(row=i, column=1, sticky="ew", pady=5)
+                self.supplier_combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
             else:
-                entry = tk.Entry(main_frame, textvariable=var)
-                entry.grid(row=i, column=1, sticky="ew", pady=5)
+                entry = CustomEntry(
+                    main_frame,
+                    textvariable=var,
+                    font=("Arial", 10),
+                    width=30
+                )
+                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
         
         # Botones
         btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
+        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(20, 10))
         
         if self.mode == "create":
-            tk.Button(
+            btn_action = CustomButton(
                 btn_frame, 
                 text="Agregar", 
                 command=self.create_item,
+                padding=8,
                 width=15
-            ).pack(side=tk.LEFT, padx=10)
+            )
         else:
-            tk.Button(
+            btn_action = CustomButton(
                 btn_frame, 
                 text="Actualizar", 
                 command=self.update_item,
+                padding=8,
                 width=15
-            ).pack(side=tk.LEFT, padx=10)
+            )
             
-        tk.Button(
+        btn_action.pack(side=tk.LEFT, padx=10)
+            
+        btn_cancel = CustomButton(
             btn_frame, 
             text="Cancelar", 
             command=self.destroy,
+            padding=8,
             width=15
-        ).pack(side=tk.LEFT, padx=10)
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def load_item_data(self) -> None:
         """Carga los datos del producto a editar."""
@@ -130,6 +165,10 @@ class CrudInventory(tk.Toplevel):
     def create_item(self) -> None:
         """Crea un nuevo producto en la base de datos."""
         try:
+            # Validar campos requeridos
+            if not self.code_var.get() or not self.product_var.get():
+                raise ValueError("Código y Producto son campos requeridos")
+                
             # Obtener el ID del estado seleccionado
             status_name = self.status_var.get()
             status = next((s for s in Status.all() if s['name'] == status_name), None)
@@ -170,6 +209,10 @@ class CrudInventory(tk.Toplevel):
             if not self.item_id:
                 raise ValueError("ID de producto no válido")
                 
+            # Validar campos requeridos
+            if not self.code_var.get() or not self.product_var.get():
+                raise ValueError("Código y Producto son campos requeridos")
+                
             # Obtener el ID del estado seleccionado
             status_name = self.status_var.get()
             status = next((s for s in Status.all() if s['name'] == status_name), None)
@@ -204,4 +247,3 @@ class CrudInventory(tk.Toplevel):
             
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo actualizar el producto: {str(e)}")
-

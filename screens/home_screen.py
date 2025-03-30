@@ -9,202 +9,130 @@ class HomeScreen(tk.Frame):
         parent: tk.Widget,
         open_login_screen_callback: Callable[[], None],
         open_inventory_callback: Callable[[], None],
-        open_suppliers_callback: Callable[[], None]  # Nuevo callback para proveedores
+        open_suppliers_callback: Callable[[], None]
     ) -> None:
         """
-        Inicializa la pantalla de inicio.
-
-        :param parent: El widget padre al que pertenece esta pantalla.
-        :param open_login_screen_callback: Función para abrir la pantalla de login.
-        :param open_inventory_callback: Función para abrir la pantalla de inventario.
-        :param open_suppliers_callback: Función para abrir la pantalla de proveedores.
+        Pantalla principal del sistema con menú de opciones.
+        
+        Args:
+            parent: Widget padre contenedor
+            open_login_screen_callback: Función para volver a la pantalla de login
+            open_inventory_callback: Función para abrir el módulo de inventario
+            open_suppliers_callback: Función para abrir el módulo de proveedores
         """
         super().__init__(parent)
-        self.parent: tk.Widget = parent
-        self.open_login_screen_callback: Callable[[], None] = open_login_screen_callback
-        self.open_inventory_callback: Callable[[], None] = open_inventory_callback
-        self.open_suppliers_callback: Callable[[], None] = open_suppliers_callback  # Guardamos el callback
+        self.parent = parent
+        self.open_login_screen_callback = open_login_screen_callback
+        self.open_inventory_callback = open_inventory_callback
+        self.open_suppliers_callback = open_suppliers_callback
         
-        # Configurar la interfaz de usuario
+        self.configure(bg="#f0f0f0")  # Fondo claro para mejor contraste
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        """
-        Configura la ventana principal cuando se muestra la pantalla de inicio.
-        """
-        self.parent.geometry("800x600")  # Tamaño específico para la pantalla de inicio
-        self.parent.resizable(False, False)  # No redimensionable
-        super().pack(**kwargs)  # Mostrar la pantalla
+        """Configura la ventana al mostrar esta pantalla."""
+        self.parent.geometry("700x600")  # Tamaño más adecuado para los botones
+        self.parent.resizable(False, False)
+        super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        """
-        Configura la interfaz de usuario de la pantalla de inicio.
-        """
-        # Añadir un título con CustomLabel
-        title: CustomLabel = CustomLabel(self, text="Menú principal", font=("Arial", 24))
-        title.place(x=300, y=20)  # Colocar el título en una posición específica
-
-        # Posiciones iniciales para los botones
-        start_x: int = 80  # Posición inicial en el eje X
-        start_y: int = 70  # Posición inicial en el eje Y
-        button_width: int = 200  # Ancho de los botones
-        button_height: int = 100  # Alto de los botones
-        padding: int = 30  # Espaciado entre botones
-
-        # Botón 1: Gestión de proveedores (MODIFICADO para usar el nuevo callback)
-        btn_suppliers: CustomButton = CustomButton(
-            self, 
-            text="Gestión de proveedores", 
-            padding=padding, 
-            command=self.suppliers_control
+        """Configura todos los elementos de la interfaz."""
+        # Frame principal para centrar contenido
+        main_frame = tk.Frame(self, bg="#f0f0f0")
+        main_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        
+        # Título principal
+        title = CustomLabel(
+            main_frame,
+            text="Sistema de Gestión",
+            font=("Arial", 24, "bold"),
+            fg="#333",
+            bg="#f0f0f0"
         )
-        btn_suppliers.place(x=start_x, y=start_y, width=button_width, height=button_height)
+        title.grid(row=0, column=0, columnspan=3, pady=(0, 30))
 
-        # Botón 2: Inventario de productos
-        btn_inventory: CustomButton = CustomButton(
-            self, 
-            text="Inventario de productos", 
-            padding=padding, 
-            command=self.inventory_control
-        )
-        btn_inventory.place(x=start_x + (button_width + padding) * 1, y=start_y, width=button_width, height=button_height)
+        # Configuración de botones
+        buttons = [
+            ("Gestión de proveedores", self.suppliers_control),
+            ("Inventario de productos", self.inventory_control),
+            ("Gestión de ventas", self.purchases_module),
+            ("Reportes", self.reports),
+            ("Facturación", self.billing_control),
+            ("Gestión de clientes", self.customers_control),
+            ("Gestión de servicios", self.services_control),
+            ("Catálogo", self.catalog),
+            ("Tipos de pagos", self.payments),
+            ("Usuarios", self.users),
+            ("Configuración", self.system_config),
+            ("Salir", self.exit)
+        ]
 
-        # Botón 3: Gestión de ventas
-        btn_purchases: CustomButton = CustomButton(
-            self, 
-            text="Gestión de ventas", 
-            padding=padding, 
-            command=self.purchases_module
-        )
-        btn_purchases.place(x=start_x + (button_width + padding) * 2, y=start_y, width=button_width, height=button_height)
+        # Crear botones en grid 4x3
+        for i, (text, command) in enumerate(buttons):
+            row = (i // 3) + 1
+            col = i % 3
+            
+            btn = CustomButton(
+                main_frame,
+                text=text,
+                command=command,
+                padding=20,
+                width=30,
+                wraplength=150 if text == "Catálogo" else None
+            )
+            btn.grid(row=row, column=col, padx=10, pady=10, ipady=20, sticky="nsew")
 
-        # Botón 4: Reportes
-        btn_reports: CustomButton = CustomButton(
-            self, 
-            text="Reportes", 
-            padding=padding, 
-            command=self.reports
-        )
-        btn_reports.place(x=start_x, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
+        # Configurar grid para expansión
+        for i in range(4):
+            main_frame.grid_rowconfigure(i, weight=1)
+        for i in range(3):
+            main_frame.grid_columnconfigure(i, weight=1)
 
-        # Botón 5: Facturación
-        btn_billing: CustomButton = CustomButton(
-            self, 
-            text="Facturación", 
-            padding=padding, 
-            command=self.billing_control
-        )
-        btn_billing.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
-
-        # Botón 6: Gestión de clientes
-        btn_customers: CustomButton = CustomButton(
-            self, 
-            text="Gestión de clientes", 
-            padding=padding, 
-            command=self.customers_control
-        )
-        btn_customers.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 1, width=button_width, height=button_height)
-
-        # Botón 7: Gestión de servicios
-        btn_services: CustomButton = CustomButton(
-            self, 
-            text="Gestión de servicios", 
-            padding=padding, 
-            command=self.services_control
-        )
-        btn_services.place(x=start_x, y=start_y + (button_height + padding) * 2, width=button_width, height=button_height)
-
-        # Botón 8: Catálogo de productos y servicios
-        btn_catalog: CustomButton = CustomButton(
-            self, 
-            text="Catálogo de productos y servicios", 
-            padding=10, 
-            command=self.catalog, 
-            wraplength=150
-        )
-        btn_catalog.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 2, width=button_width, height=button_height)
-
-        # Botón 9: Tipos de pagos
-        btn_payments: CustomButton = CustomButton(
-            self, 
-            text="Tipos de pagos", 
-            padding=padding, 
-            command=self.payments
-        )
-        btn_payments.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 2, width=button_width, height=button_height)
-
-        # Botón 10: Usuarios
-        btn_users: CustomButton = CustomButton(
-            self, 
-            text="Usuarios", 
-            padding=padding, 
-            command=self.users
-        )
-        btn_users.place(x=start_x, y=start_y + (button_height + padding) * 3, width=button_width, height=button_height)
-
-        # Botón 11: Configuración del sistema
-        btn_config: CustomButton = CustomButton(
-            self, 
-            text="Configuración del sistema", 
-            padding=padding, 
-            command=self.system_config
-        )
-        btn_config.place(x=start_x + (button_width + padding) * 1, y=start_y + (button_height + padding) * 3, width=button_width, height=button_height)
-
-        # Botón 12: Salir
-        btn_exit: CustomButton = CustomButton(
-            self, 
-            text="Salir", 
-            padding=padding, 
-            command=self.exit
-        )
-        btn_exit.place(x=start_x + (button_width + padding) * 2, y=start_y + (button_height + padding) * 3, width=button_width, height=button_height)
-
-    # Funciones para cada botón
+    # Métodos de los botones
     def suppliers_control(self) -> None:
-        """
-        Método para abrir la pantalla de proveedores.
-        """
-        print("Function: Control de proveedores")
-        self.open_suppliers_callback()  # Llama al callback para abrir Suppliers
+        """Abre el módulo de proveedores."""
+        self.open_suppliers_callback()
 
     def inventory_control(self) -> None:
-        """
-        Método para abrir la pantalla de inventario.
-        """
-        print("Function: Inventario de productos")
+        """Abre el módulo de inventario."""
         self.open_inventory_callback()
 
     def purchases_module(self) -> None:
+        """Módulo de compras (pendiente implementación)."""
         print("Function: Módulo de compras")
 
     def reports(self) -> None:
+        """Módulo de reportes (pendiente implementación)."""
         print("Function: Reportes")
 
     def billing_control(self) -> None:
+        """Módulo de facturación (pendiente implementación)."""
         print("Function: Control de facturación")
 
     def customers_control(self) -> None:
+        """Módulo de clientes (pendiente implementación)."""
         print("Function: Control de clientes")
 
     def services_control(self) -> None:
+        """Módulo de servicios (pendiente implementación)."""
         print("Function: Control de servicios")
 
     def catalog(self) -> None:
+        """Módulo de catálogo (pendiente implementación)."""
         print("Function: Catálogo de productos y servicios")
 
     def payments(self) -> None:
+        """Módulo de pagos (pendiente implementación)."""
         print("Function: Tipos de pagos")
 
     def users(self) -> None:
+        """Módulo de usuarios (pendiente implementación)."""
         print("Function: Usuarios")
 
     def system_config(self) -> None:
+        """Módulo de configuración (pendiente implementación)."""
         print("Function: Configuración del sistema")
 
     def exit(self) -> None:
-        """
-        Cierra la pantalla actual (HomeScreen) y abre la pantalla de inicio de sesión (LoginScreen).
-        """
-        print("Function: Salir")
+        """Regresa a la pantalla de login."""
         self.open_login_screen_callback()
