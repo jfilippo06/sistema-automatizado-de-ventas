@@ -15,8 +15,8 @@ class Suppliers(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("1200x800")
-        self.parent.resizable(True, True)
+        # Maximizar la ventana (pantalla completa)
+        self.parent.state('zoomed')
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
@@ -142,6 +142,10 @@ class Suppliers(tk.Frame):
             messagebox.showerror("Error", f"No se pudieron cargar los proveedores: {str(e)}", parent=self)
 
     def go_back(self) -> None:
+        # Antes de regresar, asegurarnos de que la ventana vuelva al tamaño normal
+        self.parent.state('normal')  # Restaurar ventana
+        # O si usaste fullscreen:
+        # self.parent.attributes('-fullscreen', False)
         self.open_previous_screen_callback()
 
     def add_supplier(self) -> None:
