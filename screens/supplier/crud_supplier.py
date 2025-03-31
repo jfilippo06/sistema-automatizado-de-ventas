@@ -6,6 +6,7 @@ from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
+from widgets.custom_combobox import CustomCombobox
 
 class CrudSupplier(tk.Toplevel):
     def __init__(
@@ -40,6 +41,8 @@ class CrudSupplier(tk.Toplevel):
         self.company_var = tk.StringVar()
         self.status_var = tk.StringVar()
         
+        self.entries = {}  # Diccionario para almacenar referencias a los widgets
+        
         self.configure_ui()
         
         if mode == "edit" and supplier_id:
@@ -61,19 +64,19 @@ class CrudSupplier(tk.Toplevel):
         
         # Campos del formulario
         fields = [
-            ("Código:", self.code_var),
-            ("Cédula:", self.id_number_var),
-            ("Nombres:", self.first_name_var),
-            ("Apellidos:", self.last_name_var),
-            ("Dirección:", self.address_var),
-            ("Teléfono:", self.phone_var),
-            ("Email:", self.email_var),
-            ("RIF:", self.tax_id_var),
-            ("Empresa:", self.company_var),
-            ("Estado:", self.status_var)
+            ("Código:", self.code_var, 'text'),
+            ("Cédula:", self.id_number_var, 'number'),
+            ("Nombres:", self.first_name_var, 'text'),
+            ("Apellidos:", self.last_name_var, 'text'),
+            ("Dirección:", self.address_var, 'text'),
+            ("Teléfono:", self.phone_var, 'number'),
+            ("Email:", self.email_var, None),
+            ("RIF:", self.tax_id_var, 'text'),
+            ("Empresa:", self.company_var, 'text'),
+            ("Estado:", self.status_var, None)
         ]
         
-        for i, (label, var) in enumerate(fields, start=1):
+        for i, (label, var, val_type) in enumerate(fields, start=1):
             field_label = CustomLabel(
                 main_frame,
                 text=label,
@@ -83,14 +86,15 @@ class CrudSupplier(tk.Toplevel):
             field_label.grid(row=i, column=0, sticky="w", pady=5)
             
             if label == "Estado:":
-                self.status_combobox = ttk.Combobox(
+                combobox = CustomCombobox(
                     main_frame, 
                     textvariable=var,
                     values=[status['name'] for status in Status.all()],
-                    font=("Arial", 10),
-                    state="readonly"
+                    state="readonly",
+                    width=27
                 )
-                self.status_combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                self.entries[label] = combobox
             else:
                 entry = CustomEntry(
                     main_frame,
@@ -98,7 +102,15 @@ class CrudSupplier(tk.Toplevel):
                     font=("Arial", 10),
                     width=30
                 )
+                
+                if val_type == 'number':
+                    entry.configure(validate="key")
+                    entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
+                elif val_type == 'text':
+                    entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
+                
                 entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                self.entries[label] = entry
         
         # Botones
         btn_frame = tk.Frame(main_frame)
@@ -132,6 +144,62 @@ class CrudSupplier(tk.Toplevel):
         )
         btn_cancel.pack(side=tk.LEFT, padx=10)
 
+    # Métodos de validación
+    def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
+        widget = event.widget
+        current_text = widget.get()
+        
+        if not validation_func(current_text):
+            widget.delete(0, tk.END)
+            widget.insert(0, current_text[:-1])
+
+    def validate_text(self, text: str) -> bool:
+        """Valida que el texto solo contenga letras y espacios."""
+        return all(c.isalpha() or c.isspace() for c in text) if text else True
+
+    def validate_integer(self, text: str) -> bool:
+        """Valida que el texto sea un entero válido."""
+        if text == "":
+            return True
+        try:
+            int(text)
+            return True
+        except ValueError:
+            return False
+
+    def validate_required_fields(self) -> bool:
+        """Valida que todos los campos obligatorios estén completos."""
+        required_fields = {
+            "Código:": self.code_var.get(),
+            "Cédula:": self.id_number_var.get(),
+            "Nombres:": self.first_name_var.get(),
+            "Apellidos:": self.last_name_var.get(),
+            "Dirección:": self.address_var.get(),
+            "Teléfono:": self.phone_var.get(),
+            "Email:": self.email_var.get(),
+            "RIF:": self.tax_id_var.get(),
+            "Empresa:": self.company_var.get(),
+            "Estado:": self.status_var.get()
+        }
+        
+        for field_name, value in required_fields.items():
+            if not value:
+                messagebox.showwarning("Campo requerido", 
+                                     f"El campo {field_name} es obligatorio", 
+                                     parent=self)
+                self.entries[field_name].focus_set()
+                return False
+                
+        # Validar valores numéricos
+        try:
+            int(self.id_number_var.get())
+            int(self.phone_var.get())
+        except ValueError:
+            messagebox.showerror("Error", "Los valores numéricos (Cédula y Teléfono) deben ser válidos", parent=self)
+            return False
+            
+        return True
+
     def load_supplier_data(self) -> None:
         supplier = Supplier.get_by_id(self.supplier_id)
         if not supplier:
@@ -151,15 +219,10 @@ class CrudSupplier(tk.Toplevel):
         self.status_var.set(supplier['status_name'])
 
     def create_supplier(self) -> None:
+        if not self.validate_required_fields():
+            return
+            
         try:
-            # Validar campos requeridos
-            if not all([
-                self.code_var.get(),
-                self.id_number_var.get(),
-                self.company_var.get()
-            ]):
-                raise ValueError("Código, Cédula y Empresa son campos requeridos")
-                
             # Obtener el ID del estado seleccionado
             status_name = self.status_var.get()
             status = next((s for s in Status.all() if s['name'] == status_name), None)
@@ -188,17 +251,12 @@ class CrudSupplier(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudo crear el proveedor: {str(e)}", parent=self)
 
     def update_supplier(self) -> None:
+        if not self.validate_required_fields():
+            return
+            
         try:
             if not self.supplier_id:
                 raise ValueError("ID de proveedor no válido")
-                
-            # Validar campos requeridos
-            if not all([
-                self.code_var.get(),
-                self.id_number_var.get(),
-                self.company_var.get()
-            ]):
-                raise ValueError("Código, Cédula y Empresa son campos requeridos")
                 
             # Obtener el ID del estado seleccionado
             status_name = self.status_var.get()
