@@ -7,7 +7,7 @@ from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_text import CustomText
-from widgets.custom_entry import CustomEntry  # Assuming you have this similar to CustomText
+from widgets.custom_entry import CustomEntry
 
 class CrudInventory(tk.Toplevel):
     def __init__(
@@ -17,14 +17,6 @@ class CrudInventory(tk.Toplevel):
         item_id: Optional[int] = None, 
         refresh_callback: Optional[Callable[[], None]] = None
     ) -> None:
-        """
-        Pantalla para crear o editar productos del inventario.
-        
-        :param parent: Widget padre
-        :param mode: 'create' o 'edit'
-        :param item_id: ID del producto a editar (solo para modo 'edit')
-        :param refresh_callback: Función para actualizar la tabla principal
-        """
         super().__init__(parent)
         self.mode = mode
         self.item_id = item_id
@@ -33,6 +25,10 @@ class CrudInventory(tk.Toplevel):
         self.title("Agregar Producto" if mode == "create" else "Editar Producto")
         self.geometry("500x650")
         self.resizable(False, False)
+        
+        # Establecer relación con la ventana padre
+        self.transient(parent)
+        self.grab_set()
         
         # Variables para los campos
         self.code_var = tk.StringVar()
@@ -49,7 +45,6 @@ class CrudInventory(tk.Toplevel):
             self.load_item_data()
 
     def configure_ui(self) -> None:
-        """Configura los elementos de la interfaz."""
         main_frame = tk.Frame(self, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
@@ -142,10 +137,9 @@ class CrudInventory(tk.Toplevel):
         btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def load_item_data(self) -> None:
-        """Carga los datos del producto a editar."""
         item = InventoryItem.get_by_id(self.item_id)
         if not item:
-            messagebox.showerror("Error", "No se pudo cargar el producto")
+            messagebox.showerror("Error", "No se pudo cargar el producto", parent=self)
             self.destroy()
             return
         
@@ -163,7 +157,6 @@ class CrudInventory(tk.Toplevel):
                 self.supplier_var.set(f"{supplier['company']} ({supplier['code']})")
 
     def create_item(self) -> None:
-        """Crea un nuevo producto en la base de datos."""
         try:
             # Validar campos requeridos
             if not self.code_var.get() or not self.product_var.get():
@@ -195,16 +188,15 @@ class CrudInventory(tk.Toplevel):
                 supplier_id=supplier_id
             )
             
-            messagebox.showinfo("Éxito", "Producto creado correctamente")
+            messagebox.showinfo("Éxito", "Producto creado correctamente", parent=self)
             if self.refresh_callback:
                 self.refresh_callback()
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo crear el producto: {str(e)}")
+            messagebox.showerror("Error", f"No se pudo crear el producto: {str(e)}", parent=self)
 
     def update_item(self) -> None:
-        """Actualiza un producto existente en la base de datos."""
         try:
             if not self.item_id:
                 raise ValueError("ID de producto no válido")
@@ -240,10 +232,10 @@ class CrudInventory(tk.Toplevel):
                 supplier_id=supplier_id
             )
             
-            messagebox.showinfo("Éxito", "Producto actualizado correctamente")
+            messagebox.showinfo("Éxito", "Producto actualizado correctamente", parent=self)
             if self.refresh_callback:
                 self.refresh_callback()
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo actualizar el producto: {str(e)}")
+            messagebox.showerror("Error", f"No se pudo actualizar el producto: {str(e)}", parent=self)

@@ -24,6 +24,10 @@ class CrudSupplier(tk.Toplevel):
         self.geometry("550x750")
         self.resizable(False, False)
         
+        # Establecer relación con la ventana padre
+        self.transient(parent)
+        self.grab_set()
+        
         # Variables para los campos
         self.code_var = tk.StringVar()
         self.id_number_var = tk.StringVar()
@@ -131,7 +135,7 @@ class CrudSupplier(tk.Toplevel):
     def load_supplier_data(self) -> None:
         supplier = Supplier.get_by_id(self.supplier_id)
         if not supplier:
-            messagebox.showerror("Error", "No se pudo cargar el proveedor")
+            messagebox.showerror("Error", "No se pudo cargar el proveedor", parent=self)
             self.destroy()
             return
         
@@ -175,13 +179,13 @@ class CrudSupplier(tk.Toplevel):
                 status_id=status['id']
             )
             
-            messagebox.showinfo("Éxito", "Proveedor creado correctamente")
+            messagebox.showinfo("Éxito", "Proveedor creado correctamente", parent=self)
             if self.refresh_callback:
                 self.refresh_callback()
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo crear el proveedor: {str(e)}")
+            messagebox.showerror("Error", f"No se pudo crear el proveedor: {str(e)}", parent=self)
 
     def update_supplier(self) -> None:
         try:
@@ -218,10 +222,10 @@ class CrudSupplier(tk.Toplevel):
             # Actualizar el estado por separado
             Supplier.update_status(self.supplier_id, status['id'])
             
-            messagebox.showinfo("Éxito", "Proveedor actualizado correctamente")
+            messagebox.showinfo("Éxito", "Proveedor actualizado correctamente", parent=self)
             if self.refresh_callback:
                 self.refresh_callback()
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo actualizar el proveedor: {str(e)}")
+            messagebox.showerror("Error", f"No se pudo actualizar el proveedor: {str(e)}", parent=self)

@@ -1,10 +1,8 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
-from typing import Callable, List, Dict, Any, Optional
+from tkinter import ttk, messagebox
+from typing import Callable, List, Dict, Any
 from screens.inventory.crud_inventory import CrudInventory
 from sqlite_cli.models.inventory_model import InventoryItem
-from sqlite_cli.models.supplier_model import Supplier
 from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -22,7 +20,7 @@ class Inventory(tk.Frame):
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        # Header frame with title
+        # Header con título
         header_frame = tk.Frame(self)
         header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
         
@@ -34,7 +32,7 @@ class Inventory(tk.Frame):
         )
         title_label.pack(side=tk.LEFT)
 
-        # Button frame with action buttons
+        # Frame de botones
         button_frame = tk.Frame(self)
         button_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
@@ -81,20 +79,18 @@ class Inventory(tk.Frame):
         # Treeview
         self.tree = ttk.Treeview(tree_frame, columns=(
             "ID", "Código", "Producto", "Cantidad", "Stock", 
-            "Precio", "Creación", "Modificación", "Estado", "Proveedor"
+            "Precio", "Proveedor", "Estado"
         ), show="headings")
 
         columns = [
             ("ID", 50, tk.CENTER),
-            ("Código", 100, tk.CENTER),
-            ("Producto", 200, tk.W),
+            ("Código", 80, tk.CENTER),
+            ("Producto", 150, tk.W),
             ("Cantidad", 80, tk.CENTER),
             ("Stock", 80, tk.CENTER),
-            ("Precio", 100, tk.E),
-            ("Creación", 120, tk.CENTER),
-            ("Modificación", 120, tk.CENTER),
-            ("Estado", 100, tk.CENTER),
-            ("Proveedor", 150, tk.W)
+            ("Precio", 100, tk.CENTER),
+            ("Proveedor", 150, tk.W),
+            ("Estado", 100, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -106,10 +102,10 @@ class Inventory(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Status bar
+        # Barra de estado
         self.status_bar = CustomLabel(
             self,
-            text="Listo",
+            text=f"Mostrando {len(InventoryItem.all())} productos",
             font=("Arial", 10),
             fg="#666"
         )
@@ -118,7 +114,6 @@ class Inventory(tk.Frame):
         self.refresh_data()
 
     def refresh_data(self) -> None:
-        """Actualiza los datos en la tabla."""
         for item in self.tree.get_children():
             self.tree.delete(item)
             
@@ -131,39 +126,34 @@ class Inventory(tk.Frame):
                     item['product'],
                     item['quantity'],
                     item['stock'],
-                    f"${item['price']:.2f}",
-                    item['created_at'],
-                    item['updated_at'],
-                    item['status_name'],
-                    item.get('supplier_company', 'N/A')
+                    item['price'],
+                    item.get('supplier_company', ''),
+                    item['status_name']
                 ))
-            self.status_bar.configure(text=f"Mostrando {len(items)} elementos")
+            self.status_bar.configure(text=f"Mostrando {len(items)} productos")
         except Exception as e:
             self.status_bar.configure(text=f"Error al cargar datos: {str(e)}")
-            messagebox.showerror("Error", f"No se pudieron cargar los datos: {str(e)}")
+            messagebox.showerror("Error", f"No se pudieron cargar los productos: {str(e)}", parent=self)
 
     def go_back(self) -> None:
         self.open_previous_screen_callback()
 
     def add_item(self) -> None:
-        """Abre el formulario para agregar un nuevo producto."""
         CrudInventory(self, mode="create", refresh_callback=self.refresh_data)
 
     def edit_item(self) -> None:
-        """Abre el formulario para editar un producto existente."""
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("Advertencia", "Por favor seleccione un producto")
+            messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
         CrudInventory(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
 
     def disable_item(self) -> None:
-        """Muestra un diálogo de confirmación para deshabilitar un producto."""
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("Advertencia", "Por favor seleccione un producto")
+            messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
@@ -171,7 +161,8 @@ class Inventory(tk.Frame):
         
         response = messagebox.askyesno(
             "Confirmar", 
-            f"¿Está seguro que desea deshabilitar el producto '{product_name}'?"
+            f"¿Está seguro que desea deshabilitar el producto '{product_name}'?",
+            parent=self
         )
         
         if response:
@@ -179,9 +170,9 @@ class Inventory(tk.Frame):
                 status_inactive = next((s for s in Status.all() if s['name'] == 'inactive'), None)
                 if status_inactive:
                     InventoryItem.update_status(item_id, status_inactive['id'])
-                    messagebox.showinfo("Éxito", "Producto deshabilitado correctamente")
+                    messagebox.showinfo("Éxito", "Producto deshabilitado correctamente", parent=self)
                     self.refresh_data()
                 else:
-                    messagebox.showerror("Error", "No se encontró el estado 'inactivo'")
+                    messagebox.showerror("Error", "No se encontró el estado 'inactivo'", parent=self)
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo deshabilitar el producto: {str(e)}")
+                messagebox.showerror("Error", f"No se pudo deshabilitar el producto: {str(e)}", parent=self)
