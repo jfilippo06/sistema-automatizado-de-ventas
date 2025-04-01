@@ -1,4 +1,4 @@
-from sqlite_cli.database.database import get_db_connection
+from database.database import get_db_connection
 from typing import List, Dict, Optional
 
 class Supplier:
