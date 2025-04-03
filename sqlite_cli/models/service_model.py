@@ -25,10 +25,42 @@ class Service:
     def all() -> List[Dict]:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM services')
+        cursor.execute('''
+            SELECT s.*, st.name as status_name 
+            FROM services s
+            JOIN status st ON s.status_id = st.id
+        ''')
         items = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return items
+
+    @staticmethod
+    def get_by_id(service_id: int) -> Optional[Dict]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT s.*, st.name as status_name 
+            FROM services s
+            JOIN status st ON s.status_id = st.id
+            WHERE s.id = ?
+        ''', (service_id,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
+
+    @staticmethod
+    def get_by_name(name: str) -> Optional[Dict]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT s.*, st.name as status_name 
+            FROM services s
+            JOIN status st ON s.status_id = st.id
+            WHERE s.name = ?
+        ''', (name,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
 
     @staticmethod
     def update(

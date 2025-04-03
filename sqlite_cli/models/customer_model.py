@@ -28,10 +28,42 @@ class Customer:
     def all() -> List[Dict]:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM customers')
+        cursor.execute('''
+            SELECT c.*, s.name as status_name 
+            FROM customers c
+            JOIN status s ON c.status_id = s.id
+        ''')
         items = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return items
+
+    @staticmethod
+    def get_by_id(customer_id: int) -> Optional[Dict]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT c.*, s.name as status_name 
+            FROM customers c
+            JOIN status s ON c.status_id = s.id
+            WHERE c.id = ?
+        ''', (customer_id,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
+
+    @staticmethod
+    def get_by_id_number(id_number: str) -> Optional[Dict]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT c.*, s.name as status_name 
+            FROM customers c
+            JOIN status s ON c.status_id = s.id
+            WHERE c.id_number = ?
+        ''', (id_number,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
 
     @staticmethod
     def update(

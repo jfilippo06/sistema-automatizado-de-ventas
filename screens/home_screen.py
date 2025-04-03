@@ -10,14 +10,16 @@ class HomeScreen(tk.Frame):
         open_login_screen_callback: Callable[[], None],
         open_inventory_callback: Callable[[], None],
         open_suppliers_callback: Callable[[], None],
-        open_customers_callback: Callable[[], None]  # Nuevo callback
+        open_customers_callback: Callable[[], None],
+        open_services_callback: Callable[[], None]  # Nuevo callback
     ) -> None:
         super().__init__(parent)
         self.parent = parent
         self.open_login_screen_callback = open_login_screen_callback
         self.open_inventory_callback = open_inventory_callback
         self.open_suppliers_callback = open_suppliers_callback
-        self.open_customers_callback = open_customers_callback  # Nuevo
+        self.open_customers_callback = open_customers_callback
+        self.open_services_callback = open_services_callback  # Nuevo
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()
@@ -107,8 +109,8 @@ class HomeScreen(tk.Frame):
         self.open_customers_callback()
 
     def services_control(self) -> None:
-        """Módulo de servicios (pendiente implementación)."""
-        print("Function: Control de servicios")
+        """Abre el módulo de servicios."""
+        self.open_services_callback()
 
     def catalog(self) -> None:
         """Módulo de catálogo (pendiente implementación)."""
