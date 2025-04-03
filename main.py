@@ -1,4 +1,5 @@
 import tkinter as tk
+from screens.customers.customers_screen import CustomersScreen
 from screens.login_screen import LoginScreen
 from screens.home_screen import HomeScreen
 from screens.inventory.inventory import Inventory
@@ -18,17 +19,26 @@ def main() -> None:
         home_screen.pack_forget()
         inventory_screen.pack_forget()
         suppliers_screen.pack_forget()
+        customers_screen.pack_forget()  # Nuevo
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
         home_screen.pack_forget()
         suppliers_screen.pack_forget()
+        customers_screen.pack_forget()  # Nuevo
         inventory_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_suppliers() -> None:
         home_screen.pack_forget()
         inventory_screen.pack_forget()
+        customers_screen.pack_forget()  # Nuevo
         suppliers_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_customers() -> None:  # Nueva función
+        home_screen.pack_forget()
+        inventory_screen.pack_forget()
+        suppliers_screen.pack_forget()
+        customers_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_home_from_inventory() -> None:
         inventory_screen.pack_forget()
@@ -38,16 +48,22 @@ def main() -> None:
         suppliers_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_home_from_customers() -> None:  # Nueva función
+        customers_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
     # Create all screens
     login_screen = LoginScreen(app, open_home_screen)
     home_screen = HomeScreen(
         app, 
         open_login_screen, 
         open_inventory,
-        open_suppliers  # Pass the suppliers callback
+        open_suppliers,
+        open_customers  # Nuevo callback
     )
     inventory_screen = Inventory(app, open_home_from_inventory)
-    suppliers_screen = Suppliers(app, open_home_from_suppliers)  # Create suppliers screen
+    suppliers_screen = Suppliers(app, open_home_from_suppliers)
+    customers_screen = CustomersScreen(app, open_home_from_customers)  # Nueva pantalla
 
     login_screen.pack(fill=tk.BOTH, expand=True)
     app.mainloop()

@@ -9,24 +9,17 @@ class HomeScreen(tk.Frame):
         parent: tk.Widget,
         open_login_screen_callback: Callable[[], None],
         open_inventory_callback: Callable[[], None],
-        open_suppliers_callback: Callable[[], None]
+        open_suppliers_callback: Callable[[], None],
+        open_customers_callback: Callable[[], None]  # Nuevo callback
     ) -> None:
-        """
-        Pantalla principal del sistema con menú de opciones.
-        
-        Args:
-            parent: Widget padre contenedor
-            open_login_screen_callback: Función para volver a la pantalla de login
-            open_inventory_callback: Función para abrir el módulo de inventario
-            open_suppliers_callback: Función para abrir el módulo de proveedores
-        """
         super().__init__(parent)
         self.parent = parent
         self.open_login_screen_callback = open_login_screen_callback
         self.open_inventory_callback = open_inventory_callback
         self.open_suppliers_callback = open_suppliers_callback
+        self.open_customers_callback = open_customers_callback  # Nuevo
         
-        self.configure(bg="#f0f0f0")  # Fondo claro para mejor contraste
+        self.configure(bg="#f0f0f0")
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -110,8 +103,8 @@ class HomeScreen(tk.Frame):
         print("Function: Control de facturación")
 
     def customers_control(self) -> None:
-        """Módulo de clientes (pendiente implementación)."""
-        print("Function: Control de clientes")
+        """Abre el módulo de clientes."""
+        self.open_customers_callback()
 
     def services_control(self) -> None:
         """Módulo de servicios (pendiente implementación)."""
