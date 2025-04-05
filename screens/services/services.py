@@ -76,7 +76,7 @@ class ServicesScreen(tk.Frame):
         # Botones específicos del modo
         self.btn_add = CustomButton(
             control_frame,
-            text="Agregar",
+            text="Crear",
             command=self.add_item,
             padding=8,
             width=10

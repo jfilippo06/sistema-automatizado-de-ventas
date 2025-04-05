@@ -22,7 +22,7 @@ class CrudInventory(tk.Toplevel):
         self.item_id = item_id
         self.refresh_callback = refresh_callback
         
-        self.title("Agregar Producto" if mode == "create" else "Editar Producto")
+        self.title("Crear Producto" if mode == "create" else "Editar Producto")
         self.geometry("500x650")
         self.resizable(False, False)
         
@@ -125,7 +125,7 @@ class CrudInventory(tk.Toplevel):
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
-                text="Agregar", 
+                text="Crear", 
                 command=self.create_item,
                 padding=8,
                 width=15

@@ -21,7 +21,7 @@ class CrudSupplier(tk.Toplevel):
         self.supplier_id = supplier_id
         self.refresh_callback = refresh_callback
         
-        self.title("Agregar Proveedor" if mode == "create" else "Editar Proveedor")
+        self.title("Crear Proveedor" if mode == "create" else "Editar Proveedor")
         self.geometry("550x750")
         self.resizable(False, False)
         
@@ -119,7 +119,7 @@ class CrudSupplier(tk.Toplevel):
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
-                text="Agregar", 
+                text="Crear", 
                 command=self.create_supplier,
                 padding=8,
                 width=15
