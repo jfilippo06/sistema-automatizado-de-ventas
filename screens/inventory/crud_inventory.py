@@ -3,7 +3,6 @@ from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.supplier_model import Supplier
-from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -24,7 +23,7 @@ class CrudInventory(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Crear Producto" if mode == "create" else "Editar Producto")
-        self.geometry("500x650")
+        self.geometry("380x380")
         self.resizable(False, False)
         
         self.transient(parent)
@@ -36,19 +35,19 @@ class CrudInventory(tk.Toplevel):
         self.quantity_var = tk.StringVar(value="0")
         self.stock_var = tk.StringVar(value="0")
         self.price_var = tk.StringVar(value="0.0")
-        self.status_var = tk.StringVar()
         self.supplier_var = tk.StringVar()
         
+        self.entries = {}
         self.configure_ui()
         
         if mode == "edit" and item_id:
             self.load_item_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=20)
+        main_frame = tk.Frame(self, padx=20, pady=15)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Title
+        # Título
         title_text = "Nuevo Producto" if self.mode == "create" else "Editar Producto"
         title_label = CustomLabel(
             main_frame,
@@ -56,54 +55,48 @@ class CrudInventory(tk.Toplevel):
             font=("Arial", 14, "bold"),
             fg="#333"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="w")
         
         # Campos del formulario
         fields = [
-            ("Código:", self.code_var, 'text'),
-            ("Producto:", self.product_var, 'text'),
-            ("Cantidad:", self.quantity_var, 'number'),
-            ("Stock:", self.stock_var, 'number'),
-            ("Precio:", self.price_var, 'decimal'),
-            ("Estado:", self.status_var, None),
-            ("Proveedor:", self.supplier_var, None)
+            ("Código:", self.code_var, 'text', not (self.mode == "edit")),
+            ("Producto:", self.product_var, 'text', True),
+            ("Cantidad:", self.quantity_var, 'number', True),
+            ("Stock:", self.stock_var, 'number', True),
+            ("Precio:", self.price_var, 'decimal', True),
+            ("Proveedor:", self.supplier_var, None, True)
         ]
         
-        self.entries = {}
-        
-        for i, (label, var, val_type) in enumerate(fields, start=1):
+        for i, (label, var, val_type, editable) in enumerate(fields, start=1):
             field_label = CustomLabel(
                 main_frame,
                 text=label,
                 font=("Arial", 10),
                 fg="#555"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.grid(row=i, column=0, sticky="w", pady=3)
             
-            if label in ["Estado:", "Proveedor:"]:
-                values = []
-                if label == "Estado:":
-                    values = [status['name'] for status in Status.all()]
-                    state = "readonly"
-                else:
-                    values = [f"{supplier['company']} ({supplier['code']})" for supplier in Supplier.all()]
-                    state = "normal"
+            if label == "Proveedor:":
+                # Obtener proveedores activos
+                suppliers = Supplier.search_active()
+                values = [f"{supplier['company']} ({supplier['code']})" for supplier in suppliers]
                 
                 combobox = CustomCombobox(
                     main_frame,
                     textvariable=var,
                     values=values,
-                    state=state,
-                    width=27
+                    state="readonly",
+                    width=30
                 )
-                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                combobox.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
                 self.entries[label] = combobox
             else:
                 entry = CustomEntry(
                     main_frame,
                     textvariable=var,
                     font=("Arial", 10),
-                    width=30
+                    width=32,
+                    state="normal" if editable else "readonly"
                 )
                 
                 if val_type == 'number':
@@ -115,12 +108,12 @@ class CrudInventory(tk.Toplevel):
                 else:  # text
                     entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
                 
-                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
                 self.entries[label] = entry
-
+        
         # Botones
         btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(20, 10))
+        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(15, 5))
         
         if self.mode == "create":
             btn_action = CustomButton(
@@ -139,7 +132,7 @@ class CrudInventory(tk.Toplevel):
                 width=15
             )
             
-        btn_action.pack(side=tk.LEFT, padx=10)
+        btn_action.pack(side=tk.LEFT, padx=5)
             
         btn_cancel = CustomButton(
             btn_frame, 
@@ -148,9 +141,8 @@ class CrudInventory(tk.Toplevel):
             padding=8,
             width=15
         )
-        btn_cancel.pack(side=tk.LEFT, padx=10)
+        btn_cancel.pack(side=tk.LEFT, padx=5)
 
-    # Métodos de validación
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
         Validations.validate_entry(event, validation_func)
 
@@ -168,8 +160,7 @@ class CrudInventory(tk.Toplevel):
             "Código:": self.code_var.get(),
             "Producto:": self.product_var.get(),
             "Cantidad:": self.quantity_var.get(),
-            "Precio:": self.price_var.get(),
-            "Estado:": self.status_var.get()
+            "Precio:": self.price_var.get()
         }
         
         if not Validations.validate_required_fields(self.entries, required_fields, self):
@@ -177,11 +168,9 @@ class CrudInventory(tk.Toplevel):
             
         numeric_fields = {
             "Cantidad:": (self.quantity_var.get(), False),
+            "Stock:": (self.stock_var.get(), False),
             "Precio:": (self.price_var.get(), True)
         }
-        
-        if self.stock_var.get():
-            numeric_fields["Stock:"] = (self.stock_var.get(), False)
             
         return Validations.validate_numeric_fields(numeric_fields, self)
 
@@ -197,10 +186,9 @@ class CrudInventory(tk.Toplevel):
         self.quantity_var.set(str(item['quantity']))
         self.stock_var.set(str(item['stock']))
         self.price_var.set(str(item['price']))
-        self.status_var.set(item['status_name'])
         
-        if item.get('supplier_company'):
-            suppliers = Supplier.all()
+        if item.get('supplier_id'):
+            suppliers = Supplier.search_active()
             supplier = next((s for s in suppliers if s['id'] == item['supplier_id']), None)
             if supplier:
                 self.supplier_var.set(f"{supplier['company']} ({supplier['code']})")
@@ -210,14 +198,10 @@ class CrudInventory(tk.Toplevel):
             return
             
         try:
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
-            
             supplier_id = None
             if self.supplier_var.get():
                 supplier_code = self.supplier_var.get().split("(")[-1].rstrip(")")
-                supplier = next((s for s in Supplier.all() if s['code'] == supplier_code), None)
+                supplier = next((s for s in Supplier.search_active() if s['code'] == supplier_code), None)
                 if supplier:
                     supplier_id = supplier['id']
             
@@ -227,7 +211,6 @@ class CrudInventory(tk.Toplevel):
                 quantity=int(self.quantity_var.get()),
                 stock=int(self.stock_var.get()) if self.stock_var.get() else 0,
                 price=float(self.price_var.get()),
-                status_id=status['id'],
                 supplier_id=supplier_id
             )
             
@@ -246,15 +229,11 @@ class CrudInventory(tk.Toplevel):
         try:
             if not self.item_id:
                 raise ValueError("ID de producto no válido")
-                
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
             
             supplier_id = None
             if self.supplier_var.get():
                 supplier_code = self.supplier_var.get().split("(")[-1].rstrip(")")
-                supplier = next((s for s in Supplier.all() if s['code'] == supplier_code), None)
+                supplier = next((s for s in Supplier.search_active() if s['code'] == supplier_code), None)
                 if supplier:
                     supplier_id = supplier['id']
             
@@ -265,7 +244,6 @@ class CrudInventory(tk.Toplevel):
                 quantity=int(self.quantity_var.get()),
                 stock=int(self.stock_var.get()) if self.stock_var.get() else 0,
                 price=float(self.price_var.get()),
-                status_id=status['id'],
                 supplier_id=supplier_id
             )
             

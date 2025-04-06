@@ -23,7 +23,7 @@ class CrudSupplier(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Crear Proveedor" if mode == "create" else "Editar Proveedor")
-        self.geometry("550x750")
+        self.geometry("380x500")
         self.resizable(False, False)
         
         self.transient(parent)
@@ -39,7 +39,6 @@ class CrudSupplier(tk.Toplevel):
         self.email_var = tk.StringVar()
         self.tax_id_var = tk.StringVar()
         self.company_var = tk.StringVar()
-        self.status_var = tk.StringVar()
         
         self.entries = {}
         self.configure_ui()
@@ -48,7 +47,7 @@ class CrudSupplier(tk.Toplevel):
             self.load_supplier_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=20)
+        main_frame = tk.Frame(self, padx=20, pady=15)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Título
@@ -59,61 +58,50 @@ class CrudSupplier(tk.Toplevel):
             font=("Arial", 14, "bold"),
             fg="#333"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="w")
         
         # Campos del formulario
         fields = [
-            ("Código:", self.code_var, 'text'),
-            ("Cédula:", self.id_number_var, 'number'),
-            ("Nombres:", self.first_name_var, 'text'),
-            ("Apellidos:", self.last_name_var, 'text'),
-            ("Dirección:", self.address_var, 'text'),
-            ("Teléfono:", self.phone_var, 'number'),
-            ("Email:", self.email_var, None),
-            ("RIF:", self.tax_id_var, 'text'),
-            ("Empresa:", self.company_var, 'text'),
-            ("Estado:", self.status_var, None)
+            ("Código:", self.code_var, 'text', not (self.mode == "edit")),
+            ("Cédula:", self.id_number_var, 'number', True),
+            ("Nombres:", self.first_name_var, 'text', True),
+            ("Apellidos:", self.last_name_var, 'text', True),
+            ("Dirección:", self.address_var, 'text', True),
+            ("Teléfono:", self.phone_var, 'number', True),
+            ("Email:", self.email_var, None, True),
+            ("RIF:", self.tax_id_var, 'text', True),
+            ("Empresa:", self.company_var, 'text', True)
         ]
         
-        for i, (label, var, val_type) in enumerate(fields, start=1):
+        for i, (label, var, val_type, editable) in enumerate(fields, start=1):
             field_label = CustomLabel(
                 main_frame,
                 text=label,
                 font=("Arial", 10),
                 fg="#555"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.grid(row=i, column=0, sticky="w", pady=3)
             
-            if label == "Estado:":
-                combobox = CustomCombobox(
-                    main_frame, 
-                    textvariable=var,
-                    values=[status['name'] for status in Status.all()],
-                    state="readonly",
-                    width=27
-                )
-                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = combobox
-            else:
-                entry = CustomEntry(
-                    main_frame,
-                    textvariable=var,
-                    font=("Arial", 10),
-                    width=30
-                )
-                
-                if val_type == 'number':
-                    entry.configure(validate="key")
-                    entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
-                elif val_type == 'text':
-                    entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
-                
-                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = entry
+            entry = CustomEntry(
+                main_frame,
+                textvariable=var,
+                font=("Arial", 10),
+                width=32,
+                state="normal" if editable else "readonly"
+            )
+            
+            if val_type == 'number':
+                entry.configure(validate="key")
+                entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
+            elif val_type == 'text':
+                entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
+            
+            entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
+            self.entries[label] = entry
         
         # Botones
         btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(20, 10))
+        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(15, 5))
         
         if self.mode == "create":
             btn_action = CustomButton(
@@ -132,18 +120,17 @@ class CrudSupplier(tk.Toplevel):
                 width=15
             )
             
-        btn_action.pack(side=tk.LEFT, padx=10)
+        btn_action.pack(side=tk.LEFT, padx=5)
             
         btn_cancel = CustomButton(
             btn_frame, 
             text="Cancelar", 
             command=self.destroy,
-            padding=8,
-            width=15
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=10)
+                padding=8,
+                width=15
+            )
+        btn_cancel.pack(side=tk.LEFT, padx=5)
 
-    # Métodos de validación
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
         Validations.validate_entry(event, validation_func)
 
@@ -163,8 +150,7 @@ class CrudSupplier(tk.Toplevel):
             "Teléfono:": self.phone_var.get(),
             "Email:": self.email_var.get(),
             "RIF:": self.tax_id_var.get(),
-            "Empresa:": self.company_var.get(),
-            "Estado:": self.status_var.get()
+            "Empresa:": self.company_var.get()
         }
         
         if not Validations.validate_required_fields(self.entries, required_fields, self):
@@ -193,19 +179,12 @@ class CrudSupplier(tk.Toplevel):
         self.email_var.set(supplier['email'])
         self.tax_id_var.set(supplier['tax_id'])
         self.company_var.set(supplier['company'])
-        self.status_var.set(supplier['status_name'])
 
     def create_supplier(self) -> None:
         if not self.validate_required_fields():
             return
             
         try:
-            # Obtener el ID del estado seleccionado
-            status_name = self.status_var.get()
-            status = next((s for s in Status.all() if s['name'] == status_name), None)
-            if not status:
-                raise ValueError("Estado no válido")
-            
             Supplier.create(
                 code=self.code_var.get(),
                 id_number=self.id_number_var.get(),
@@ -216,7 +195,7 @@ class CrudSupplier(tk.Toplevel):
                 email=self.email_var.get(),
                 tax_id=self.tax_id_var.get(),
                 company=self.company_var.get(),
-                status_id=status['id']
+                status_id=1  # Siempre activo al crear
             )
             
             messagebox.showinfo("Éxito", "Proveedor creado correctamente", parent=self)
@@ -234,12 +213,6 @@ class CrudSupplier(tk.Toplevel):
         try:
             if not self.supplier_id:
                 raise ValueError("ID de proveedor no válido")
-                
-            # Obtener el ID del estado seleccionado
-            status_name = self.status_var.get()
-            status = next((s for s in Status.all() if s['name'] == status_name), None)
-            if not status:
-                raise ValueError("Estado no válido")
             
             Supplier.update(
                 supplier_id=self.supplier_id,
@@ -253,9 +226,6 @@ class CrudSupplier(tk.Toplevel):
                 tax_id=self.tax_id_var.get(),
                 company=self.company_var.get()
             )
-            
-            # Actualizar el estado por separado
-            Supplier.update_status(self.supplier_id, status['id'])
             
             messagebox.showinfo("Éxito", "Proveedor actualizado correctamente", parent=self)
             if self.refresh_callback:
