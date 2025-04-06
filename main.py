@@ -1,10 +1,12 @@
+# main.py (actualizado)
 import tkinter as tk
 from screens.customers.customers_screen import CustomersScreen
 from screens.login_screen import LoginScreen
 from screens.home_screen import HomeScreen
 from screens.inventory.inventory import Inventory
-from screens.services.services import ServicesScreen
-from screens.supplier.supplier import Suppliers  # Import the new Suppliers screen
+from screens.service_requests.service_requests_screen import ServiceRequestsScreen
+from screens.services.services_screen import ServicesScreen
+from screens.supplier.supplier import Suppliers
 
 def main() -> None:
     app = tk.Tk()
@@ -21,35 +23,48 @@ def main() -> None:
         inventory_screen.pack_forget()
         suppliers_screen.pack_forget()
         customers_screen.pack_forget()
-        services_screen.pack_forget()  # Nuevo
+        service_requests_screen.pack_forget()
+        services_screen.pack_forget()
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
         home_screen.pack_forget()
         suppliers_screen.pack_forget()
         customers_screen.pack_forget()
-        services_screen.pack_forget()  # Nuevo
+        service_requests_screen.pack_forget()
+        services_screen.pack_forget()
         inventory_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_suppliers() -> None:
         home_screen.pack_forget()
         inventory_screen.pack_forget()
         customers_screen.pack_forget()
-        services_screen.pack_forget()  # Nuevo
+        service_requests_screen.pack_forget()
+        services_screen.pack_forget()
         suppliers_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_customers() -> None:
         home_screen.pack_forget()
         inventory_screen.pack_forget()
         suppliers_screen.pack_forget()
-        services_screen.pack_forget()  # Nuevo
+        service_requests_screen.pack_forget()
+        services_screen.pack_forget()
         customers_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_services() -> None:  # Nueva función
+    def open_service_requests() -> None:
         home_screen.pack_forget()
         inventory_screen.pack_forget()
         suppliers_screen.pack_forget()
         customers_screen.pack_forget()
+        services_screen.pack_forget()
+        service_requests_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_services() -> None:
+        home_screen.pack_forget()
+        inventory_screen.pack_forget()
+        suppliers_screen.pack_forget()
+        customers_screen.pack_forget()
+        service_requests_screen.pack_forget()
         services_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_home_from_inventory() -> None:
@@ -64,7 +79,11 @@ def main() -> None:
         customers_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_home_from_services() -> None:  # Nueva función
+    def open_home_from_service_requests() -> None:
+        service_requests_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_home_from_services() -> None:
         services_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -76,12 +95,14 @@ def main() -> None:
         open_inventory,
         open_suppliers,
         open_customers,
-        open_services  # Nuevo callback
+        open_service_requests,
+        open_services
     )
     inventory_screen = Inventory(app, open_home_from_inventory)
     suppliers_screen = Suppliers(app, open_home_from_suppliers)
     customers_screen = CustomersScreen(app, open_home_from_customers)
-    services_screen = ServicesScreen(app, open_home_from_services)  # Nueva pantalla
+    service_requests_screen = ServiceRequestsScreen(app, open_home_from_service_requests)
+    services_screen = ServicesScreen(app, open_home_from_services)
 
     login_screen.pack(fill=tk.BOTH, expand=True)
     app.mainloop()
