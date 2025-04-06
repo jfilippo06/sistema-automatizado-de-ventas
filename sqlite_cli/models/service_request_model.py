@@ -57,12 +57,13 @@ class ServiceRequest:
 
     @staticmethod
     def get_by_id(request_id: int) -> Optional[Dict]:
+        """Obtiene una solicitud por su ID con información relacionada."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT sr.*, 
                    c.first_name, c.last_name, c.id_number,
-                   s.name as service_name, s.price as service_price,
+                   s.name as service_name,
                    rs.name as request_status_name,
                    st.name as status_name
             FROM service_requests sr

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.supplier_model import Supplier
@@ -8,6 +8,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from utils.valdations import Validations
 
 class CrudInventory(tk.Toplevel):
     def __init__(
@@ -26,7 +27,6 @@ class CrudInventory(tk.Toplevel):
         self.geometry("500x650")
         self.resizable(False, False)
         
-        # Establecer relación con la ventana padre
         self.transient(parent)
         self.grab_set()
         
@@ -152,33 +152,16 @@ class CrudInventory(tk.Toplevel):
 
     # Métodos de validación
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
-        widget = event.widget
-        current_text = widget.get()
-        
-        if not validation_func(current_text):
-            widget.delete(0, tk.END)
-            widget.insert(0, current_text[:-1])
+        Validations.validate_entry(event, validation_func)
 
     def validate_text(self, text: str) -> bool:
-        return all(c.isalpha() or c.isspace() or c.isdigit() for c in text) if text else True
+        return Validations.validate_text(text)
 
     def validate_integer(self, text: str) -> bool:
-        if text == "":
-            return True
-        try:
-            int(text)
-            return True
-        except ValueError:
-            return False
+        return Validations.validate_integer(text)
 
     def validate_decimal(self, text: str) -> bool:
-        if text == "":
-            return True
-        try:
-            float(text)
-            return True
-        except ValueError:
-            return False
+        return Validations.validate_decimal(text)
 
     def validate_required_fields(self) -> bool:
         required_fields = {
@@ -189,25 +172,18 @@ class CrudInventory(tk.Toplevel):
             "Estado:": self.status_var.get()
         }
         
-        for field_name, value in required_fields.items():
-            if not value:
-                messagebox.showwarning("Campo requerido", 
-                                     f"El campo {field_name} es obligatorio", 
-                                     parent=self)
-                self.entries[field_name].focus_set()
-                return False
-                
-        # Validar valores numéricos
-        try:
-            int(self.quantity_var.get())
-            float(self.price_var.get())
-            if self.stock_var.get():
-                int(self.stock_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "Los valores numéricos no son válidos", parent=self)
+        if not Validations.validate_required_fields(self.entries, required_fields, self):
             return False
             
-        return True
+        numeric_fields = {
+            "Cantidad:": (self.quantity_var.get(), False),
+            "Precio:": (self.price_var.get(), True)
+        }
+        
+        if self.stock_var.get():
+            numeric_fields["Stock:"] = (self.stock_var.get(), False)
+            
+        return Validations.validate_numeric_fields(numeric_fields, self)
 
     def load_item_data(self) -> None:
         item = InventoryItem.get_by_id(self.item_id)

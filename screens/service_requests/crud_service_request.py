@@ -1,6 +1,5 @@
-# screens/services/crud_service_request.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from screens.customers.crud_customer import CrudCustomer
 from sqlite_cli.database.database import get_db_connection
@@ -13,6 +12,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from utils.valdations import Validations
 
 class CrudServiceRequest(tk.Toplevel):
     def __init__(
@@ -183,13 +183,7 @@ class CrudServiceRequest(tk.Toplevel):
         btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def validate_integer(self, text: str) -> bool:
-        if text == "":
-            return True
-        try:
-            int(text)
-            return True
-        except ValueError:
-            return False
+        return Validations.validate_integer(text)
 
     def search_customer(self) -> None:
         """Busca un cliente por su cédula."""
@@ -274,28 +268,6 @@ class CrudServiceRequest(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudieron cargar los datos: {str(e)}", parent=self)
             self.destroy()
 
-    @staticmethod
-    def get_by_id(request_id: int) -> Optional[Dict]:
-        """Obtiene una solicitud por su ID con información relacionada."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT sr.*, 
-                   c.first_name, c.last_name, c.id_number,
-                   s.name as service_name,
-                   rs.name as request_status_name,
-                   st.name as status_name
-            FROM service_requests sr
-            JOIN customers c ON sr.customer_id = c.id
-            JOIN services s ON sr.service_id = s.id
-            JOIN request_status rs ON sr.request_status_id = rs.id
-            JOIN status st ON sr.status_id = st.id
-            WHERE sr.id = ?
-        ''', (request_id,))
-        item = cursor.fetchone()
-        conn.close()
-        return dict(item) if item else None
-
     def validate_fields(self) -> bool:
         """Valida que todos los campos requeridos estén completos."""
         required_fields = {
@@ -306,21 +278,14 @@ class CrudServiceRequest(tk.Toplevel):
             "Estado Solicitud:": self.request_status_var.get()
         }
         
-        for field_name, value in required_fields.items():
-            if not value:
-                messagebox.showwarning("Campo requerido", 
-                                     f"El campo {field_name} es obligatorio", 
-                                     parent=self)
-                self.entries[field_name].focus_set()
-                return False
-                
-        try:
-            int(self.quantity_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "La cantidad debe ser un número válido", parent=self)
+        if not Validations.validate_required_fields(self.entries, required_fields, self):
             return False
             
-        return True
+        numeric_fields = {
+            "Cantidad:": (self.quantity_var.get(), False)
+        }
+            
+        return Validations.validate_numeric_fields(numeric_fields, self)
 
     def create_item(self) -> None:
         if not self.validate_fields():

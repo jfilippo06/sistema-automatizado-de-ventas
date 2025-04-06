@@ -1,6 +1,5 @@
-# screens/services/crud_service.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.service_model import Service
 from sqlite_cli.models.status_model import Status
@@ -8,6 +7,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from utils.valdations import Validations
 
 class CrudService(tk.Toplevel):
     def __init__(
@@ -132,13 +132,7 @@ class CrudService(tk.Toplevel):
         btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def validate_decimal(self, text: str) -> bool:
-        if text == "":
-            return True
-        try:
-            float(text)
-            return True
-        except ValueError:
-            return False
+        return Validations.validate_decimal(text)
 
     def validate_fields(self) -> bool:
         required_fields = {
@@ -147,19 +141,14 @@ class CrudService(tk.Toplevel):
             "Estado:": self.status_var.get()
         }
         
-        for field_name, value in required_fields.items():
-            if not value:
-                messagebox.showwarning("Campo requerido", 
-                                     f"El campo {field_name} es obligatorio", 
-                                     parent=self)
-                self.entries[field_name].focus_set()
-                return False
-                
-        try:
-            float(self.price_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "El precio debe ser un número válido", parent=self)
+        if not Validations.validate_required_fields(self.entries, required_fields, self):
             return False
+            
+        numeric_fields = {
+            "Precio:": (self.price_var.get(), True)
+        }
+            
+        return Validations.validate_numeric_fields(numeric_fields, self)
             
         return True
 

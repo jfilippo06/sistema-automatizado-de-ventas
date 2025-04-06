@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.supplier_model import Supplier
 from sqlite_cli.models.status_model import Status
@@ -7,6 +7,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from utils.valdations import Validations
 
 class CrudSupplier(tk.Toplevel):
     def __init__(
@@ -25,7 +26,6 @@ class CrudSupplier(tk.Toplevel):
         self.geometry("550x750")
         self.resizable(False, False)
         
-        # Establecer relación con la ventana padre
         self.transient(parent)
         self.grab_set()
         
@@ -41,8 +41,7 @@ class CrudSupplier(tk.Toplevel):
         self.company_var = tk.StringVar()
         self.status_var = tk.StringVar()
         
-        self.entries = {}  # Diccionario para almacenar referencias a los widgets
-        
+        self.entries = {}
         self.configure_ui()
         
         if mode == "edit" and supplier_id:
@@ -146,29 +145,15 @@ class CrudSupplier(tk.Toplevel):
 
     # Métodos de validación
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
-        widget = event.widget
-        current_text = widget.get()
-        
-        if not validation_func(current_text):
-            widget.delete(0, tk.END)
-            widget.insert(0, current_text[:-1])
+        Validations.validate_entry(event, validation_func)
 
     def validate_text(self, text: str) -> bool:
-        """Valida que el texto solo contenga letras y espacios."""
-        return all(c.isalpha() or c.isspace() for c in text) if text else True
+        return Validations.validate_text(text)
 
     def validate_integer(self, text: str) -> bool:
-        """Valida que el texto sea un entero válido."""
-        if text == "":
-            return True
-        try:
-            int(text)
-            return True
-        except ValueError:
-            return False
+        return Validations.validate_integer(text)
 
     def validate_required_fields(self) -> bool:
-        """Valida que todos los campos obligatorios estén completos."""
         required_fields = {
             "Código:": self.code_var.get(),
             "Cédula:": self.id_number_var.get(),
@@ -182,23 +167,15 @@ class CrudSupplier(tk.Toplevel):
             "Estado:": self.status_var.get()
         }
         
-        for field_name, value in required_fields.items():
-            if not value:
-                messagebox.showwarning("Campo requerido", 
-                                     f"El campo {field_name} es obligatorio", 
-                                     parent=self)
-                self.entries[field_name].focus_set()
-                return False
-                
-        # Validar valores numéricos
-        try:
-            int(self.id_number_var.get())
-            int(self.phone_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "Los valores numéricos (Cédula y Teléfono) deben ser válidos", parent=self)
+        if not Validations.validate_required_fields(self.entries, required_fields, self):
             return False
             
-        return True
+        numeric_fields = {
+            "Cédula:": (self.id_number_var.get(), False),
+            "Teléfono:": (self.phone_var.get(), False)
+        }
+            
+        return Validations.validate_numeric_fields(numeric_fields, self)
 
     def load_supplier_data(self) -> None:
         supplier = Supplier.get_by_id(self.supplier_id)
