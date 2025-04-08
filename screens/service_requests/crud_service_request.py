@@ -1,13 +1,11 @@
+# screens/service_requests/crud_service_request.py
 import tkinter as tk
 from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from screens.customers.crud_customer import CrudCustomer
-from sqlite_cli.database.database import get_db_connection
 from sqlite_cli.models.customer_model import Customer
 from sqlite_cli.models.service_model import Service
 from sqlite_cli.models.service_request_model import ServiceRequest
-from sqlite_cli.models.status_model import Status
-from sqlite_cli.models.request_status_model import RequestStatus
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -30,7 +28,7 @@ class CrudServiceRequest(tk.Toplevel):
         self.service_data = None
         
         self.title("Nueva Solicitud" if mode == "create" else "Editar Solicitud")
-        self.geometry("600x500")
+        self.geometry("600x350")  # Reduced height since we removed status field
         self.resizable(False, False)
         
         self.transient(parent)
@@ -42,8 +40,6 @@ class CrudServiceRequest(tk.Toplevel):
         self.service_var = tk.StringVar()
         self.description_var = tk.StringVar()
         self.quantity_var = tk.StringVar(value="1")
-        self.request_status_var = tk.StringVar()
-        self.status_var = tk.StringVar()
         
         self.configure_ui()
         
@@ -66,15 +62,13 @@ class CrudServiceRequest(tk.Toplevel):
         )
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
-        # Campos del formulario
+        # Campos del formulario (removed request_status field)
         fields = [
-            ("Cédula Cliente:", self.customer_id_var, 'text', self.search_customer),
+            ("Cédula Cliente:", self.customer_id_var, 'text', None if self.mode == "edit" else self.search_customer),
             ("Nombre Cliente:", self.customer_name_var, None, None),
             ("Servicio:", self.service_var, None, None),
             ("Descripción:", self.description_var, 'text', None),
-            ("Cantidad:", self.quantity_var, 'number', None),
-            ("Estado Solicitud:", self.request_status_var, None, None),
-            ("Estado:", self.status_var, None, None)
+            ("Cantidad:", self.quantity_var, 'number', None)
         ]
         
         self.entries = {}
@@ -97,31 +91,27 @@ class CrudServiceRequest(tk.Toplevel):
                     entry_frame,
                     textvariable=var,
                     font=("Arial", 10),
-                    width=20
+                    width=20,
+                    state="readonly" if self.mode == "edit" else "normal"
                 )
                 entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                 
-                btn_search = CustomButton(
-                    entry_frame,
-                    text="Buscar",
-                    command=command,
-                    padding=4,
-                    width=8
-                )
-                btn_search.pack(side=tk.LEFT, padx=5)
+                if self.mode != "edit":
+                    btn_search = CustomButton(
+                        entry_frame,
+                        text="Buscar",
+                        command=command,
+                        padding=4,
+                        width=8
+                    )
+                    btn_search.pack(side=tk.LEFT, padx=5)
+                    self.widgets[label] = (entry, btn_search)
                 
                 self.entries[label] = entry
-                self.widgets[label] = (entry, btn_search)
-            elif label in ["Nombre Cliente:", "Servicio:", "Estado Solicitud:", "Estado:"]:
+            elif label in ["Nombre Cliente:", "Servicio:"]:
                 if label == "Servicio:":
                     values = [s['name'] for s in Service.all()]
                     state = "readonly" if self.mode == "edit" else "disabled"
-                elif label == "Estado Solicitud:":
-                    values = [s['name'] for s in RequestStatus.all()]
-                    state = "readonly"
-                elif label == "Estado:":
-                    values = [s['name'] for s in Status.all()]
-                    state = "readonly"
                 else:  # Nombre Cliente
                     values = []
                     state = "disabled"
@@ -212,7 +202,6 @@ class CrudServiceRequest(tk.Toplevel):
     def register_new_customer(self, id_number: str) -> None:
         """Abre la pantalla para registrar un nuevo cliente."""
         def on_customer_created():
-            # Después de crear el cliente, intentar buscarlo de nuevo
             self.search_customer()
         
         CrudCustomer(
@@ -230,8 +219,6 @@ class CrudServiceRequest(tk.Toplevel):
         self.entries["Servicio:"].configure(state=readonly_state)
         self.entries["Descripción:"].configure(state=state)
         self.entries["Cantidad:"].configure(state=state)
-        self.entries["Estado Solicitud:"].configure(state=readonly_state)
-        self.entries["Estado:"].configure(state=readonly_state)
 
     def load_item_data(self) -> None:
         """Carga los datos de una solicitud existente para editar."""
@@ -258,8 +245,6 @@ class CrudServiceRequest(tk.Toplevel):
             # Cargar otros datos
             self.description_var.set(request['description'])
             self.quantity_var.set(str(request['quantity']))
-            self.request_status_var.set(request.get('request_status_name', 'Iniciado'))
-            self.status_var.set(request.get('status_name', 'Activo'))
             
             # Habilitar campos
             self.enable_fields(True)
@@ -274,8 +259,7 @@ class CrudServiceRequest(tk.Toplevel):
             "Cédula Cliente:": self.customer_id_var.get(),
             "Servicio:": self.service_var.get(),
             "Descripción:": self.description_var.get(),
-            "Cantidad:": self.quantity_var.get(),
-            "Estado Solicitud:": self.request_status_var.get()
+            "Cantidad:": self.quantity_var.get()
         }
         
         if not Validations.validate_required_fields(self.entries, required_fields, self):
@@ -299,22 +283,12 @@ class CrudServiceRequest(tk.Toplevel):
             service = next((s for s in Service.all() if s['name'] == service_name), None)
             if not service:
                 raise ValueError("Servicio no válido")
-                
-            request_status = next((rs for rs in RequestStatus.all() if rs['name'] == self.request_status_var.get()), None)
-            if not request_status:
-                raise ValueError("Estado de solicitud no válido")
-                
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
             
             ServiceRequest.create(
                 customer_id=self.customer_data['id'],
                 service_id=service['id'],
                 description=self.description_var.get(),
-                quantity=int(self.quantity_var.get()),
-                request_status_id=request_status['id'],
-                status_id=status['id']
+                quantity=int(self.quantity_var.get())
             )
             
             messagebox.showinfo("Éxito", "Solicitud creada correctamente", parent=self)
@@ -340,23 +314,13 @@ class CrudServiceRequest(tk.Toplevel):
             service = next((s for s in Service.all() if s['name'] == service_name), None)
             if not service:
                 raise ValueError("Servicio no válido")
-                
-            request_status = next((rs for rs in RequestStatus.all() if rs['name'] == self.request_status_var.get()), None)
-            if not request_status:
-                raise ValueError("Estado de solicitud no válido")
-                
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
             
             ServiceRequest.update(
                 request_id=self.item_id,
                 customer_id=self.customer_data['id'],
                 service_id=service['id'],
                 description=self.description_var.get(),
-                quantity=int(self.quantity_var.get()),
-                request_status_id=request_status['id'],
-                status_id=status['id']
+                quantity=int(self.quantity_var.get())
             )
             
             messagebox.showinfo("Éxito", "Solicitud actualizada correctamente", parent=self)

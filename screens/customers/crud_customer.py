@@ -1,13 +1,12 @@
 # screens/customers/crud_customer.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.customer_model import Customer
-from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from widgets.custom_combobox import CustomCombobox
+from utils.valdations import Validations
 
 class CrudCustomer(tk.Toplevel):
     def __init__(
@@ -24,7 +23,7 @@ class CrudCustomer(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Nuevo Cliente" if mode == "create" else "Editar Cliente")
-        self.geometry("500x600")
+        self.geometry("500x500")
         self.resizable(False, False)
         
         self.transient(parent)
@@ -37,8 +36,8 @@ class CrudCustomer(tk.Toplevel):
         self.email_var = tk.StringVar()
         self.phone_var = tk.StringVar()
         self.address_var = tk.StringVar()
-        self.status_var = tk.StringVar()
         
+        self.entries = {}
         self.configure_ui()
         
         if mode == "edit" and item_id:
@@ -58,20 +57,17 @@ class CrudCustomer(tk.Toplevel):
         )
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
-        # Campos del formulario
+        # Campos del formulario con tipos de validación
         fields = [
-            ("Nombres:", self.first_name_var, 'text'),
-            ("Apellidos:", self.last_name_var, 'text'),
-            ("Cédula:", self.id_number_var, 'text'),
-            ("Email:", self.email_var, 'text'),
-            ("Teléfono:", self.phone_var, 'text'),
-            ("Dirección:", self.address_var, 'text'),
-            ("Estado:", self.status_var, None)
+            ("Nombres:", self.first_name_var, 'text', True),
+            ("Apellidos:", self.last_name_var, 'text', True),
+            ("Cédula:", self.id_number_var, 'id_number', True),
+            ("Email:", self.email_var, 'email', False),
+            ("Teléfono:", self.phone_var, 'phone', False),
+            ("Dirección:", self.address_var, 'text', False)
         ]
         
-        self.entries = {}
-        
-        for i, (label, var, val_type) in enumerate(fields, start=1):
+        for i, (label, var, val_type, required) in enumerate(fields, start=1):
             field_label = CustomLabel(
                 main_frame,
                 text=label,
@@ -80,26 +76,27 @@ class CrudCustomer(tk.Toplevel):
             )
             field_label.grid(row=i, column=0, sticky="w", pady=5)
             
-            if label == "Estado:":
-                values = [s['name'] for s in Status.all()]
-                combobox = CustomCombobox(
-                    main_frame,
-                    textvariable=var,
-                    values=values,
-                    state="readonly",
-                    width=27
-                )
-                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = combobox
-            else:
-                entry = CustomEntry(
-                    main_frame,
-                    textvariable=var,
-                    font=("Arial", 10),
-                    width=30
-                )
-                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = entry
+            entry = CustomEntry(
+                main_frame,
+                textvariable=var,
+                font=("Arial", 10),
+                width=30
+            )
+            
+            # Configurar validaciones según el tipo de campo
+            if val_type == 'id_number':
+                entry.configure(validate="key")
+                entry.configure(validatecommand=(entry.register(self.validate_id_number), '%P'))
+            elif val_type == 'phone':
+                entry.configure(validate="key")
+                entry.configure(validatecommand=(entry.register(self.validate_phone), '%P'))
+            elif val_type == 'email':
+                entry.bind("<FocusOut>", lambda e, entry=entry: self.validate_email(entry.get()))
+            else:  # text
+                entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
+            
+            entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+            self.entries[label] = (entry, required)
 
         # Botones
         btn_frame = tk.Frame(main_frame)
@@ -133,6 +130,64 @@ class CrudCustomer(tk.Toplevel):
         )
         btn_cancel.pack(side=tk.LEFT, padx=10)
 
+    def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
+        Validations.validate_entry(event, validation_func)
+
+    def validate_text(self, text: str) -> bool:
+        return Validations.validate_text(text)
+
+    def validate_id_number(self, text: str) -> bool:
+        """Valida que el texto sea un número de cédula válido (solo números, máximo 10 dígitos)"""
+        if not text:
+            return True
+        return text.isdigit() and len(text) <= 10
+
+    def validate_phone(self, text: str) -> bool:
+        """Valida que el texto sea un número de teléfono válido"""
+        if not text:
+            return True
+        # Permite números, espacios, guiones y paréntesis
+        return all(c.isdigit() or c in ' +-()' for c in text)
+
+    def validate_email(self, email: str) -> bool:
+        """Valida el formato del email si se ha ingresado uno"""
+        if email and not Validations.validate_email(email):
+            messagebox.showwarning("Email inválido", 
+                                 "El formato del email no es válido", 
+                                 parent=self)
+            return False
+        return True
+
+    def validate_required_fields(self) -> bool:
+        """Valida que todos los campos requeridos estén completos y sean válidos"""
+        required_fields = {}
+        
+        # Construir diccionario de campos requeridos
+        for label, (entry, required) in self.entries.items():
+            if required:
+                required_fields[label] = entry.get()
+        
+        # Validar campos requeridos
+        if not Validations.validate_required_fields(self.entries, required_fields, self):
+            return False
+            
+        # Validaciones específicas
+        if not self.validate_id_number(self.id_number_var.get()):
+            messagebox.showwarning("Cédula inválida", 
+                                 "La cédula debe contener solo números (máximo 10 dígitos)", 
+                                 parent=self)
+            self.entries["Cédula:"][0].focus_set()
+            return False
+            
+        if self.email_var.get() and not Validations.validate_email(self.email_var.get()):
+            messagebox.showwarning("Email inválido", 
+                                 "El formato del email no es válido", 
+                                 parent=self)
+            self.entries["Email:"][0].focus_set()
+            return False
+            
+        return True
+
     def load_item_data(self) -> None:
         """Carga los datos de un cliente existente para editar."""
         try:
@@ -149,47 +204,23 @@ class CrudCustomer(tk.Toplevel):
             self.email_var.set(customer.get('email', ''))
             self.phone_var.set(customer.get('phone', ''))
             self.address_var.set(customer.get('address', ''))
-            self.status_var.set(customer.get('status_name', 'Activo'))
             
         except Exception as e:
             messagebox.showerror("Error", f"No se pudieron cargar los datos: {str(e)}", parent=self)
             self.destroy()
 
-    def validate_fields(self) -> bool:
-        """Valida que todos los campos requeridos estén completos."""
-        required_fields = {
-            "Nombres:": self.first_name_var.get(),
-            "Apellidos:": self.last_name_var.get(),
-            "Cédula:": self.id_number_var.get()
-        }
-        
-        for field_name, value in required_fields.items():
-            if not value:
-                messagebox.showwarning("Campo requerido", 
-                                     f"El campo {field_name} es obligatorio", 
-                                     parent=self)
-                self.entries[field_name].focus_set()
-                return False
-                
-        return True
-
     def create_item(self) -> None:
-        if not self.validate_fields():
+        if not self.validate_required_fields():
             return
             
         try:
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
-            
             Customer.create(
                 first_name=self.first_name_var.get(),
                 last_name=self.last_name_var.get(),
                 id_number=self.id_number_var.get(),
                 email=self.email_var.get() if self.email_var.get() else None,
                 phone=self.phone_var.get() if self.phone_var.get() else None,
-                address=self.address_var.get() if self.address_var.get() else None,
-                status_id=status['id']
+                address=self.address_var.get() if self.address_var.get() else None
             )
             
             messagebox.showinfo("Éxito", "Cliente creado correctamente", parent=self)
@@ -201,16 +232,12 @@ class CrudCustomer(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudo crear el cliente: {str(e)}", parent=self)
 
     def update_item(self) -> None:
-        if not self.validate_fields():
+        if not self.validate_required_fields():
             return
             
         try:
             if not self.item_id:
                 raise ValueError("ID de cliente no válido")
-                
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
             
             Customer.update(
                 customer_id=self.item_id,
@@ -219,8 +246,7 @@ class CrudCustomer(tk.Toplevel):
                 id_number=self.id_number_var.get(),
                 email=self.email_var.get() if self.email_var.get() else None,
                 phone=self.phone_var.get() if self.phone_var.get() else None,
-                address=self.address_var.get() if self.address_var.get() else None,
-                status_id=status['id']
+                address=self.address_var.get() if self.address_var.get() else None
             )
             
             messagebox.showinfo("Éxito", "Cliente actualizado correctamente", parent=self)
