@@ -94,7 +94,7 @@ class Suppliers(tk.Frame):
 
         btn_add = CustomButton(
             action_frame,
-            text="Crear",
+            text="Agregar",
             command=self.add_supplier,
             padding=8,
             width=10

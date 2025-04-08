@@ -90,7 +90,7 @@ class Inventory(tk.Frame):
 
         btn_add = CustomButton(
             action_frame,
-            text="Crear",
+            text="Agregar",
             command=self.add_item,
             padding=8,
             width=10

@@ -105,7 +105,7 @@ class CrudCustomer(tk.Toplevel):
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
-                text="Crear", 
+                text="Guardar", 
                 command=self.create_item,
                 padding=8,
                 width=15
@@ -229,7 +229,7 @@ class CrudCustomer(tk.Toplevel):
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo crear el cliente: {str(e)}", parent=self)
+            messagebox.showerror("Error", f"No se pudo guardar el cliente: {str(e)}", parent=self)
 
     def update_item(self) -> None:
         if not self.validate_required_fields():

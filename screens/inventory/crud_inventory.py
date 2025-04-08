@@ -22,7 +22,7 @@ class CrudInventory(tk.Toplevel):
         self.item_id = item_id
         self.refresh_callback = refresh_callback
         
-        self.title("Crear Producto" if mode == "create" else "Editar Producto")
+        self.title("Guardar Producto" if mode == "create" else "Editar Producto")
         self.geometry("380x380")
         self.resizable(False, False)
         
@@ -118,7 +118,7 @@ class CrudInventory(tk.Toplevel):
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
-                text="Crear", 
+                text="Guardar", 
                 command=self.create_item,
                 padding=8,
                 width=15
@@ -220,7 +220,7 @@ class CrudInventory(tk.Toplevel):
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo crear el producto: {str(e)}", parent=self)
+            messagebox.showerror("Error", f"No se pudo guardar el producto: {str(e)}", parent=self)
 
     def update_item(self) -> None:
         if not self.validate_required_fields():

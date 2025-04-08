@@ -22,7 +22,7 @@ class CrudSupplier(tk.Toplevel):
         self.supplier_id = supplier_id
         self.refresh_callback = refresh_callback
         
-        self.title("Crear Proveedor" if mode == "create" else "Editar Proveedor")
+        self.title("Guardar Proveedor" if mode == "create" else "Editar Proveedor")
         self.geometry("380x500")
         self.resizable(False, False)
         
@@ -106,7 +106,7 @@ class CrudSupplier(tk.Toplevel):
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
-                text="Crear", 
+                text="Guadar", 
                 command=self.create_supplier,
                 padding=8,
                 width=15
@@ -195,7 +195,7 @@ class CrudSupplier(tk.Toplevel):
                 email=self.email_var.get(),
                 tax_id=self.tax_id_var.get(),
                 company=self.company_var.get(),
-                status_id=1  # Siempre activo al crear
+                status_id=1  # Siempre activo al guardar
             )
             
             messagebox.showinfo("Éxito", "Proveedor creado correctamente", parent=self)
@@ -204,7 +204,7 @@ class CrudSupplier(tk.Toplevel):
             self.destroy()
             
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo crear el proveedor: {str(e)}", parent=self)
+            messagebox.showerror("Error", f"No se pudo guardar el proveedor: {str(e)}", parent=self)
 
     def update_supplier(self) -> None:
         if not self.validate_required_fields():
