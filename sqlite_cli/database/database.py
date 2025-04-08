@@ -94,6 +94,7 @@ def init_db() -> None:
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             price REAL NOT NULL,
             description TEXT,

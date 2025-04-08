@@ -1,4 +1,3 @@
-# seeds/inventory_seeds.py
 from models.inventory_model import InventoryItem
 from typing import List, Dict
 
@@ -13,7 +12,6 @@ def seed_inventory() -> None:
             'quantity': 50,
             'stock': 50,
             'price': 1200.00,
-            'status_id': 1,  # active
             'supplier_id': 1
         },
         {
@@ -22,7 +20,6 @@ def seed_inventory() -> None:
             'quantity': 100,
             'stock': 80,
             'price': 45.50,
-            'status_id': 1,  # active
             'supplier_id': None
         },
         {
@@ -31,7 +28,6 @@ def seed_inventory() -> None:
             'quantity': 75,
             'stock': 20,
             'price': 35.75,
-            'status_id': 1,  # active
             'supplier_id': 2
         },
         {
@@ -40,7 +36,6 @@ def seed_inventory() -> None:
             'quantity': 30,
             'stock': 5,
             'price': 250.00,
-            'status_id': 2,  # inactive
             'supplier_id': 1
         }
     ]

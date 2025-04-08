@@ -2,11 +2,9 @@ import tkinter as tk
 from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any
 from sqlite_cli.models.service_model import Service
-from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from widgets.custom_combobox import CustomCombobox
 from utils.valdations import Validations
 
 class CrudService(tk.Toplevel):
@@ -23,17 +21,17 @@ class CrudService(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Nuevo Servicio" if mode == "create" else "Editar Servicio")
-        self.geometry("500x400")
+        self.geometry("400x350")
         self.resizable(False, False)
         
         self.transient(parent)
         self.grab_set()
         
         # Variables para los campos
+        self.code_var = tk.StringVar()
         self.name_var = tk.StringVar()
         self.price_var = tk.StringVar(value="0.0")
         self.description_var = tk.StringVar()
-        self.status_var = tk.StringVar()
         
         self.configure_ui()
         
@@ -56,15 +54,15 @@ class CrudService(tk.Toplevel):
         
         # Campos del formulario
         fields = [
-            ("Nombre:", self.name_var, 'text'),
-            ("Precio:", self.price_var, 'decimal'),
-            ("Descripción:", self.description_var, 'text'),
-            ("Estado:", self.status_var, None)
+            ("Código:", self.code_var, 'text', not (self.mode == "edit")),
+            ("Nombre:", self.name_var, 'text', True),
+            ("Precio:", self.price_var, 'decimal', True),
+            ("Descripción:", self.description_var, 'text', True)
         ]
         
         self.entries = {}
         
-        for i, (label, var, val_type) in enumerate(fields, start=1):
+        for i, (label, var, val_type, editable) in enumerate(fields, start=1):
             field_label = CustomLabel(
                 main_frame,
                 text=label,
@@ -73,31 +71,20 @@ class CrudService(tk.Toplevel):
             )
             field_label.grid(row=i, column=0, sticky="w", pady=5)
             
-            if label == "Estado:":
-                values = [s['name'] for s in Status.all()]
-                combobox = CustomCombobox(
-                    main_frame,
-                    textvariable=var,
-                    values=values,
-                    state="readonly",
-                    width=27
-                )
-                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = combobox
-            else:
-                entry = CustomEntry(
-                    main_frame,
-                    textvariable=var,
-                    font=("Arial", 10),
-                    width=30
-                )
+            entry = CustomEntry(
+                main_frame,
+                textvariable=var,
+                font=("Arial", 10),
+                width=30,
+                state="normal" if editable else "readonly"
+            )
                 
-                if val_type == 'decimal':
-                    entry.configure(validate="key")
-                    entry.configure(validatecommand=(entry.register(self.validate_decimal), '%P'))
+            if val_type == 'decimal':
+                entry.configure(validate="key")
+                entry.configure(validatecommand=(entry.register(self.validate_decimal), '%P'))
                 
-                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = entry
+            entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+            self.entries[label] = entry
 
         # Botones
         btn_frame = tk.Frame(main_frame)
@@ -136,9 +123,9 @@ class CrudService(tk.Toplevel):
 
     def validate_fields(self) -> bool:
         required_fields = {
+            "Código:": self.code_var.get(),
             "Nombre:": self.name_var.get(),
-            "Precio:": self.price_var.get(),
-            "Estado:": self.status_var.get()
+            "Precio:": self.price_var.get()
         }
         
         if not Validations.validate_required_fields(self.entries, required_fields, self):
@@ -149,8 +136,6 @@ class CrudService(tk.Toplevel):
         }
             
         return Validations.validate_numeric_fields(numeric_fields, self)
-            
-        return True
 
     def load_item_data(self) -> None:
         try:
@@ -161,10 +146,10 @@ class CrudService(tk.Toplevel):
             if not service:
                 raise ValueError("Servicio no encontrado")
             
+            self.code_var.set(service['code'])
             self.name_var.set(service['name'])
             self.price_var.set(str(service['price']))
             self.description_var.set(service.get('description', ''))
-            self.status_var.set(service.get('status_name', 'Activo'))
             
         except Exception as e:
             messagebox.showerror("Error", f"No se pudieron cargar los datos: {str(e)}", parent=self)
@@ -175,15 +160,11 @@ class CrudService(tk.Toplevel):
             return
             
         try:
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
-            
             Service.create(
+                code=self.code_var.get(),
                 name=self.name_var.get(),
                 price=float(self.price_var.get()),
-                description=self.description_var.get() if self.description_var.get() else None,
-                status_id=status['id']
+                description=self.description_var.get() if self.description_var.get() else None
             )
             
             messagebox.showinfo("Éxito", "Servicio creado correctamente", parent=self)
@@ -202,16 +183,12 @@ class CrudService(tk.Toplevel):
             if not self.item_id:
                 raise ValueError("ID de servicio no válido")
                 
-            status = next((s for s in Status.all() if s['name'] == self.status_var.get()), None)
-            if not status:
-                raise ValueError("Estado no válido")
-            
             Service.update(
                 service_id=self.item_id,
+                code=self.code_var.get(),
                 name=self.name_var.get(),
                 price=float(self.price_var.get()),
-                description=self.description_var.get() if self.description_var.get() else None,
-                status_id=status['id']
+                description=self.description_var.get() if self.description_var.get() else None
             )
             
             messagebox.showinfo("Éxito", "Servicio actualizado correctamente", parent=self)
