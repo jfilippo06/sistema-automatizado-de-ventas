@@ -34,6 +34,49 @@ def init_db() -> None:
             description TEXT
         )
     ''')
+
+    # Create roles table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS roles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT
+        )
+    ''')
+    
+    # Create person table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS person (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            id_number TEXT NOT NULL UNIQUE,
+            address TEXT,
+            phone TEXT,
+            email TEXT,
+            department TEXT,
+            position TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Create users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            person_id INTEGER NOT NULL,
+            status_id INTEGER NOT NULL DEFAULT 1,
+            role_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (person_id) REFERENCES person(id),
+            FOREIGN KEY (status_id) REFERENCES status(id),
+            FOREIGN KEY (role_id) REFERENCES roles(id)
+        )
+    ''')
     
     # Create suppliers table (MODIFICADA para incluir status_id)
     cursor.execute('''
