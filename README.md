@@ -1,45 +1,74 @@
-**Edit a file, create a new file, and clone from Bitbucket in under 2 minutes**
+Guía Completa para Configurar Entorno Virtual en Python (Windows)
+Requisitos Previos
+✅ Python 3.x instalado
+✅ pip actualizado (python -m pip install --upgrade pip)
 
-When you're done, you can delete the content in this README and update the file with details for others getting started with your repository.
+Pasos para Configuración
+Abrir terminal
+Presiona Win + R, escribe cmd y presiona Enter (o usa PowerShell)
 
-*We recommend that you open this README in another tab as you perform the tasks below. You can [watch our video](https://youtu.be/0ocf7u76WSo) for a full demo of all the steps in this tutorial. Open the video in a new tab to avoid leaving Bitbucket.*
+Instalar virtualenv
 
----
+bash
+Copy
+pip install virtualenv
+Navegar a tu proyecto
 
-## Edit a file
+bash
+Copy
+cd ruta\a\tu\proyecto
+Crear entorno virtual
 
-You’ll start by editing this README file to learn how to edit a file in Bitbucket.
+bash
+Copy
+python -m virtualenv env
+(Se creará una carpeta env con todo lo necesario)
 
-1. Click **Source** on the left side.
-2. Click the README.md link from the list of files.
-3. Click the **Edit** button.
-4. Delete the following text: *Delete this line to make a change to the README from Bitbucket.*
-5. After making your change, click **Commit** and then **Commit** again in the dialog. The commit page will open and you’ll see the change you just made.
-6. Go back to the **Source** page.
+Activar el entorno
 
----
+bash
+Copy
+.\env\Scripts\activate
+🔹 Verás (env) al inicio de la línea de comandos cuando esté activado
 
-## Create a file
+Instalar dependencias
 
-Next, you’ll add a new file to this repository.
+bash
+Copy
+pip install -r requirements.txt
+Verificar instalación
 
-1. Click the **New file** button at the top of the **Source** page.
-2. Give the file a filename of **contributors.txt**.
-3. Enter your name in the empty file space.
-4. Click **Commit** and then **Commit** again in the dialog.
-5. Go back to the **Source** page.
+bash
+Copy
+pip list
+(Debes ver solo los paquetes instalados en tu entorno virtual)
 
-Before you move on, go ahead and explore the repository. You've already seen the **Source** page, but check out the **Commits**, **Branches**, and **Settings** pages.
+Comandos Útiles
+Comando	Descripción
+deactivate	Desactiva el entorno virtual
+where python	Muestra la ruta del Python actualmente en uso
+pip freeze > requirements.txt	Genera archivo de dependencias
+Recomendaciones
+✨ Siempre activa el entorno antes de trabajar en el proyecto
 
----
+🚫 No incluyas la carpeta env en tu control de versiones (agrégala a .gitignore)
 
-## Clone a repository
+🔄 Actualiza requirements.txt cuando instales nuevos paquetes:
 
-Use these steps to clone from SourceTree, our client for using the repository command-line free. Cloning allows you to work on your files locally. If you don't yet have SourceTree, [download and install first](https://www.sourcetreeapp.com/). If you prefer to clone from the command line, see [Clone a repository](https://confluence.atlassian.com/x/4whODQ).
+bash
+Copy
+pip freeze > requirements.txt
+Solución de Problemas Comunes
+Si activate no funciona:
 
-1. You’ll see the clone button under the **Source** heading. Click that button.
-2. Now click **Check out in SourceTree**. You may need to create a SourceTree account or log in.
-3. When you see the **Clone New** dialog in SourceTree, update the destination path and name if you’d like to and then click **Clone**.
-4. Open the directory you just created to see your repository’s files.
+Ejecuta PowerShell como administrador
 
-Now that you're more familiar with your Bitbucket repository, go ahead and add a new file locally. You can [push your change back to Bitbucket with SourceTree](https://confluence.atlassian.com/x/iqyBMg), or you can [add, commit,](https://confluence.atlassian.com/x/8QhODQ) and [push from the command line](https://confluence.atlassian.com/x/NQ0zDQ).
+Ejecuta: Set-ExecutionPolicy RemoteSigned
+
+Intenta nuevamente
+
+Si tienes errores de permisos:
+
+bash
+Copy
+python -m venv --clear env
