@@ -122,7 +122,7 @@ class UsersScreen(tk.Frame):
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.tree = ttk.Treeview(tree_frame, columns=(
-            "ID", "Usuario", "Nombre", "Correo", "Rol", "Estado"
+            "ID", "Usuario", "Nombre", "Correo", "Rol"
         ), show="headings")
 
         columns = [
@@ -130,8 +130,7 @@ class UsersScreen(tk.Frame):
             ("Usuario", 100, tk.CENTER),
             ("Nombre", 150, tk.W),
             ("Correo", 200, tk.W),
-            ("Rol", 100, tk.CENTER),
-            ("Estado", 100, tk.CENTER)
+            ("Rol", 100, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -169,8 +168,7 @@ class UsersScreen(tk.Frame):
                 user['username'],
                 f"{user['first_name']} {user['last_name']}",
                 user['email'],
-                user['role_name'],
-                "Activo" if user['status_name'] == 'active' else "Inactivo"
+                user['role_name']
             ))
         
         self.status_bar.configure(text=f"Mostrando {len(users)} usuarios")
