@@ -68,14 +68,16 @@ class Suppliers(tk.Frame):
         # Combobox para seleccionar campo de búsqueda
         search_fields = [
                 "Todos los campos",
-                "ID",  # Nueva opción añadida
+                "ID",
                 "Código",
                 "Cédula",
                 "Nombres",
                 "Apellidos",
-                "Empresa",
+                "Dirección",
+                "Teléfono",
+                "Email",
                 "RIF",
-                "Teléfono"
+                "Empresa"
             ]
         
         search_combobox = CustomCombobox(
@@ -126,7 +128,7 @@ class Suppliers(tk.Frame):
         # Treeview
         self.tree = ttk.Treeview(tree_frame, columns=(
             "ID", "Código", "Cédula", "Nombres", "Apellidos", 
-            "Dirección", "Teléfono", "Email", "RIF", "Empresa", "Estado"
+            "Dirección", "Teléfono", "Email", "RIF", "Empresa"
         ), show="headings")
 
         columns = [
@@ -139,8 +141,7 @@ class Suppliers(tk.Frame):
             ("Teléfono", 100, tk.CENTER),
             ("Email", 150, tk.W),
             ("RIF", 100, tk.CENTER),
-            ("Empresa", 150, tk.W),
-            ("Estado", 100, tk.CENTER)
+            ("Empresa", 150, tk.W)
         ]
 
         for col, width, anchor in columns:
@@ -183,8 +184,7 @@ class Suppliers(tk.Frame):
                 supplier['phone'],
                 supplier['email'],
                 supplier['tax_id'],
-                supplier['company'],
-                supplier['status_name']
+                supplier['company']
             ))
         
         self.status_bar.configure(text=f"Mostrando {len(suppliers)} proveedores")
