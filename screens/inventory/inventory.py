@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from typing import Callable, List, Dict, Any
 from screens.inventory.crud_inventory import CrudInventory
 from sqlite_cli.models.inventory_model import InventoryItem
@@ -8,6 +8,8 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from PIL import Image, ImageTk
+import os
 
 class Inventory(tk.Frame):
     def __init__(self, parent: tk.Widget, open_previous_screen_callback: Callable[[], None]) -> None:
@@ -16,6 +18,7 @@ class Inventory(tk.Frame):
         self.open_previous_screen_callback = open_previous_screen_callback
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Todos los campos")
+        self.current_image = None
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -71,7 +74,10 @@ class Inventory(tk.Frame):
             "ID",
             "Código",
             "Producto",
-            "Proveedor"
+            "Proveedor",
+            "Existencias",
+            "Stock mínimo",
+            "Stock máximo"
         ]
         
         search_combobox = CustomCombobox(
@@ -115,24 +121,34 @@ class Inventory(tk.Frame):
         )
         btn_disable.pack(side=tk.RIGHT, padx=5)
 
+        # Frame para la miniatura de la imagen
+        self.image_frame = tk.Frame(action_frame)
+        self.image_frame.pack(side=tk.LEFT, padx=5)
+        
+        self.image_label = tk.Label(self.image_frame)
+        self.image_label.pack()
+        self.image_label.bind("<Button-1>", self.show_full_image)
+
         # Treeview frame
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Treeview (eliminada la columna "Estado")
+        # Treeview
         self.tree = ttk.Treeview(tree_frame, columns=(
-            "ID", "Código", "Producto", "Cantidad", "Stock", 
-            "Precio", "Proveedor"
+            "ID", "Código", "Producto", "Existencias", "Stock mínimo", 
+            "Stock máximo", "Precio", "Proveedor", "Vencimiento"
         ), show="headings")
 
         columns = [
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
             ("Producto", 150, tk.W),
-            ("Cantidad", 80, tk.CENTER),
-            ("Stock", 80, tk.CENTER),
+            ("Existencias", 80, tk.CENTER),
+            ("Stock mínimo", 80, tk.CENTER),
+            ("Stock máximo", 80, tk.CENTER),
             ("Precio", 100, tk.CENTER),
-            ("Proveedor", 150, tk.W)
+            ("Proveedor", 150, tk.W),
+            ("Vencimiento", 100, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -153,7 +169,64 @@ class Inventory(tk.Frame):
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
 
+        # Bind selection event
+        self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
+
         self.refresh_data()
+
+    def on_item_selected(self, event):
+        selected = self.tree.selection()
+        if selected:
+            item_id = self.tree.item(selected[0])['values'][0]
+            item = InventoryItem.get_by_id(item_id)
+            if item and item.get('image_path'):
+                self.load_image_thumbnail(item['image_path'])
+            else:
+                self.clear_image()
+
+    def load_image_thumbnail(self, image_path):
+        try:
+            if not os.path.exists(image_path):
+                self.clear_image()
+                return
+
+            img = Image.open(image_path)
+            img.thumbnail((50, 50))
+            self.current_image = ImageTk.PhotoImage(img)
+            self.image_label.config(image=self.current_image)
+        except Exception as e:
+            print(f"Error loading image: {e}")
+            self.clear_image()
+
+    def clear_image(self):
+        self.image_label.config(image='')
+        self.current_image = None
+
+    def show_full_image(self, event):
+        if not self.current_image:
+            return
+            
+        selected = self.tree.selection()
+        if selected:
+            item_id = self.tree.item(selected[0])['values'][0]
+            item = InventoryItem.get_by_id(item_id)
+            if item and item.get('image_path'):
+                self.show_image_window(item['image_path'])
+
+    def show_image_window(self, image_path):
+        if not os.path.exists(image_path):
+            messagebox.showerror("Error", "La imagen no se encuentra en la ruta especificada", parent=self)
+            return
+
+        top = tk.Toplevel(self)
+        top.title("Imagen del Producto")
+        
+        img = Image.open(image_path)
+        photo = ImageTk.PhotoImage(img)
+        
+        label = tk.Label(top, image=photo)
+        label.image = photo  # keep a reference!
+        label.pack()
 
     def on_search(self, event=None) -> None:
         search_term = self.search_var.get().lower()
@@ -170,12 +243,15 @@ class Inventory(tk.Frame):
                 item['code'],
                 item['product'],
                 item['quantity'],
-                item['stock'],
+                item['min_stock'],
+                item['max_stock'],
                 item['price'],
-                item.get('supplier_company', '')
+                item.get('supplier_company', ''),
+                item.get('expiration_date', '')
             ))
         
         self.status_bar.configure(text=f"Mostrando {len(items)} productos")
+        self.clear_image()
 
     def refresh_data(self) -> None:
         self.search_var.set("")

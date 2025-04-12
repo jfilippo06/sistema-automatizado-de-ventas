@@ -98,19 +98,22 @@ def init_db() -> None:
         )
     ''')
     
-    # Create inventory table with foreign keys
+    # Añade esto a las tablas existentes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             code TEXT NOT NULL UNIQUE,
             product TEXT NOT NULL,
             quantity INTEGER NOT NULL,
-            stock INTEGER NOT NULL,
+            min_stock INTEGER NOT NULL DEFAULT 0,
+            max_stock INTEGER NOT NULL DEFAULT 0,
             price REAL NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             status_id INTEGER NOT NULL,
             supplier_id INTEGER,
+            expiration_date TEXT,
+            image_path TEXT,
             FOREIGN KEY (status_id) REFERENCES status(id),
             FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
         )
