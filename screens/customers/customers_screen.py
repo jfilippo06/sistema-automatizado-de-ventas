@@ -88,6 +88,19 @@ class CustomersScreen(tk.Frame):
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
+        # Frame para los botones de acciones (derecha)
+        action_frame = tk.Frame(top_frame)
+        action_frame.pack(side=tk.RIGHT)
+
+        btn_edit = CustomButton(
+            action_frame,
+            text="Actualizar datos del cliente",
+            command=self.edit_customer,
+            padding=8,
+            width=25
+        )
+        btn_edit.pack(side=tk.RIGHT, padx=5)
+
         # Treeview frame
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -157,3 +170,12 @@ class CustomersScreen(tk.Frame):
     def go_back(self) -> None:
         self.parent.state('normal')
         self.open_previous_screen_callback()
+
+    def edit_customer(self) -> None:
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione un cliente", parent=self)
+            return
+            
+        customer_id = self.tree.item(selected[0])['values'][0]
+        CrudCustomer(self, mode="edit", customer_id=customer_id, refresh_callback=self.refresh_data)

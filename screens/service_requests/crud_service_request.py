@@ -28,7 +28,7 @@ class CrudServiceRequest(tk.Toplevel):
         self.service_data = None
         
         self.title("Nueva Solicitud" if mode == "create" else "Editar Solicitud")
-        self.geometry("600x350")  # Reduced height since we removed status field
+        self.geometry("400x350")  # Reduced height since we removed status field
         self.resizable(False, False)
         
         self.transient(parent)
