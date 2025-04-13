@@ -27,7 +27,7 @@ class CrudInventory(tk.Toplevel):
         self.current_image = None
         
         self.title("Guardar Producto" if mode == "create" else "Editar Producto")
-        self.geometry("800x500")  # Pantalla más ancha
+        self.geometry("800x500")
         self.resizable(False, False)
         
         self.transient(parent)
@@ -37,6 +37,7 @@ class CrudInventory(tk.Toplevel):
         self.code_var = tk.StringVar()
         self.product_var = tk.StringVar()
         self.quantity_var = tk.StringVar(value="0")
+        self.stock_var = tk.StringVar(value="0")
         self.min_stock_var = tk.StringVar(value="0")
         self.max_stock_var = tk.StringVar(value="0")
         self.price_var = tk.StringVar(value="0.0")
@@ -71,7 +72,8 @@ class CrudInventory(tk.Toplevel):
         fields = [
             ("Código:", self.code_var, 'text', not (self.mode == "edit")),
             ("Producto:", self.product_var, 'text', True),
-            ("Existencias:", self.quantity_var, 'number', True),
+            ("Cantidad:", self.quantity_var, 'number', True),
+            ("Existencias:", self.stock_var, 'number', True),
             ("Stock mínimo:", self.min_stock_var, 'number', True),
             ("Stock máximo:", self.max_stock_var, 'number', True),
             ("Precio:", self.price_var, 'decimal', True),
@@ -110,6 +112,17 @@ class CrudInventory(tk.Toplevel):
                     width=32,
                     state="normal" if editable else "readonly"
                 )
+                
+                # Configurar validación para fecha (formato YYYY/MM/DD)
+                entry.configure(validate="key")
+                entry.configure(validatecommand=(
+                    entry.register(self.validate_date_input), 
+                    '%P', '%d', '%i', '%S'
+                ))
+                
+                # Insertar guiones automáticamente
+                entry.bind("<KeyRelease>", self.format_date_input)
+                
                 entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
                 self.entries[label] = entry
             else:
@@ -133,7 +146,7 @@ class CrudInventory(tk.Toplevel):
                 entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
                 self.entries[label] = entry
         
-        # Frame para los botones (ahora con 3 botones)
+        # Frame para los botones (orden: Guardar, Cargar Imagen, Cancelar)
         btn_frame = tk.Frame(form_frame)
         btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(15, 5))
         
@@ -156,16 +169,6 @@ class CrudInventory(tk.Toplevel):
             )
         btn_action.pack(side=tk.LEFT, padx=5)
         
-        # Botón Cancelar
-        btn_cancel = CustomButton(
-            btn_frame, 
-            text="Cancelar", 
-            command=self.destroy,
-            padding=8,
-            width=15
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=5)
-        
         # Botón Cargar Imagen
         btn_load_image = CustomButton(
             btn_frame,
@@ -175,6 +178,16 @@ class CrudInventory(tk.Toplevel):
             width=15
         )
         btn_load_image.pack(side=tk.LEFT, padx=5)
+        
+        # Botón Cancelar
+        btn_cancel = CustomButton(
+            btn_frame, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=8,
+            width=15
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=5)
 
         # Frame para la imagen (derecha)
         image_frame = tk.Frame(main_frame, padx=20, pady=20)
@@ -188,6 +201,53 @@ class CrudInventory(tk.Toplevel):
         self.image_label = tk.Label(img_container, bg='white', width=300, height=300)
         self.image_label.pack(fill=tk.BOTH, expand=True)
 
+    def validate_date_input(self, new_text: str, action_code: str, index: str, char: str) -> bool:
+        """
+        Valida la entrada de fecha en formato YYYY/MM/DD
+        """
+        # Permitir borrado
+        if action_code == '0':  # Borrado
+            return True
+            
+        # Solo permitir números
+        if not char.isdigit():
+            return False
+            
+        # Limitar longitud total
+        if len(new_text) > 10:
+            return False
+            
+        # Validar posiciones de las barras
+        if len(new_text) >= 4 and new_text[4] != '/':
+            return False
+        if len(new_text) >= 7 and new_text[7] != '/':
+            return False
+            
+        return True
+
+    def format_date_input(self, event: tk.Event) -> None:
+        """
+        Formatea automáticamente la fecha insertando las barras
+        """
+        entry = event.widget
+        text = entry.get()
+        
+        # Eliminar todas las barras para reprocesar
+        clean_text = text.replace('/', '')
+        
+        # Reconstruir con barras en posiciones correctas
+        formatted = ''
+        for i, char in enumerate(clean_text):
+            if i == 4 or i == 6:
+                formatted += '/'
+            if i < 8:  # Limitar a YYYY/MM/DD (10 caracteres)
+                formatted += char
+        
+        # Actualizar el texto si hubo cambios
+        if formatted != text:
+            entry.delete(0, tk.END)
+            entry.insert(0, formatted)
+
     def load_image(self):
         file_path = filedialog.askopenfilename(
             title="Seleccionar imagen",
@@ -195,11 +255,10 @@ class CrudInventory(tk.Toplevel):
         )
         
         if file_path:
-            self.image_path = file_path
             try:
                 img = Image.open(file_path)
-                # Redimensionar manteniendo aspecto
                 img.thumbnail((300, 300))
+                self.image_path = file_path
                 self.current_image = ImageTk.PhotoImage(img)
                 self.image_label.config(image=self.current_image)
             except Exception as e:
@@ -221,7 +280,8 @@ class CrudInventory(tk.Toplevel):
         required_fields = {
             "Código:": self.code_var.get(),
             "Producto:": self.product_var.get(),
-            "Existencias:": self.quantity_var.get(),
+            "Cantidad:": self.quantity_var.get(),
+            "Existencias:": self.stock_var.get(),
             "Precio:": self.price_var.get()
         }
         
@@ -229,7 +289,8 @@ class CrudInventory(tk.Toplevel):
             return False
             
         numeric_fields = {
-            "Existencias:": (self.quantity_var.get(), False),
+            "Cantidad:": (self.quantity_var.get(), False),
+            "Existencias:": (self.stock_var.get(), False),
             "Stock mínimo:": (self.min_stock_var.get(), False),
             "Stock máximo:": (self.max_stock_var.get(), False),
             "Precio:": (self.price_var.get(), True)
@@ -247,6 +308,7 @@ class CrudInventory(tk.Toplevel):
         self.code_var.set(item['code'])
         self.product_var.set(item['product'])
         self.quantity_var.set(str(item['quantity']))
+        self.stock_var.set(str(item['stock']))
         self.min_stock_var.set(str(item['min_stock']))
         self.max_stock_var.set(str(item['max_stock']))
         self.price_var.set(str(item['price']))
@@ -284,6 +346,7 @@ class CrudInventory(tk.Toplevel):
                 code=self.code_var.get(),
                 product=self.product_var.get(),
                 quantity=int(self.quantity_var.get()),
+                stock=int(self.stock_var.get()),
                 min_stock=int(self.min_stock_var.get()),
                 max_stock=int(self.max_stock_var.get()),
                 price=float(self.price_var.get()),
@@ -320,6 +383,7 @@ class CrudInventory(tk.Toplevel):
                 code=self.code_var.get(),
                 product=self.product_var.get(),
                 quantity=int(self.quantity_var.get()),
+                stock=int(self.stock_var.get()),
                 min_stock=int(self.min_stock_var.get()),
                 max_stock=int(self.max_stock_var.get()),
                 price=float(self.price_var.get()),

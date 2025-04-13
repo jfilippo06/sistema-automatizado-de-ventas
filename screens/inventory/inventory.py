@@ -75,6 +75,7 @@ class Inventory(tk.Frame):
             "Código",
             "Producto",
             "Proveedor",
+            "Cantidad",
             "Existencias",
             "Stock mínimo",
             "Stock máximo"
@@ -135,7 +136,7 @@ class Inventory(tk.Frame):
 
         # Treeview
         self.tree = ttk.Treeview(tree_frame, columns=(
-            "ID", "Código", "Producto", "Existencias", "Stock mínimo", 
+            "ID", "Código", "Producto", "Cantidad", "Existencias", "Stock mínimo", 
             "Stock máximo", "Precio", "Proveedor", "Vencimiento"
         ), show="headings")
 
@@ -143,6 +144,7 @@ class Inventory(tk.Frame):
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
             ("Producto", 150, tk.W),
+            ("Cantidad", 80, tk.CENTER),
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
             ("Stock máximo", 80, tk.CENTER),
@@ -243,6 +245,7 @@ class Inventory(tk.Frame):
                 item['code'],
                 item['product'],
                 item['quantity'],
+                item['stock'],
                 item['min_stock'],
                 item['max_stock'],
                 item['price'],

@@ -78,7 +78,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create suppliers table (MODIFICADA para incluir status_id)
+    # Create suppliers table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS suppliers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,13 +98,14 @@ def init_db() -> None:
         )
     ''')
     
-    # Añade esto a las tablas existentes
+    # Create inventory table with all fields
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             code TEXT NOT NULL UNIQUE,
             product TEXT NOT NULL,
             quantity INTEGER NOT NULL,
+            stock INTEGER NOT NULL,
             min_stock INTEGER NOT NULL DEFAULT 0,
             max_stock INTEGER NOT NULL DEFAULT 0,
             price REAL NOT NULL,
@@ -119,7 +120,7 @@ def init_db() -> None:
         )
     ''')
 
-     # Create customers table
+    # Create customers table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -160,7 +161,7 @@ def init_db() -> None:
         )
     ''')
 
-    # Create service_requests table (modificada)
+    # Create service_requests table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS service_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -40,6 +40,7 @@ class InventoryItem:
         code: str,
         product: str,
         quantity: int,
+        stock: int,
         min_stock: int,
         max_stock: int,
         price: float,
@@ -54,11 +55,11 @@ class InventoryItem:
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO inventory (
-                code, product, quantity, min_stock, max_stock, price, 
+                code, product, quantity, stock, min_stock, max_stock, price, 
                 supplier_id, expiration_date, image_path, status_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
         ''', (
-            code, product, quantity, min_stock, max_stock, price, 
+            code, product, quantity, stock, min_stock, max_stock, price, 
             supplier_id, expiration_date, saved_image_path
         ))
         conn.commit()
@@ -103,7 +104,8 @@ class InventoryItem:
                     "Código": "i.code",
                     "Producto": "i.product",
                     "Proveedor": "sp.company",
-                    "Existencias": "i.quantity",
+                    "Cantidad": "i.quantity",
+                    "Existencias": "i.stock",
                     "Stock mínimo": "i.min_stock",
                     "Stock máximo": "i.max_stock"
                 }
@@ -125,10 +127,11 @@ class InventoryItem:
                         LOWER(i.product) LIKE ? OR 
                         LOWER(sp.company) LIKE ? OR
                         CAST(i.quantity AS TEXT) LIKE ? OR
+                        CAST(i.stock AS TEXT) LIKE ? OR
                         CAST(i.min_stock AS TEXT) LIKE ? OR
                         CAST(i.max_stock AS TEXT) LIKE ?)
                 '''
-                params.extend([f"%{search_term}%"] * 6)
+                params.extend([f"%{search_term}%"] * 7)
         
         cursor.execute(base_query, params)
         items = [dict(row) for row in cursor.fetchall()]
@@ -157,6 +160,7 @@ class InventoryItem:
         code: str,
         product: str,
         quantity: int,
+        stock: int,
         min_stock: int,
         max_stock: int,
         price: float,
@@ -191,6 +195,7 @@ class InventoryItem:
                 code = ?,
                 product = ?,
                 quantity = ?,
+                stock = ?,
                 min_stock = ?,
                 max_stock = ?,
                 price = ?,
@@ -200,7 +205,7 @@ class InventoryItem:
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ''', (
-            code, product, quantity, min_stock, max_stock, price, 
+            code, product, quantity, stock, min_stock, max_stock, price, 
             supplier_id, expiration_date, saved_image_path, item_id
         ))
         conn.commit()
