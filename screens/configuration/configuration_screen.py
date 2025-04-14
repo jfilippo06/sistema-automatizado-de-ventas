@@ -8,12 +8,16 @@ class ConfigurationScreen(tk.Frame):
         self,
         parent: tk.Widget,
         open_previous_screen_callback: Callable[[], None],
-        open_users_callback: Callable[[], None]
+        open_users_callback: Callable[[], None],
+        open_currency_callback: Callable[[], None],
+        open_taxes_callback: Callable[[], None]
     ) -> None:
         super().__init__(parent)
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
         self.open_users_callback = open_users_callback
+        self.open_currency_callback = open_currency_callback
+        self.open_taxes_callback = open_taxes_callback
         self.configure(bg="#f0f0f0")
         self.configure_ui()
 
@@ -59,10 +63,10 @@ class ConfigurationScreen(tk.Frame):
         self.open_users_callback()
 
     def currency_management(self) -> None:
-        print("Function: Gestión de monedas")
+        self.open_currency_callback()
 
     def taxes_management(self) -> None:
-        print("Function: Gestión de impuestos")
+        self.open_taxes_callback()
 
     def go_back(self) -> None:
         self.open_previous_screen_callback()
