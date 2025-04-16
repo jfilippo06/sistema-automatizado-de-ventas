@@ -180,6 +180,20 @@ def init_db() -> None:
             FOREIGN KEY (request_status_id) REFERENCES request_status(id)
         )
     ''')
+
+    # Create currencies table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS currencies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            symbol TEXT NOT NULL,
+            value REAL NOT NULL,
+            status_id INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (status_id) REFERENCES status(id)
+        )
+    ''')
     
     conn.commit()
     conn.close()

@@ -11,6 +11,7 @@ from seeds.request_status_seeds import seed_request_status
 from seeds.person_seeds import seed_persons
 from seeds.role_seeds import seed_roles
 from seeds.user_seeds import seed_users
+from seeds.currency_seeds import seed_currencies
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CLI para gestionar el inventario.")
@@ -24,26 +25,29 @@ def main() -> None:
     elif args.command == 'seed':
         seed_status()
         seed_roles()
-        seed_persons()  # New seed
+        seed_persons()
         seed_users()
-        seed_request_status()  # Nueva semilla
+        seed_request_status()
         seed_suppliers()
         seed_inventory()
         seed_customers()
         seed_services()
         seed_service_requests()
+        seed_currencies()
         print("Datos iniciales insertados.")
     elif args.command == 'reset':
         init_db()
         seed_status()
         seed_roles()
-        seed_persons()  # New seed
+        seed_persons()
         seed_users()
-        seed_request_status()  # Nueva semilla
+        seed_request_status()
         seed_suppliers()
         seed_inventory()
         seed_customers()
         seed_services()
+        seed_service_requests()
+        seed_currencies()
         seed_service_requests()
         print("Base de datos reinicializada con datos de ejemplo.")
 
