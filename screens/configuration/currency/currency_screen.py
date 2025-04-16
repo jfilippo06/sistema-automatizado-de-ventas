@@ -138,9 +138,9 @@ class CurrencyManagementScreen(tk.Frame):
 
     def update_currency_value(self, currency_name: str, new_value: str, is_active: bool) -> None:
         """Actualiza el valor de una moneda"""
+        # Protección adicional - aunque el botón debería estar deshabilitado
         if not is_active:
-            messagebox.showwarning("Advertencia", f"No se puede actualizar {currency_name} porque está desactivada", parent=self)
-            return
+            return  # Simplemente salir sin hacer nada
             
         try:
             value = float(new_value)
@@ -169,14 +169,10 @@ class CurrencyManagementScreen(tk.Frame):
                 # Actualizar botón de actualizar
                 if activate:
                     widgets['btn_update'].enable()
-                    # Actualizamos la función del botón con el nuevo estado
-                    widgets['btn_update'].command = lambda: self.update_currency_value(
-                        currency_name, 
-                        widgets['value_var'].get(), 
-                        activate
-                    )
                 else:
                     widgets['btn_update'].disable()
+                    # Eliminar cualquier comando pendiente
+                    widgets['btn_update'].command = None
                 
                 # Actualizar botón de toggle
                 widgets['btn_toggle'].label.configure(

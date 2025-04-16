@@ -194,6 +194,19 @@ def init_db() -> None:
             FOREIGN KEY (status_id) REFERENCES status(id)
         )
     ''')
+
+    # Create taxes table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS taxes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            value REAL NOT NULL,
+            status_id INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (status_id) REFERENCES status(id)
+        )
+    ''')
     
     conn.commit()
     conn.close()
