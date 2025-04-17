@@ -10,6 +10,8 @@ from screens.configuration.configuration_screen import ConfigurationScreen
 from screens.configuration.users.users_screen import UsersScreen
 from screens.configuration.currency.currency_screen import CurrencyManagementScreen
 from screens.configuration.taxes.taxes_screen import TaxesManagementScreen
+from screens.maintenance.maintenance_screen import MaintenanceScreen
+from screens.recovery.recovery_screen import RecoveryScreen
 
 def main() -> None:
     app = tk.Tk()
@@ -24,6 +26,8 @@ def main() -> None:
         users_screen.pack_forget()
         currency_screen.pack_forget()
         taxes_screen.pack_forget()
+        maintenance_screen.pack_forget()
+        recovery_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -37,6 +41,8 @@ def main() -> None:
         users_screen.pack_forget()
         currency_screen.pack_forget()
         taxes_screen.pack_forget()
+        maintenance_screen.pack_forget()
+        recovery_screen.pack_forget()
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -78,7 +84,15 @@ def main() -> None:
         config_screen.pack_forget()
         taxes_screen.pack(fill=tk.BOTH, expand=True)
 
-    # Callbacks para regresar al home o configuración
+    def open_maintenance() -> None:
+        home_screen.pack_forget()
+        maintenance_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_recovery() -> None:
+        home_screen.pack_forget()
+        recovery_screen.pack(fill=tk.BOTH, expand=True)
+
+    # Callbacks para regresar al home
     def open_home_from_inventory() -> None:
         inventory_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
@@ -115,6 +129,14 @@ def main() -> None:
         taxes_screen.pack_forget()
         config_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_home_from_maintenance() -> None:
+        maintenance_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_home_from_recovery() -> None:
+        recovery_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
     # Creación de todas las pantallas
     login_screen = LoginScreen(app, open_home_screen)
     
@@ -126,7 +148,9 @@ def main() -> None:
         open_customers,
         open_service_requests,
         open_services,
-        open_config
+        open_config,
+        open_maintenance,
+        open_recovery
     )
     
     inventory_screen = Inventory(app, open_home_from_inventory)
@@ -138,6 +162,8 @@ def main() -> None:
     users_screen = UsersScreen(app, open_config_from_users)
     currency_screen = CurrencyManagementScreen(app, open_config_from_currency)
     taxes_screen = TaxesManagementScreen(app, open_config_from_taxes)
+    maintenance_screen = MaintenanceScreen(app, open_home_from_maintenance)
+    recovery_screen = RecoveryScreen(app, open_home_from_recovery)
 
     # Mostrar pantalla de login al iniciar
     login_screen.pack(fill=tk.BOTH, expand=True)

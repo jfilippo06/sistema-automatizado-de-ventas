@@ -13,7 +13,9 @@ class HomeScreen(tk.Frame):
         open_customers_callback: Callable[[], None],
         open_service_requests_callback: Callable[[], None],
         open_services_callback: Callable[[], None],
-        open_config_callback: Callable[[], None]
+        open_config_callback: Callable[[], None],
+        open_maintenance_callback: Callable[[], None],
+        open_recovery_callback: Callable[[], None]
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -24,6 +26,8 @@ class HomeScreen(tk.Frame):
         self.open_service_requests_callback = open_service_requests_callback
         self.open_services_callback = open_services_callback
         self.open_config_callback = open_config_callback
+        self.open_maintenance_callback = open_maintenance_callback
+        self.open_recovery_callback = open_recovery_callback
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()
@@ -109,10 +113,10 @@ class HomeScreen(tk.Frame):
         print("Function: Catálogo de productos y servicios")
 
     def maintenance(self) -> None:
-        print("Function: Mantenimiento del sistema")
+        self.open_maintenance_callback()
 
     def recovery(self) -> None:
-        print("Function: Recuperación de registros deshabilitados")
+        self.open_recovery_callback()
 
     def config_control(self) -> None:
         self.open_config_callback()
