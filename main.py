@@ -8,8 +8,8 @@ from screens.services.services_screen import ServicesScreen
 from screens.supplier.supplier import Suppliers
 from screens.configuration.configuration_screen import ConfigurationScreen
 from screens.configuration.users.users_screen import UsersScreen
-from screens.configuration.currency.currency_screen import CurrencyManagementScreen
-from screens.configuration.taxes.taxes_screen import TaxesManagementScreen
+from screens.configuration.currency_screen import CurrencyManagementScreen
+from screens.configuration.taxes_screen import TaxesManagementScreen
 from screens.maintenance.maintenance_screen import MaintenanceScreen
 from screens.recovery.recovery_screen import RecoveryScreen
 from screens.recovery.recovery_suppliers import RecoverySuppliers
