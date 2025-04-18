@@ -2,17 +2,20 @@ from sqlite_cli.database.database import get_db_connection
 from typing import List, Dict, Optional
 import os
 import shutil
+from datetime import datetime
 
 class InventoryItem:
     IMAGE_FOLDER = "inventory_images"
     
     @staticmethod
     def _ensure_image_folder():
+        """Crea la carpeta para imágenes si no existe"""
         if not os.path.exists(InventoryItem.IMAGE_FOLDER):
             os.makedirs(InventoryItem.IMAGE_FOLDER)
 
     @staticmethod
     def _save_image(image_path: Optional[str]) -> Optional[str]:
+        """Guarda una imagen en la carpeta designada y devuelve la nueva ruta"""
         if not image_path:
             return None
             
@@ -22,7 +25,7 @@ class InventoryItem:
             filename = os.path.basename(image_path)
             dest_path = os.path.join(InventoryItem.IMAGE_FOLDER, filename)
             
-            # If file exists, add a suffix
+            # Si el archivo existe, añade un sufijo numérico
             counter = 1
             while os.path.exists(dest_path):
                 name, ext = os.path.splitext(filename)
@@ -32,7 +35,7 @@ class InventoryItem:
             shutil.copy2(image_path, dest_path)
             return dest_path
         except Exception as e:
-            print(f"Error saving image: {e}")
+            print(f"Error al guardar imagen: {e}")
             return None
 
     @staticmethod
@@ -48,7 +51,7 @@ class InventoryItem:
         expiration_date: Optional[str] = None,
         image_path: Optional[str] = None
     ) -> None:
-        """Crea un nuevo producto en el inventario (siempre activo)"""
+        """Crea un nuevo producto en el inventario (activo por defecto)"""
         saved_image_path = InventoryItem._save_image(image_path)
         
         conn = get_db_connection()
@@ -107,7 +110,9 @@ class InventoryItem:
                     "Cantidad": "i.quantity",
                     "Existencias": "i.stock",
                     "Stock mínimo": "i.min_stock",
-                    "Stock máximo": "i.max_stock"
+                    "Stock máximo": "i.max_stock",
+                    "Precio": "i.price",
+                    "Vencimiento": "i.expiration_date"
                 }
                 field_name = field_map.get(field)
                 if field_name:
@@ -116,6 +121,14 @@ class InventoryItem:
                             item_id = int(search_term)
                             base_query += f" AND {field_name} = ?"
                             params.append(item_id)
+                        except ValueError:
+                            base_query += " AND 1 = 0"
+                    elif field == "Vencimiento":
+                        try:
+                            # Buscar por fecha (formato YYYY-MM-DD)
+                            date_obj = datetime.strptime(search_term, "%Y-%m-%d")
+                            base_query += f" AND DATE({field_name}) = DATE(?)"
+                            params.append(search_term)
                         except ValueError:
                             base_query += " AND 1 = 0"
                     else:
@@ -129,9 +142,79 @@ class InventoryItem:
                         CAST(i.quantity AS TEXT) LIKE ? OR
                         CAST(i.stock AS TEXT) LIKE ? OR
                         CAST(i.min_stock AS TEXT) LIKE ? OR
-                        CAST(i.max_stock AS TEXT) LIKE ?)
+                        CAST(i.max_stock AS TEXT) LIKE ? OR
+                        CAST(i.price AS TEXT) LIKE ? OR
+                        i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term}%"] * 7)
+                params.extend([f"%{search_term}%"] * 9)
+        
+        cursor.execute(base_query, params)
+        items = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return items
+
+    @staticmethod
+    def search_inactive(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
+        """Busca productos inactivos con filtro opcional"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        base_query = '''
+            SELECT i.*, st.name as status_name, sp.company as supplier_company
+            FROM inventory i
+            JOIN status st ON i.status_id = st.id
+            LEFT JOIN suppliers sp ON i.supplier_id = sp.id
+            WHERE st.name = 'inactive'
+        '''
+        
+        params = []
+        
+        if search_term:
+            if field:
+                field_map = {
+                    "ID": "i.id",
+                    "Código": "i.code",
+                    "Producto": "i.product",
+                    "Proveedor": "sp.company",
+                    "Cantidad": "i.quantity",
+                    "Existencias": "i.stock",
+                    "Stock mínimo": "i.min_stock",
+                    "Stock máximo": "i.max_stock",
+                    "Precio": "i.price",
+                    "Vencimiento": "i.expiration_date"
+                }
+                field_name = field_map.get(field)
+                if field_name:
+                    if field == "ID":
+                        try:
+                            item_id = int(search_term)
+                            base_query += f" AND {field_name} = ?"
+                            params.append(item_id)
+                        except ValueError:
+                            base_query += " AND 1 = 0"
+                    elif field == "Vencimiento":
+                        try:
+                            date_obj = datetime.strptime(search_term, "%Y-%m-%d")
+                            base_query += f" AND DATE({field_name}) = DATE(?)"
+                            params.append(search_term)
+                        except ValueError:
+                            base_query += " AND 1 = 0"
+                    else:
+                        base_query += f" AND LOWER({field_name}) LIKE ?"
+                        params.append(f"%{search_term}%")
+            else:
+                base_query += '''
+                    AND (LOWER(i.code) LIKE ? OR 
+                        LOWER(i.product) LIKE ? OR 
+                        LOWER(sp.company) LIKE ? OR
+                        CAST(i.quantity AS TEXT) LIKE ? OR
+                        CAST(i.stock AS TEXT) LIKE ? OR
+                        CAST(i.min_stock AS TEXT) LIKE ? OR
+                        CAST(i.max_stock AS TEXT) LIKE ? OR
+                        CAST(i.price AS TEXT) LIKE ? OR
+                        i.expiration_date LIKE ?)
+                '''
+                params.extend([f"%{search_term}%"] * 9)
         
         cursor.execute(base_query, params)
         items = [dict(row) for row in cursor.fetchall()]
@@ -140,7 +223,7 @@ class InventoryItem:
 
     @staticmethod
     def get_by_id(item_id: int) -> Optional[Dict]:
-        """Obtiene un producto por su ID (solo si está activo)"""
+        """Obtiene un producto por su ID, independientemente de su estado"""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
@@ -148,7 +231,7 @@ class InventoryItem:
             FROM inventory i
             JOIN status st ON i.status_id = st.id
             LEFT JOIN suppliers sp ON i.supplier_id = sp.id
-            WHERE i.id = ? AND st.name = 'active'
+            WHERE i.id = ?
         ''', (item_id,))
         item = cursor.fetchone()
         conn.close()
@@ -182,11 +265,14 @@ class InventoryItem:
                     try:
                         os.remove(current_image)
                     except Exception as e:
-                        print(f"Error deleting old image: {e}")
+                        print(f"Error eliminando imagen anterior: {e}")
                 
                 saved_image_path = InventoryItem._save_image(image_path)
             else:
                 saved_image_path = current_image
+        elif current_image:
+            # Si no se proporciona nueva imagen pero hay una actual, mantenerla
+            saved_image_path = current_image
         
         conn = get_db_connection()
         cursor = conn.cursor()

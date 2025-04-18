@@ -8,12 +8,14 @@ class RecoveryScreen(tk.Frame):
         self,
         parent: tk.Widget,
         open_previous_screen_callback: Callable[[], None],
-        open_recovery_suppliers_callback: Callable[[], None]  # Nuevo parámetro
+        open_recovery_suppliers_callback: Callable[[], None],
+        open_recovery_inventory_callback: Callable[[], None]  # Nuevo parámetro
     ) -> None:
         super().__init__(parent)
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
-        self.open_recovery_suppliers_callback = open_recovery_suppliers_callback  # Guardamos el callback
+        self.open_recovery_suppliers_callback = open_recovery_suppliers_callback
+        self.open_recovery_inventory_callback = open_recovery_inventory_callback  # Guardamos el callback
         self.configure(bg="#f0f0f0")
         self.configure_ui()
 
@@ -40,7 +42,7 @@ class RecoveryScreen(tk.Frame):
 
         buttons = [
             ("Gestión de Proveedores", self.recover_suppliers),
-            ("Inventario de Productos", self.recover_inventory),
+            ("Inventario de Productos", self.recover_inventory),  # Actualizado
             ("Solicitudes de Servicio", self.recover_service_requests),
             ("Gestión de Servicios", self.recover_services),
             ("Regresar", self.go_back)
@@ -57,10 +59,10 @@ class RecoveryScreen(tk.Frame):
             btn.pack(pady=5, ipady=10, ipadx=10)
 
     def recover_suppliers(self) -> None:
-        self.open_recovery_suppliers_callback()  # Usamos el callback para abrir la pantalla
+        self.open_recovery_suppliers_callback()
 
     def recover_inventory(self) -> None:
-        print("Function: Recuperar Inventario")
+        self.open_recovery_inventory_callback()  # Usamos el callback para abrir la pantalla
 
     def recover_service_requests(self) -> None:
         print("Function: Recuperar Solicitudes de Servicio")
