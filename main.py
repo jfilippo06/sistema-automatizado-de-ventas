@@ -15,6 +15,7 @@ from screens.recovery.recovery_screen import RecoveryScreen
 from screens.recovery.recovery_suppliers import RecoverySuppliers
 from screens.recovery.recovery_inventory import RecoveryInventory
 from screens.recovery.recovery_service_requests import RecoveryServiceRequests
+from screens.recovery.recovery_services import RecoveryServices
 
 def main() -> None:
     app = tk.Tk()
@@ -170,6 +171,14 @@ def main() -> None:
         recovery_service_requests_screen.pack_forget()
         recovery_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_recovery_services() -> None:
+        recovery_screen.pack_forget()
+        recovery_services_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_recovery_from_services() -> None:
+        recovery_services_screen.pack_forget()
+        recovery_screen.pack(fill=tk.BOTH, expand=True)
+
     # Creación de todas las pantallas
     login_screen = LoginScreen(app, open_home_screen)
     
@@ -201,13 +210,13 @@ def main() -> None:
         open_home_from_recovery, 
         open_recovery_suppliers,
         open_recovery_inventory,
-        open_recovery_service_requests  # Nuevo callback
+        open_recovery_service_requests,
+        open_recovery_services  # Nuevo callback
     )
-    recovery_suppliers_screen = RecoverySuppliers(app, open_recovery_from_suppliers)
-    recovery_inventory_screen = RecoveryInventory(app, open_recovery_from_inventory)  # Nueva pantalla
     recovery_suppliers_screen = RecoverySuppliers(app, open_recovery_from_suppliers)
     recovery_inventory_screen = RecoveryInventory(app, open_recovery_from_inventory)
     recovery_service_requests_screen = RecoveryServiceRequests(app, open_recovery_from_service_requests)
+    recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
 
     # Mostrar pantalla de login al iniciar
     login_screen.pack(fill=tk.BOTH, expand=True)

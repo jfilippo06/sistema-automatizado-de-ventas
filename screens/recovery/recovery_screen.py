@@ -10,7 +10,8 @@ class RecoveryScreen(tk.Frame):
         open_previous_screen_callback: Callable[[], None],
         open_recovery_suppliers_callback: Callable[[], None],
         open_recovery_inventory_callback: Callable[[], None],
-        open_recovery_service_requests_callback: Callable[[], None]  # Nuevo parámetro
+        open_recovery_service_requests_callback: Callable[[], None],
+        open_recovery_services_callback: Callable[[], None]  # Nuevo parámetro
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -18,6 +19,7 @@ class RecoveryScreen(tk.Frame):
         self.open_recovery_suppliers_callback = open_recovery_suppliers_callback
         self.open_recovery_inventory_callback = open_recovery_inventory_callback
         self.open_recovery_service_requests_callback = open_recovery_service_requests_callback
+        self.open_recovery_services_callback = open_recovery_services_callback
         self.configure(bg="#f0f0f0")
         self.configure_ui()
 
@@ -45,8 +47,8 @@ class RecoveryScreen(tk.Frame):
         buttons = [
             ("Gestión de Proveedores", self.recover_suppliers),
             ("Inventario de Productos", self.recover_inventory),
-            ("Solicitudes de Servicio", self.recover_service_requests),  # Actualizado
-            ("Gestión de Servicios", self.recover_services),
+            ("Solicitudes de Servicio", self.recover_service_requests),
+            ("Gestión de Servicios", self.recover_services),  # Actualizado
             ("Regresar", self.go_back)
         ]
 
@@ -67,10 +69,10 @@ class RecoveryScreen(tk.Frame):
         self.open_recovery_inventory_callback()
 
     def recover_service_requests(self) -> None:
-        self.open_recovery_service_requests_callback()  # Nuevo callback
+        self.open_recovery_service_requests_callback()
 
     def recover_services(self) -> None:
-        print("Function: Recuperar Servicios")
+        self.open_recovery_services_callback()  # Nuevo callback
 
     def go_back(self) -> None:
         self.open_previous_screen_callback()
