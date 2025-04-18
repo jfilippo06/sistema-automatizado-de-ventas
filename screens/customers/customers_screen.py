@@ -17,6 +17,7 @@ class CustomersScreen(tk.Frame):
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Todos los campos")
         self.configure_ui()
+        self.refresh_data()
 
     def pack(self, **kwargs: Any) -> None:
         self.parent.state('zoomed')

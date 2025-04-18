@@ -20,6 +20,7 @@ class Inventory(tk.Frame):
         self.search_field_var = tk.StringVar(value="Todos los campos")
         self.current_image = None
         self.configure_ui()
+        self.refresh_data()
 
     def pack(self, **kwargs: Any) -> None:
         self.parent.state('zoomed')

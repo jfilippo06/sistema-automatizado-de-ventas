@@ -18,6 +18,7 @@ class RecoveryScreen(tk.Frame):
         self.open_recovery_inventory_callback = open_recovery_inventory_callback  # Guardamos el callback
         self.configure(bg="#f0f0f0")
         self.configure_ui()
+        self.refresh_data()
 
     def pack(self, **kwargs: Any) -> None:
         self.parent.geometry("500x420")
