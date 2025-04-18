@@ -193,3 +193,75 @@ class ServiceRequest:
         )
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def search_inactive(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
+        """Busca solicitudes inactivas con filtro opcional"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        base_query = '''
+            SELECT sr.*, 
+                   c.first_name || ' ' || c.last_name as customer_name,
+                   c.id_number as customer_id_number,
+                   s.name as service_name,
+                   s.price as service_price,
+                   rs.name as request_status_name
+            FROM service_requests sr
+            JOIN customers c ON sr.customer_id = c.id
+            JOIN services s ON sr.service_id = s.id
+            JOIN request_status rs ON sr.request_status_id = rs.id
+            JOIN status st ON sr.status_id = st.id
+            WHERE st.name = 'inactive'
+        '''
+        
+        params = []
+        
+        if search_term:
+            if field:
+                field_map = {
+                    "ID": "sr.id",
+                    "Cliente": "c.first_name || ' ' || c.last_name",
+                    "Servicio": "s.name",
+                    "Estado Solicitud": "rs.name"
+                }
+                field_name = field_map.get(field)
+                if field_name:
+                    if field == "ID":
+                        try:
+                            item_id = int(search_term)
+                            base_query += f" AND {field_name} = ?"
+                            params.append(item_id)
+                        except ValueError:
+                            base_query += " AND 1 = 0"
+                    else:
+                        base_query += f" AND LOWER({field_name}) LIKE ?"
+                        params.append(f"%{search_term}%")
+            else:
+                base_query += '''
+                    AND (LOWER(sr.id) LIKE ? OR 
+                        LOWER(c.first_name || ' ' || c.last_name) LIKE ? OR 
+                        LOWER(s.name) LIKE ? OR
+                        LOWER(rs.name) LIKE ?)
+                '''
+                params.extend([f"%{search_term}%"] * 4)
+        
+        cursor.execute(base_query, params)
+        items = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return items
+
+    @staticmethod
+    def activate(request_id: int) -> None:
+        """Activa una solicitud (estado activo)"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''UPDATE service_requests 
+            SET status_id = (SELECT id FROM status WHERE name = 'active'),
+            updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?''',
+            (request_id,)
+        )
+        conn.commit()
+        conn.close()
