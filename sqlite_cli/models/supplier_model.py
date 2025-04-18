@@ -43,7 +43,7 @@ class Supplier:
         if search_term:
             if field:
                 field_map = {
-                    "ID": "s.id",  # Nueva opción de búsqueda
+                    "ID": "s.id",
                     "Código": "s.code",
                     "Cédula": "s.id_number",
                     "Nombres": "s.first_name",
@@ -54,14 +54,69 @@ class Supplier:
                 }
                 field_name = field_map.get(field)
                 if field_name:
-                    # Manejo especial para búsqueda por ID (búsqueda exacta)
                     if field == "ID":
                         try:
                             supplier_id = int(search_term)
                             base_query += f" AND {field_name} = ?"
                             params.append(supplier_id)
                         except ValueError:
-                            # Si no es un número válido, no devolver resultados
+                            base_query += " AND 1 = 0"
+                    else:
+                        base_query += f" AND LOWER({field_name}) LIKE ?"
+                        params.append(f"%{search_term}%")
+            else:
+                base_query += '''
+                    AND (LOWER(s.code) LIKE ? OR 
+                        LOWER(s.id_number) LIKE ? OR 
+                        LOWER(s.first_name) LIKE ? OR 
+                        LOWER(s.last_name) LIKE ? OR 
+                        LOWER(s.address) LIKE ? OR 
+                        LOWER(s.phone) LIKE ? OR 
+                        LOWER(s.email) LIKE ? OR 
+                        LOWER(s.tax_id) LIKE ? OR 
+                        LOWER(s.company) LIKE ?)
+                '''
+                params.extend([f"%{search_term}%"] * 9)
+        
+        cursor.execute(base_query, params)
+        items = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return items
+
+    @staticmethod
+    def search_inactive(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        base_query = '''
+            SELECT s.*, st.name as status_name 
+            FROM suppliers s
+            JOIN status st ON s.status_id = st.id
+            WHERE st.name = 'inactive'
+        '''
+        
+        params = []
+        
+        if search_term:
+            if field:
+                field_map = {
+                    "ID": "s.id",
+                    "Código": "s.code",
+                    "Cédula": "s.id_number",
+                    "Nombres": "s.first_name",
+                    "Apellidos": "s.last_name",
+                    "Empresa": "s.company",
+                    "RIF": "s.tax_id",
+                    "Teléfono": "s.phone"
+                }
+                field_name = field_map.get(field)
+                if field_name:
+                    if field == "ID":
+                        try:
+                            supplier_id = int(search_term)
+                            base_query += f" AND {field_name} = ?"
+                            params.append(supplier_id)
+                        except ValueError:
                             base_query += " AND 1 = 0"
                     else:
                         base_query += f" AND LOWER({field_name}) LIKE ?"

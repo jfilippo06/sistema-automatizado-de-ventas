@@ -12,6 +12,7 @@ from screens.configuration.currency.currency_screen import CurrencyManagementScr
 from screens.configuration.taxes.taxes_screen import TaxesManagementScreen
 from screens.maintenance.maintenance_screen import MaintenanceScreen
 from screens.recovery.recovery_screen import RecoveryScreen
+from screens.recovery.recovery_suppliers import RecoverySuppliers  # Nuevo import
 
 def main() -> None:
     app = tk.Tk()
@@ -28,6 +29,7 @@ def main() -> None:
         taxes_screen.pack_forget()
         maintenance_screen.pack_forget()
         recovery_screen.pack_forget()
+        recovery_suppliers_screen.pack_forget()  # Nuevo
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -43,6 +45,7 @@ def main() -> None:
         taxes_screen.pack_forget()
         maintenance_screen.pack_forget()
         recovery_screen.pack_forget()
+        recovery_suppliers_screen.pack_forget()  # Nuevo
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -92,7 +95,12 @@ def main() -> None:
         home_screen.pack_forget()
         recovery_screen.pack(fill=tk.BOTH, expand=True)
 
-    # Callbacks para regresar al home
+    # Nuevo callback para abrir recuperación de proveedores
+    def open_recovery_suppliers() -> None:
+        recovery_screen.pack_forget()
+        recovery_suppliers_screen.pack(fill=tk.BOTH, expand=True)
+
+    # Callbacks para regresar
     def open_home_from_inventory() -> None:
         inventory_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
@@ -137,6 +145,11 @@ def main() -> None:
         recovery_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
+    # Nuevo callback para regresar desde recuperación de proveedores
+    def open_recovery_from_suppliers() -> None:
+        recovery_suppliers_screen.pack_forget()
+        recovery_screen.pack(fill=tk.BOTH, expand=True)
+
     # Creación de todas las pantallas
     login_screen = LoginScreen(app, open_home_screen)
     
@@ -163,7 +176,8 @@ def main() -> None:
     currency_screen = CurrencyManagementScreen(app, open_config_from_currency)
     taxes_screen = TaxesManagementScreen(app, open_config_from_taxes)
     maintenance_screen = MaintenanceScreen(app, open_home_from_maintenance)
-    recovery_screen = RecoveryScreen(app, open_home_from_recovery)
+    recovery_screen = RecoveryScreen(app, open_home_from_recovery, open_recovery_suppliers)  # Modificado
+    recovery_suppliers_screen = RecoverySuppliers(app, open_recovery_from_suppliers)  # Nueva pantalla
 
     # Mostrar pantalla de login al iniciar
     login_screen.pack(fill=tk.BOTH, expand=True)
