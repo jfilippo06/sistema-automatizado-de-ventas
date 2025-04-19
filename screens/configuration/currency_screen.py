@@ -6,6 +6,7 @@ from widgets.custom_entry import CustomEntry
 from sqlite_cli.models.currency_model import Currency
 from sqlite_cli.models.status_model import Status
 from typing import Any, Callable, Dict
+from utils.valdations import Validations  # Importamos las validaciones
 
 class CurrencyManagementScreen(tk.Frame):
     def __init__(
@@ -98,6 +99,12 @@ class CurrencyManagementScreen(tk.Frame):
             width=15,
             state="normal" if currency['status_name'] == 'active' else "disabled"
         )
+        # Configuramos la validación para números decimales
+        value_entry.configure(validate="key")
+        value_entry.configure(validatecommand=(
+            value_entry.register(Validations.validate_decimal),
+            '%P'
+        ))
         value_entry.pack(side=tk.LEFT, padx=(0, 10))
 
         # Frame para botones
