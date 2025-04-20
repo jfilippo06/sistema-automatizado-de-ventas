@@ -165,8 +165,10 @@ def init_db() -> None:
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS service_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_number TEXT NOT NULL UNIQUE,
             customer_id INTEGER NOT NULL,
             service_id INTEGER NOT NULL,
+            employee_id INTEGER NOT NULL,
             description TEXT NOT NULL,
             quantity INTEGER NOT NULL DEFAULT 1,
             total REAL NOT NULL,
@@ -176,6 +178,7 @@ def init_db() -> None:
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (customer_id) REFERENCES customers(id),
             FOREIGN KEY (service_id) REFERENCES services(id),
+            FOREIGN KEY (employee_id) REFERENCES users(id),
             FOREIGN KEY (status_id) REFERENCES status(id),
             FOREIGN KEY (request_status_id) REFERENCES request_status(id)
         )

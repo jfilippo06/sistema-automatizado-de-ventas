@@ -71,9 +71,11 @@ class ServiceRequestsScreen(tk.Frame):
         search_fields = [
             "Todos los campos",
             "ID",
+            "Número",
             "Cliente",
             "Servicio",
-            "Estado Solicitud"
+            "Estado Solicitud",
+            "Empleado"
         ]
         
         search_combobox = CustomCombobox(
@@ -130,19 +132,21 @@ class ServiceRequestsScreen(tk.Frame):
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Treeview para solicitudes (sin columna de Estado)
+        # Treeview para solicitudes
         self.tree = ttk.Treeview(tree_frame, columns=(
-            "ID", "Cliente", "Servicio", "Descripción", "Cantidad", 
+            "ID", "Número", "Cliente", "Servicio", "Empleado", "Descripción", "Cantidad", 
             "Total", "Estado Solicitud"
         ), show="headings")
 
         columns = [
             ("ID", 50, tk.CENTER),
+            ("Número", 80, tk.CENTER),
             ("Cliente", 150, tk.W),
             ("Servicio", 120, tk.W),
-            ("Descripción", 200, tk.W),
-            ("Cantidad", 80, tk.CENTER),
-            ("Total", 100, tk.CENTER),
+            ("Empleado", 120, tk.W),
+            ("Descripción", 180, tk.W),
+            ("Cantidad", 70, tk.CENTER),
+            ("Total", 90, tk.CENTER),
             ("Estado Solicitud", 120, tk.CENTER)
         ]
 
@@ -178,11 +182,13 @@ class ServiceRequestsScreen(tk.Frame):
         for item in items:
             self.tree.insert("", tk.END, values=(
                 item['id'],
+                item['request_number'],
                 item['customer_name'],
                 item['service_name'],
+                item['employee_name'],
                 item['description'],
                 item['quantity'],
-                f"{item['total']:.2f}",  # Removed $ sign
+                f"{item['total']:.2f}",
                 item['request_status_name']
             ))
         
@@ -216,7 +222,7 @@ class ServiceRequestsScreen(tk.Frame):
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
-        service_name = self.tree.item(selected[0])['values'][2]
+        service_name = self.tree.item(selected[0])['values'][3]
         
         response = messagebox.askyesno(
             "Confirmar", 
@@ -239,7 +245,7 @@ class ServiceRequestsScreen(tk.Frame):
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
-        current_status = self.tree.item(selected[0])['values'][6]
+        current_status = self.tree.item(selected[0])['values'][8]
         
         status_window = tk.Toplevel(self)
         status_window.title("Cambiar Estado de Solicitud")

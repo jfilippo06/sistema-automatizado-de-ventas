@@ -7,6 +7,7 @@ class ServiceRequest:
     def create(
         customer_id: int,
         service_id: int,
+        employee_id: int,
         description: str,
         quantity: int = 1,
         request_status_id: int = 1
@@ -14,6 +15,7 @@ class ServiceRequest:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Get service price
         cursor.execute('SELECT price FROM services WHERE id = ?', (service_id,))
         service = cursor.fetchone()
         if not service:
@@ -23,12 +25,21 @@ class ServiceRequest:
         price = service['price']
         total = price * quantity
         
+        # Generate request number (SR- followed by ID)
         cursor.execute(
             '''INSERT INTO service_requests 
-            (customer_id, service_id, description, quantity, total, request_status_id, status_id)
-            VALUES (?, ?, ?, ?, ?, ?, 1)''',  # 1 = active by default
-            (customer_id, service_id, description, quantity, total, request_status_id)
+            (request_number, customer_id, service_id, employee_id, description, quantity, total, request_status_id, status_id)
+            VALUES ('SR-', ?, ?, ?, ?, ?, ?, ?, 1)''',
+            (customer_id, service_id, employee_id, description, quantity, total, request_status_id)
         )
+        
+        # Update the request number with the actual ID
+        request_id = cursor.lastrowid
+        cursor.execute(
+            'UPDATE service_requests SET request_number = ? WHERE id = ?',
+            (f"SR-{request_id}", request_id)
+        )
+        
         conn.commit()
         conn.close()
 
@@ -42,12 +53,16 @@ class ServiceRequest:
                    c.id_number as customer_id_number,
                    s.name as service_name,
                    s.price as service_price,
-                   rs.name as request_status_name
+                   rs.name as request_status_name,
+                   u.username as employee_username,
+                   p.first_name || ' ' || p.last_name as employee_name
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
+            JOIN users u ON sr.employee_id = u.id
+            JOIN person p ON u.person_id = p.id
             WHERE st.name = 'active'
         ''')
         items = [dict(row) for row in cursor.fetchall()]
@@ -56,7 +71,6 @@ class ServiceRequest:
 
     @staticmethod
     def search_active(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
-        """Busca solicitudes activas con filtro opcional"""
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -66,12 +80,16 @@ class ServiceRequest:
                    c.id_number as customer_id_number,
                    s.name as service_name,
                    s.price as service_price,
-                   rs.name as request_status_name
+                   rs.name as request_status_name,
+                   u.username as employee_username,
+                   p.first_name || ' ' || p.last_name as employee_name
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
+            JOIN users u ON sr.employee_id = u.id
+            JOIN person p ON u.person_id = p.id
             WHERE st.name = 'active'
         '''
         
@@ -81,30 +99,30 @@ class ServiceRequest:
             if field:
                 field_map = {
                     "ID": "sr.id",
+                    "Número": "sr.request_number",
                     "Cliente": "c.first_name || ' ' || c.last_name",
                     "Servicio": "s.name",
-                    "Estado Solicitud": "rs.name"
+                    "Estado Solicitud": "rs.name",
+                    "Empleado": "p.first_name || ' ' || p.last_name"
                 }
                 field_name = field_map.get(field)
                 if field_name:
-                    if field == "ID":
-                        try:
-                            item_id = int(search_term)
-                            base_query += f" AND {field_name} = ?"
-                            params.append(item_id)
-                        except ValueError:
-                            base_query += " AND 1 = 0"
+                    if field in ["ID", "Número"]:
+                        base_query += f" AND {field_name} LIKE ?"
+                        params.append(f"%{search_term}%")
                     else:
                         base_query += f" AND LOWER({field_name}) LIKE ?"
-                        params.append(f"%{search_term}%")
+                        params.append(f"%{search_term.lower()}%")
             else:
                 base_query += '''
                     AND (LOWER(sr.id) LIKE ? OR 
+                        LOWER(sr.request_number) LIKE ? OR
                         LOWER(c.first_name || ' ' || c.last_name) LIKE ? OR 
                         LOWER(s.name) LIKE ? OR
-                        LOWER(rs.name) LIKE ?)
+                        LOWER(rs.name) LIKE ? OR
+                        LOWER(p.first_name || ' ' || p.last_name) LIKE ?)
                 '''
-                params.extend([f"%{search_term}%"] * 4)
+                params.extend([f"%{search_term.lower()}%"] * 6)
         
         cursor.execute(base_query, params)
         items = [dict(row) for row in cursor.fetchall()]
@@ -113,19 +131,22 @@ class ServiceRequest:
 
     @staticmethod
     def get_by_id(request_id: int) -> Optional[Dict]:
-        """Obtiene una solicitud por su ID (solo si está activa)"""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             SELECT sr.*, 
                    c.first_name, c.last_name, c.id_number,
                    s.name as service_name,
-                   rs.name as request_status_name
+                   rs.name as request_status_name,
+                   u.id as employee_id,
+                   p.first_name || ' ' || p.last_name as employee_name
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
+            JOIN users u ON sr.employee_id = u.id
+            JOIN person p ON u.person_id = p.id
             WHERE sr.id = ? AND st.name = 'active'
         ''', (request_id,))
         item = cursor.fetchone()
@@ -137,6 +158,7 @@ class ServiceRequest:
         request_id: int,
         customer_id: int,
         service_id: int,
+        employee_id: int,
         description: str,
         quantity: int,
         request_status_id: int
@@ -157,13 +179,14 @@ class ServiceRequest:
             '''UPDATE service_requests SET
             customer_id = ?,
             service_id = ?,
+            employee_id = ?,
             description = ?,
             quantity = ?,
             total = ?,
             request_status_id = ?,
             updated_at = CURRENT_TIMESTAMP
             WHERE id = ?''',
-            (customer_id, service_id, description, quantity, total, request_status_id, request_id)
+            (customer_id, service_id, employee_id, description, quantity, total, request_status_id, request_id)
         )
         conn.commit()
         conn.close()

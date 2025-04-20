@@ -6,6 +6,7 @@ from screens.customers.crud_customer import CrudCustomer
 from sqlite_cli.models.customer_model import Customer
 from sqlite_cli.models.service_model import Service
 from sqlite_cli.models.service_request_model import ServiceRequest
+from sqlite_cli.models.user_model import User
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -28,7 +29,7 @@ class CrudServiceRequest(tk.Toplevel):
         self.service_data = None
         
         self.title("Nueva Solicitud" if mode == "create" else "Editar Solicitud")
-        self.geometry("400x350")  # Reduced height since we removed status field
+        self.geometry("400x400")
         self.resizable(False, False)
         
         self.transient(parent)
@@ -40,6 +41,7 @@ class CrudServiceRequest(tk.Toplevel):
         self.service_var = tk.StringVar()
         self.description_var = tk.StringVar()
         self.quantity_var = tk.StringVar(value="1")
+        self.employee_var = tk.StringVar()
         
         self.configure_ui()
         
@@ -62,11 +64,12 @@ class CrudServiceRequest(tk.Toplevel):
         )
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
-        # Campos del formulario (removed request_status field)
+        # Campos del formulario
         fields = [
             ("Cédula Cliente:", self.customer_id_var, 'text', None if self.mode == "edit" else self.search_customer),
             ("Nombre Cliente:", self.customer_name_var, None, None),
             ("Servicio:", self.service_var, None, None),
+            ("Empleado:", self.employee_var, None, None),
             ("Descripción:", self.description_var, 'text', None),
             ("Cantidad:", self.quantity_var, 'number', None)
         ]
@@ -108,9 +111,16 @@ class CrudServiceRequest(tk.Toplevel):
                     self.widgets[label] = (entry, btn_search)
                 
                 self.entries[label] = entry
-            elif label in ["Nombre Cliente:", "Servicio:"]:
+            elif label in ["Nombre Cliente:", "Servicio:", "Empleado:"]:
                 if label == "Servicio:":
                     values = [s['name'] for s in Service.all()]
+                    state = "readonly" if self.mode == "edit" else "disabled"
+                elif label == "Empleado:":
+                    # Get all active users (employees)
+                    values = []
+                    users = User.all()
+                    for user in users:
+                        values.append(f"{user['first_name']} {user['last_name']}")
                     state = "readonly" if self.mode == "edit" else "disabled"
                 else:  # Nombre Cliente
                     values = []
@@ -176,7 +186,6 @@ class CrudServiceRequest(tk.Toplevel):
         return Validations.validate_integer(text)
 
     def search_customer(self) -> None:
-        """Busca un cliente por su cédula."""
         id_number = self.customer_id_var.get().strip()
         if not id_number:
             messagebox.showwarning("Advertencia", "Ingrese una cédula para buscar", parent=self)
@@ -200,7 +209,6 @@ class CrudServiceRequest(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudo buscar el cliente: {str(e)}", parent=self)
 
     def register_new_customer(self, id_number: str) -> None:
-        """Abre la pantalla para registrar un nuevo cliente."""
         def on_customer_created():
             self.search_customer()
         
@@ -212,16 +220,15 @@ class CrudServiceRequest(tk.Toplevel):
         )
 
     def enable_fields(self, enable: bool) -> None:
-        """Habilita o deshabilita los campos según si hay un cliente seleccionado."""
         state = "normal" if enable else "disabled"
         readonly_state = "readonly" if enable else "disabled"
         
         self.entries["Servicio:"].configure(state=readonly_state)
+        self.entries["Empleado:"].configure(state=readonly_state)
         self.entries["Descripción:"].configure(state=state)
         self.entries["Cantidad:"].configure(state=state)
 
     def load_item_data(self) -> None:
-        """Carga los datos de una solicitud existente para editar."""
         try:
             if not self.item_id:
                 raise ValueError("ID de solicitud no válido")
@@ -242,6 +249,9 @@ class CrudServiceRequest(tk.Toplevel):
             if service:
                 self.service_var.set(service['name'])
             
+            # Cargar datos del empleado
+            self.employee_var.set(request['employee_name'])
+            
             # Cargar otros datos
             self.description_var.set(request['description'])
             self.quantity_var.set(str(request['quantity']))
@@ -254,10 +264,10 @@ class CrudServiceRequest(tk.Toplevel):
             self.destroy()
 
     def validate_fields(self) -> bool:
-        """Valida que todos los campos requeridos estén completos."""
         required_fields = {
             "Cédula Cliente:": self.customer_id_var.get(),
             "Servicio:": self.service_var.get(),
+            "Empleado:": self.employee_var.get(),
             "Descripción:": self.description_var.get(),
             "Cantidad:": self.quantity_var.get()
         }
@@ -284,9 +294,16 @@ class CrudServiceRequest(tk.Toplevel):
             if not service:
                 raise ValueError("Servicio no válido")
             
+            employee_name = self.employee_var.get()
+            users = User.all()
+            employee = next((u for u in users if f"{u['first_name']} {u['last_name']}" == employee_name), None)
+            if not employee:
+                raise ValueError("Empleado no válido")
+            
             ServiceRequest.create(
                 customer_id=self.customer_data['id'],
                 service_id=service['id'],
+                employee_id=employee['id'],
                 description=self.description_var.get(),
                 quantity=int(self.quantity_var.get())
             )
@@ -315,10 +332,17 @@ class CrudServiceRequest(tk.Toplevel):
             if not service:
                 raise ValueError("Servicio no válido")
             
+            employee_name = self.employee_var.get()
+            users = User.all()
+            employee = next((u for u in users if f"{u['first_name']} {u['last_name']}" == employee_name), None)
+            if not employee:
+                raise ValueError("Empleado no válido")
+            
             ServiceRequest.update(
                 request_id=self.item_id,
                 customer_id=self.customer_data['id'],
                 service_id=service['id'],
+                employee_id=employee['id'],
                 description=self.description_var.get(),
                 quantity=int(self.quantity_var.get())
             )
