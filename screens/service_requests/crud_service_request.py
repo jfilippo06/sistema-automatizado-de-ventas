@@ -1,7 +1,7 @@
-# screens/service_requests/crud_service_request.py
+# screens/service_requests/crud_service_request.py (completo)
 import tkinter as tk
 from tkinter import messagebox
-from typing import Callable, Optional, Dict, Any
+from typing import Callable, Optional, Dict, Any, List
 from screens.customers.crud_customer import CrudCustomer
 from sqlite_cli.models.customer_model import Customer
 from sqlite_cli.models.service_model import Service
@@ -27,6 +27,7 @@ class CrudServiceRequest(tk.Toplevel):
         self.refresh_callback = refresh_callback
         self.customer_data = None
         self.service_data = None
+        self.employee_users = []
         
         self.title("Nueva Solicitud" if mode == "create" else "Editar Solicitud")
         self.geometry("400x400")
@@ -67,7 +68,7 @@ class CrudServiceRequest(tk.Toplevel):
         # Campos del formulario
         fields = [
             ("Cédula Cliente:", self.customer_id_var, 'text', None if self.mode == "edit" else self.search_customer),
-            ("Nombre Cliente:", self.customer_name_var, None, None),
+            ("Nombre Cliente:", self.customer_name_var, 'text', None),
             ("Servicio:", self.service_var, None, None),
             ("Empleado:", self.employee_var, None, None),
             ("Descripción:", self.description_var, 'text', None),
@@ -95,7 +96,7 @@ class CrudServiceRequest(tk.Toplevel):
                     textvariable=var,
                     font=("Arial", 10),
                     width=20,
-                    state="readonly" if self.mode == "edit" else "normal"
+                    state="normal"
                 )
                 entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                 
@@ -111,41 +112,32 @@ class CrudServiceRequest(tk.Toplevel):
                     self.widgets[label] = (entry, btn_search)
                 
                 self.entries[label] = entry
-            elif label in ["Nombre Cliente:", "Servicio:", "Empleado:"]:
-                if label == "Servicio:":
-                    values = [s['name'] for s in Service.all()]
-                    state = "readonly" if self.mode == "edit" else "disabled"
-                elif label == "Empleado:":
-                    # Get all active users (employees)
-                    values = []
-                    users = User.all()
-                    for user in users:
-                        values.append(f"{user['first_name']} {user['last_name']}")
-                    state = "readonly" if self.mode == "edit" else "disabled"
-                else:  # Nombre Cliente
-                    values = []
-                    state = "disabled"
-                
-                combobox = CustomCombobox(
-                    main_frame,
-                    textvariable=var,
-                    values=values,
-                    state=state,
-                    width=27
-                )
-                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-                self.entries[label] = combobox
             else:
-                entry = CustomEntry(
-                    main_frame,
-                    textvariable=var,
-                    font=("Arial", 10),
-                    width=30
-                )
-                
-                if val_type == 'number':
-                    entry.configure(validate="key")
-                    entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
+                if label in ["Servicio:", "Empleado:"]:
+                    if label == "Servicio:":
+                        values = [s['name'] for s in Service.all()]
+                    else:  # Empleado
+                        self.employee_users = self.get_employee_users()
+                        values = [emp['name'] for emp in self.employee_users]
+                    
+                    entry = CustomCombobox(
+                        main_frame,
+                        textvariable=var,
+                        values=values,
+                        state="disabled",
+                        width=27
+                    )
+                else:
+                    entry = CustomEntry(
+                        main_frame,
+                        textvariable=var,
+                        font=("Arial", 10),
+                        width=30,
+                        state="disabled"
+                    )
+                    if val_type == 'number':
+                        entry.configure(validate="key")
+                        entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
                 
                 entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
                 self.entries[label] = entry
@@ -157,7 +149,7 @@ class CrudServiceRequest(tk.Toplevel):
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
-                text="Guadar", 
+                text="Guardar", 
                 command=self.create_item,
                 padding=8,
                 width=15
@@ -181,6 +173,20 @@ class CrudServiceRequest(tk.Toplevel):
             width=15
         )
         btn_cancel.pack(side=tk.LEFT, padx=10)
+
+    def get_employee_users(self) -> List[Dict]:
+        """Obtiene solo los usuarios con rol de empleado"""
+        all_users = User.all()
+        employee_users = []
+        
+        for user in all_users:
+            if user['role_name'].lower() == 'employee':
+                employee_users.append({
+                    'id': user['id'],
+                    'name': f"{user['first_name']} {user['last_name']}"
+                })
+        
+        return employee_users
 
     def validate_integer(self, text: str) -> bool:
         return Validations.validate_integer(text)
@@ -220,11 +226,19 @@ class CrudServiceRequest(tk.Toplevel):
         )
 
     def enable_fields(self, enable: bool) -> None:
+        """Habilita o deshabilita los campos según si hay un cliente seleccionado"""
         state = "normal" if enable else "disabled"
         readonly_state = "readonly" if enable else "disabled"
         
+        self.entries["Nombre Cliente:"].configure(state="readonly")
         self.entries["Servicio:"].configure(state=readonly_state)
-        self.entries["Empleado:"].configure(state=readonly_state)
+        
+        employee_combobox = self.entries["Empleado:"]
+        employee_combobox.configure(state=readonly_state)
+        if enable:
+            employee_names = [emp['name'] for emp in self.employee_users]
+            employee_combobox['values'] = employee_names
+        
         self.entries["Descripción:"].configure(state=state)
         self.entries["Cantidad:"].configure(state=state)
 
@@ -237,26 +251,20 @@ class CrudServiceRequest(tk.Toplevel):
             if not request:
                 raise ValueError("Solicitud no encontrada")
             
-            # Cargar datos del cliente
             customer = Customer.get_by_id(request['customer_id'])
             if customer:
                 self.customer_data = customer
                 self.customer_id_var.set(customer['id_number'])
                 self.customer_name_var.set(f"{customer['first_name']} {customer['last_name']}")
             
-            # Cargar datos del servicio
             service = Service.get_by_id(request['service_id'])
             if service:
                 self.service_var.set(service['name'])
             
-            # Cargar datos del empleado
             self.employee_var.set(request['employee_name'])
-            
-            # Cargar otros datos
             self.description_var.set(request['description'])
             self.quantity_var.set(str(request['quantity']))
             
-            # Habilitar campos
             self.enable_fields(True)
             
         except Exception as e:
@@ -266,6 +274,7 @@ class CrudServiceRequest(tk.Toplevel):
     def validate_fields(self) -> bool:
         required_fields = {
             "Cédula Cliente:": self.customer_id_var.get(),
+            "Nombre Cliente:": self.customer_name_var.get(),
             "Servicio:": self.service_var.get(),
             "Empleado:": self.employee_var.get(),
             "Descripción:": self.description_var.get(),
@@ -295,10 +304,9 @@ class CrudServiceRequest(tk.Toplevel):
                 raise ValueError("Servicio no válido")
             
             employee_name = self.employee_var.get()
-            users = User.all()
-            employee = next((u for u in users if f"{u['first_name']} {u['last_name']}" == employee_name), None)
+            employee = next((emp for emp in self.employee_users if emp['name'] == employee_name), None)
             if not employee:
-                raise ValueError("Empleado no válido")
+                raise ValueError("Debe seleccionar un empleado válido")
             
             ServiceRequest.create(
                 customer_id=self.customer_data['id'],
@@ -333,10 +341,9 @@ class CrudServiceRequest(tk.Toplevel):
                 raise ValueError("Servicio no válido")
             
             employee_name = self.employee_var.get()
-            users = User.all()
-            employee = next((u for u in users if f"{u['first_name']} {u['last_name']}" == employee_name), None)
+            employee = next((emp for emp in self.employee_users if emp['name'] == employee_name), None)
             if not employee:
-                raise ValueError("Empleado no válido")
+                raise ValueError("Debe seleccionar un empleado válido")
             
             ServiceRequest.update(
                 request_id=self.item_id,

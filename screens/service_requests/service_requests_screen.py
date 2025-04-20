@@ -71,7 +71,7 @@ class ServiceRequestsScreen(tk.Frame):
         search_fields = [
             "Todos los campos",
             "ID",
-            "Número",
+            "Número de solicitud",
             "Cliente",
             "Servicio",
             "Estado Solicitud",
@@ -134,16 +134,16 @@ class ServiceRequestsScreen(tk.Frame):
 
         # Treeview para solicitudes
         self.tree = ttk.Treeview(tree_frame, columns=(
-            "ID", "Número", "Cliente", "Servicio", "Empleado", "Descripción", "Cantidad", 
+            "ID", "Número de solicitud", "Empleado", "Cliente", "Servicio", "Descripción", "Cantidad", 
             "Total", "Estado Solicitud"
         ), show="headings")
 
         columns = [
             ("ID", 50, tk.CENTER),
-            ("Número", 80, tk.CENTER),
+            ("Número de solicitud", 120, tk.CENTER),
+            ("Empleado", 150, tk.W),
             ("Cliente", 150, tk.W),
             ("Servicio", 120, tk.W),
-            ("Empleado", 120, tk.W),
             ("Descripción", 180, tk.W),
             ("Cantidad", 70, tk.CENTER),
             ("Total", 90, tk.CENTER),
@@ -179,17 +179,27 @@ class ServiceRequestsScreen(tk.Frame):
             
         items = ServiceRequest.search_active(search_term, field if field != "Todos los campos" else None)
         
+        # Mapeo de estados en inglés a español
+        status_mapping = {
+            "started": "Iniciado",
+            "in_progress": "En progreso",
+            "completed": "Completado",
+        }
+        
         for item in items:
+            status = item['request_status_name']
+            status_es = status_mapping.get(status, status)
+            
             self.tree.insert("", tk.END, values=(
                 item['id'],
                 item['request_number'],
+                item['employee_name'],
                 item['customer_name'],
                 item['service_name'],
-                item['employee_name'],
                 item['description'],
                 item['quantity'],
                 f"{item['total']:.2f}",
-                item['request_status_name']
+                status_es
             ))
         
         self.status_bar.configure(text=f"Mostrando {len(items)} solicitudes")
@@ -222,7 +232,7 @@ class ServiceRequestsScreen(tk.Frame):
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
-        service_name = self.tree.item(selected[0])['values'][3]
+        service_name = self.tree.item(selected[0])['values'][4]
         
         response = messagebox.askyesno(
             "Confirmar", 
@@ -267,11 +277,18 @@ class ServiceRequestsScreen(tk.Frame):
         ).pack(pady=5)
         
         status_var = tk.StringVar()
-        statuses = [s['name'] for s in RequestStatus.all()]
+        
+        # Estados en español pero guardamos los valores en inglés
+        status_options = {
+            "Iniciado": "started",
+            "En progreso": "in_progress",
+            "Completado": "completed",
+        }
+        
         status_combobox = ttk.Combobox(
             status_window,
             textvariable=status_var,
-            values=statuses,
+            values=list(status_options.keys()),
             state="readonly"
         )
         status_combobox.pack(pady=5)
@@ -283,12 +300,16 @@ class ServiceRequestsScreen(tk.Frame):
                 return
                 
             try:
-                status = RequestStatus.get_by_name(new_status)
-                if status:
-                    ServiceRequest.update_request_status(item_id, status['id'])
-                    messagebox.showinfo("Éxito", "Estado actualizado correctamente", parent=status_window)
-                    self.refresh_data()
-                    status_window.destroy()
+                status_english = status_options.get(new_status)
+                if status_english:
+                    status = RequestStatus.get_by_name(status_english)
+                    if status:
+                        ServiceRequest.update_request_status(item_id, status['id'])
+                        messagebox.showinfo("Éxito", "Estado actualizado correctamente", parent=status_window)
+                        self.refresh_data()
+                        status_window.destroy()
+                    else:
+                        messagebox.showerror("Error", "Estado no válido", parent=status_window)
                 else:
                     messagebox.showerror("Error", "Estado no válido", parent=status_window)
             except Exception as e:
