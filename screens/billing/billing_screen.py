@@ -8,6 +8,7 @@ from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.customer_model import Customer
 from sqlite_cli.models.tax_model import Tax
+from sqlite_cli.models.currency_model import Currency
 from screens.customers.crud_customer import CrudCustomer
 
 class BillingScreen(tk.Frame):
@@ -148,7 +149,7 @@ class BillingScreen(tk.Frame):
         lbl_products.pack(anchor=tk.W)
 
         products_frame = tk.Frame(tables_frame)
-        products_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        products_frame.pack(fill=tk.X, pady=(0, 20))
 
         self.products_tree = ttk.Treeview(products_frame, columns=(
             "ID", "Código", "Producto", "Existencias", "Stock mínimo", 
@@ -158,7 +159,7 @@ class BillingScreen(tk.Frame):
         columns = [
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
-            ("Producto", 200, tk.W),
+            ("Producto", 150, tk.W),
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
             ("Stock máximo", 80, tk.CENTER),
@@ -185,10 +186,10 @@ class BillingScreen(tk.Frame):
         lbl_cart.pack(anchor=tk.W)
 
         cart_frame = tk.Frame(tables_frame)
-        cart_frame.pack(fill=tk.BOTH, expand=True)
+        cart_frame.pack(fill=tk.X)
 
         self.cart_tree = ttk.Treeview(cart_frame, columns=(
-            "ID", "Producto", "Cantidad", "Precio Unitario", "Total"
+            "ID", "Producto", "Cantidad", "Precio Unitario", "Total",
         ), show="headings")
 
         cart_columns = [
@@ -196,7 +197,7 @@ class BillingScreen(tk.Frame):
             ("Producto", 200, tk.W),
             ("Cantidad", 80, tk.CENTER),
             ("Precio Unitario", 100, tk.CENTER),
-            ("Total", 100, tk.CENTER)
+            ("Total", 100, tk.CENTER),
         ]
 
         for col, width, anchor in cart_columns:
@@ -213,14 +214,16 @@ class BillingScreen(tk.Frame):
         totals_frame = tk.Frame(self)
         totals_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        # Obtener información de impuestos
+        # Obtener información de impuestos y monedas
         iva_tax = Tax.get_by_name("IVA")
+        dollar = Currency.get_by_name("Dólar")
+        euro = Currency.get_by_name("Euro")
 
         # Mostrar u ocultar según estén activos
         if iva_tax and iva_tax.get('status_name') == 'active':
             self.lbl_subtotal = CustomLabel(
                 totals_frame,
-                text="Subtotal: Bs. 0.00",
+                text="Subtotal: $0.00",
                 font=("Arial", 10, "bold"),
                 fg="#333"
             )
@@ -228,7 +231,7 @@ class BillingScreen(tk.Frame):
 
             self.lbl_iva = CustomLabel(
                 totals_frame,
-                text=f"IVA ({iva_tax['value']}%): Bs. 0.00",
+                text=f"IVA ({iva_tax['value']}%): $0.00",
                 font=("Arial", 10, "bold"),
                 fg="#333"
             )
@@ -236,11 +239,29 @@ class BillingScreen(tk.Frame):
 
         self.lbl_total = CustomLabel(
             totals_frame,
-            text="Total: Bs. 0.00",
+            text="Total: $0.00",
             font=("Arial", 10, "bold"),
             fg="#333"
         )
         self.lbl_total.pack(side=tk.LEFT, padx=10)
+
+        if dollar and dollar.get('status_name') == 'active':
+            self.lbl_dollar = CustomLabel(
+                totals_frame,
+                text="Dólares: $0.00",
+                font=("Arial", 10),
+                fg="#666"
+            )
+            self.lbl_dollar.pack(side=tk.LEFT, padx=10)
+
+        if euro and euro.get('status_name') == 'active':
+            self.lbl_euro = CustomLabel(
+                totals_frame,
+                text="Euros: €0.00",
+                font=("Arial", 10),
+                fg="#666"
+            )
+            self.lbl_euro.pack(side=tk.LEFT, padx=10)
 
         # Barra de estado
         self.status_bar = CustomLabel(
@@ -268,7 +289,7 @@ class BillingScreen(tk.Frame):
                 item['stock'],
                 item['min_stock'],
                 item['max_stock'],
-                item['price']
+                item['price'],
             ))
         
         self.status_bar.configure(text=f"Mostrando {len(items)} productos disponibles")
@@ -376,212 +397,149 @@ class BillingScreen(tk.Frame):
         existing_item = next((item for item in self.cart_items if item['id'] == item_id), None)
         
         # Crear ventana para seleccionar cantidad
-        add_window = tk.Toplevel(self)
-        add_window.title(f"Agregar {product_name}")
-        add_window.geometry("400x300")
-        add_window.resizable(False, False)
+        quantity_window = tk.Toplevel(self)
+        quantity_window.title(f"Agregar {product_name}")
         
-        # Centrar la ventana
-        window_width = 400
-        window_height = 300
-        screen_width = add_window.winfo_screenwidth()
-        screen_height = add_window.winfo_screenheight()
-        position_top = int(screen_height / 2 - window_height / 2)
-        position_right = int(screen_width / 2 - window_width / 2)
-        add_window.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
+        # Calcular posición para centrar la ventana
+        window_width = 350
+        window_height = 250
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width/2)
+        center_y = int(screen_height/2 - window_height/2)
         
-        add_window.transient(self)
-        add_window.grab_set()
+        quantity_window.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        quantity_window.resizable(False, False)
+        quantity_window.transient(self)
+        quantity_window.grab_set()
         
-        # Frame principal
-        main_frame = tk.Frame(add_window, padx=20, pady=20)
+        # Frame principal para mejor organización
+        main_frame = tk.Frame(quantity_window, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Información del producto
         tk.Label(
             main_frame, 
             text=f"Producto: {product_name}",
-            font=("Arial", 12, "bold")
-        ).pack(pady=(0, 10), anchor=tk.W)
+            font=("Arial", 10)
+        ).pack(pady=5)
         
         tk.Label(
             main_frame, 
             text=f"Existencias: {stock}",
             font=("Arial", 10)
-        ).pack(anchor=tk.W)
+        ).pack(pady=5)
         
         tk.Label(
             main_frame, 
-            text=f"Stock mínimo: {min_stock}",
+            text=f"Rango permitido: {min_stock} - {max_stock}",
             font=("Arial", 10)
-        ).pack(anchor=tk.W)
+        ).pack(pady=5)
         
         tk.Label(
             main_frame, 
-            text=f"Stock máximo: {max_stock}",
+            text=f"Precio unitario: ${price}",
             font=("Arial", 10)
-        ).pack(anchor=tk.W)
+        ).pack(pady=5)
+        
+        # Frame para cantidad
+        quantity_frame = tk.Frame(main_frame)
+        quantity_frame.pack(pady=10)
         
         tk.Label(
-            main_frame, 
-            text=f"Precio unitario: Bs. {price:.2f}",
-            font=("Arial", 10)
-        ).pack(anchor=tk.W)
-        
-        # Cantidad
-        tk.Label(
-            main_frame, 
+            quantity_frame, 
             text="Cantidad:",
             font=("Arial", 10)
-        ).pack(pady=(10, 5), anchor=tk.W)
+        ).pack(side=tk.LEFT)
         
-        quantity_var = tk.StringVar(value=str(min_stock) if not existing_item else str(existing_item['quantity']))
+        quantity_var = tk.StringVar(value=str(min_stock if not existing_item else existing_item['quantity']))
         quantity_entry = CustomEntry(
-            main_frame,
+            quantity_frame,
             textvariable=quantity_var,
-            font=("Arial", 12),
+            font=("Arial", 10),
             width=10,
             validate="key",
-            validatecommand=(add_window.register(self.validate_quantity), '%P')
+            validatecommand=(quantity_window.register(self.validate_quantity), '%P')
         )
-        quantity_entry.pack(anchor=tk.W)
+        quantity_entry.pack(side=tk.LEFT, padx=5)
         
-        # Frame para botones
+        # Botones
         btn_frame = tk.Frame(main_frame)
-        btn_frame.pack(pady=(20, 0))
-        
-        def add_to_cart():
-            try:
-                quantity = int(quantity_var.get())
-                if quantity <= 0:
-                    messagebox.showwarning("Advertencia", "La cantidad debe ser mayor a cero", parent=add_window)
-                    return
-                    
-                if quantity < min_stock:
-                    messagebox.showwarning("Advertencia", f"La cantidad mínima permitida es {min_stock}", parent=add_window)
-                    return
-                    
-                if quantity > max_stock:
-                    messagebox.showwarning("Advertencia", f"La cantidad máxima permitida es {max_stock}", parent=add_window)
-                    return
-                    
-                if quantity > stock:
-                    messagebox.showwarning("Advertencia", "No hay suficiente stock disponible", parent=add_window)
-                    return
-                    
-                # Actualizar o agregar al carrito
-                if existing_item:
-                    existing_item['quantity'] = quantity
-                    existing_item['total'] = quantity * price
-                else:
-                    self.cart_items.append({
-                        'id': item_id,
-                        'name': product_name,
-                        'quantity': quantity,
-                        'unit_price': price,
-                        'total': quantity * price
-                    })
-                
-                self.update_cart_tree()
-                self.update_totals()
-                add_window.destroy()
-                
-            except ValueError:
-                messagebox.showwarning("Advertencia", "Ingrese una cantidad válida", parent=add_window)
+        btn_frame.pack(pady=10)
         
         CustomButton(
             btn_frame,
             text="Agregar",
-            command=add_to_cart,
-            padding=8,
-            width=12
-        ).pack(side=tk.LEFT, padx=10)
+            command=lambda: self.add_to_cart(
+                quantity_window, quantity_var, item_id, product_name, 
+                price, min_stock, max_stock, stock, existing_item
+            ),
+            padding=6,
+            width=10
+        ).pack(side=tk.LEFT, padx=5)
         
         CustomButton(
             btn_frame,
             text="Cancelar",
-            command=add_window.destroy,
-            padding=8,
-            width=12
-        ).pack(side=tk.LEFT, padx=10)
+            command=quantity_window.destroy,
+            padding=6,
+            width=10
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Poner foco en el campo de cantidad
+        quantity_entry.focus_set()
 
-    def on_cart_item_click(self, event) -> None:
-        selected = self.cart_tree.identify_row(event.y)
-        if not selected:
-            return
+    def add_to_cart(self, window, quantity_var, item_id, product_name, price, min_stock, max_stock, stock, existing_item):
+        try:
+            quantity = int(quantity_var.get())
             
-        item_id = self.cart_tree.item(selected)['values'][0]
-        product_name = self.cart_tree.item(selected)['values'][1]
-        quantity = self.cart_tree.item(selected)['values'][2]
-        price = float(self.cart_tree.item(selected)['values'][3].replace("Bs. ", ""))
-        
-        # Crear ventana de confirmación para eliminar
-        confirm_window = tk.Toplevel(self)
-        confirm_window.title("Confirmar Eliminación")
-        confirm_window.geometry("400x200")
-        confirm_window.resizable(False, False)
-        
-        # Centrar la ventana
-        window_width = 400
-        window_height = 200
-        screen_width = confirm_window.winfo_screenwidth()
-        screen_height = confirm_window.winfo_screenheight()
-        position_top = int(screen_height / 2 - window_height / 2)
-        position_right = int(screen_width / 2 - window_width / 2)
-        confirm_window.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
-        
-        confirm_window.transient(self)
-        confirm_window.grab_set()
-        
-        # Frame principal
-        main_frame = tk.Frame(confirm_window, padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Mensaje de confirmación
-        tk.Label(
-            main_frame, 
-            text=f"¿Está seguro que desea eliminar este producto del carrito?",
-            font=("Arial", 12)
-        ).pack(pady=(10, 20))
-        
-        tk.Label(
-            main_frame, 
-            text=f"Producto: {product_name}",
-            font=("Arial", 10)
-        ).pack(anchor=tk.W)
-        
-        tk.Label(
-            main_frame, 
-            text=f"Cantidad: {quantity} - Total: Bs. {quantity * price:.2f}",
-            font=("Arial", 10)
-        ).pack(anchor=tk.W)
-        
-        # Frame para botones
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.pack(pady=(20, 0))
-        
-        CustomButton(
-            btn_frame,
-            text="Eliminar",
-            command=lambda: self.remove_from_cart(item_id, confirm_window),
-            padding=8,
-            width=12
-        ).pack(side=tk.LEFT, padx=10)
-        
-        CustomButton(
-            btn_frame,
-            text="Cancelar",
-            command=confirm_window.destroy,
-            padding=8,
-            width=12
-        ).pack(side=tk.LEFT, padx=10)
-
-    def remove_from_cart(self, item_id: int, window=None) -> None:
-        self.cart_items = [item for item in self.cart_items if item['id'] != item_id]
-        self.update_cart_tree()
-        self.update_totals()
-        if window:
+            if quantity < min_stock:
+                messagebox.showwarning(
+                    "Advertencia", 
+                    f"La cantidad mínima permitida es {min_stock}", 
+                    parent=window
+                )
+                return
+                
+            if quantity > max_stock:
+                messagebox.showwarning(
+                    "Advertencia", 
+                    f"La cantidad máxima permitida es {max_stock}", 
+                    parent=window
+                )
+                return
+                
+            if quantity > stock:
+                messagebox.showwarning(
+                    "Advertencia", 
+                    "No hay suficiente stock disponible", 
+                    parent=window
+                )
+                return
+                
+            # Actualizar o agregar al carrito
+            if existing_item:
+                existing_item['quantity'] = quantity
+                existing_item['total'] = quantity * price
+            else:
+                self.cart_items.append({
+                    'id': item_id,
+                    'name': product_name,
+                    'quantity': quantity,
+                    'unit_price': price,
+                    'total': quantity * price
+                })
+            
+            self.update_cart_tree()
+            self.update_totals()
             window.destroy()
+            
+        except ValueError:
+            messagebox.showwarning(
+                "Advertencia", 
+                "Ingrese una cantidad válida", 
+                parent=window
+            )
 
     def validate_quantity(self, text: str) -> bool:
         if not text:
@@ -597,24 +555,55 @@ class BillingScreen(tk.Frame):
                 item['id'],
                 item['name'],
                 item['quantity'],
-                f"Bs. {item['unit_price']:.2f}",
-                f"Bs. {item['total']:.2f}"
+                f"${item['unit_price']:.2f}",
+                f"${item['total']:.2f}",
+                "Eliminar"
             ))
+        
+        # Configurar evento para el botón eliminar
+        self.cart_tree.bind("<Button-1>", self.on_cart_item_click)
+
+    def on_cart_item_click(self, event) -> None:
+        region = self.cart_tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+            
+        column = self.cart_tree.identify_column(event.x)
+        selected = self.cart_tree.identify_row(event.y)
+        
+        if column == "#6":  # Columna de acción
+            item_id = self.cart_tree.item(selected)['values'][0]
+            self.remove_from_cart(item_id)
+
+    def remove_from_cart(self, item_id: int) -> None:
+        self.cart_items = [item for item in self.cart_items if item['id'] != item_id]
+        self.update_cart_tree()
+        self.update_totals()
 
     def update_totals(self) -> None:
         subtotal = sum(item['total'] for item in self.cart_items)
         
-        # Obtener impuestos
+        # Obtener impuestos y monedas
         iva_tax = Tax.get_by_name("IVA")
+        dollar = Currency.get_by_name("Dólar")
+        euro = Currency.get_by_name("Euro")
         
         # Calcular totales
         if iva_tax and iva_tax.get('status_name') == 'active':
             iva_amount = subtotal * (iva_tax['value'] / 100)
             total = subtotal + iva_amount
             
-            self.lbl_subtotal.configure(text=f"Subtotal: Bs. {subtotal:.2f}")
-            self.lbl_iva.configure(text=f"IVA ({iva_tax['value']}%): Bs. {iva_amount:.2f}")
+            self.lbl_subtotal.configure(text=f"Subtotal: ${subtotal:.2f}")
+            self.lbl_iva.configure(text=f"IVA ({iva_tax['value']}%): ${iva_amount:.2f}")
         else:
             total = subtotal
         
-        self.lbl_total.configure(text=f"Total: Bs. {total:.2f}")
+        self.lbl_total.configure(text=f"Total: ${total:.2f}")
+        
+        if dollar and dollar.get('status_name') == 'active':
+            dollar_amount = total / dollar['value'] if dollar['value'] != 0 else 0
+            self.lbl_dollar.configure(text=f"Dólares: ${dollar_amount:.2f}")
+        
+        if euro and euro.get('status_name') == 'active':
+            euro_amount = total / euro['value'] if euro['value'] != 0 else 0
+            self.lbl_euro.configure(text=f"Euros: €{euro_amount:.2f}")
