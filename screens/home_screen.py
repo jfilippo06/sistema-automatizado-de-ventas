@@ -15,7 +15,8 @@ class HomeScreen(tk.Frame):
         open_services_callback: Callable[[], None],
         open_config_callback: Callable[[], None],
         open_maintenance_callback: Callable[[], None],
-        open_recovery_callback: Callable[[], None]
+        open_recovery_callback: Callable[[], None],
+        open_billing_callback: Callable[[], None]  # Nuevo callback para facturación
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -28,6 +29,7 @@ class HomeScreen(tk.Frame):
         self.open_config_callback = open_config_callback
         self.open_maintenance_callback = open_maintenance_callback
         self.open_recovery_callback = open_recovery_callback
+        self.open_billing_callback = open_billing_callback  # Nuevo callback
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()
@@ -55,7 +57,7 @@ class HomeScreen(tk.Frame):
             ("Inventario de productos", self.inventory_control),
             ("Gestión de ventas", self.purchases_module),
             ("Reportes", self.reports),
-            ("Facturación", self.billing_control),
+            ("Facturación", self.billing_control),  # Botón de facturación
             ("Gestión de clientes", self.customers_control),
             ("Solicitudes de servicio", self.service_requests_control),
             ("Gestión de servicios", self.services_control),
@@ -98,7 +100,7 @@ class HomeScreen(tk.Frame):
         print("Function: Reportes")
 
     def billing_control(self) -> None:
-        print("Function: Control de facturación")
+        self.open_billing_callback()  # Llama al callback para abrir facturación
 
     def customers_control(self) -> None:
         self.open_customers_callback()

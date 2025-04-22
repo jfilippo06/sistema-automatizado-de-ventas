@@ -16,6 +16,7 @@ from screens.recovery.recovery_suppliers import RecoverySuppliers
 from screens.recovery.recovery_inventory import RecoveryInventory
 from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
+from screens.billing.billing_screen import BillingScreen
 
 def main() -> None:
     app = tk.Tk()
@@ -33,7 +34,10 @@ def main() -> None:
         maintenance_screen.pack_forget()
         recovery_screen.pack_forget()
         recovery_suppliers_screen.pack_forget()
-        recovery_inventory_screen.pack_forget()  # Nuevo
+        recovery_inventory_screen.pack_forget()
+        recovery_service_requests_screen.pack_forget()
+        recovery_services_screen.pack_forget()
+        billing_screen.pack_forget()  # Nueva línea
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -50,7 +54,10 @@ def main() -> None:
         maintenance_screen.pack_forget()
         recovery_screen.pack_forget()
         recovery_suppliers_screen.pack_forget()
-        recovery_inventory_screen.pack_forget()  # Nuevo
+        recovery_inventory_screen.pack_forget()
+        recovery_service_requests_screen.pack_forget()
+        recovery_services_screen.pack_forget()
+        billing_screen.pack_forget()
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -100,6 +107,10 @@ def main() -> None:
         home_screen.pack_forget()
         recovery_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_billing() -> None:  # Nueva función
+        home_screen.pack_forget()
+        billing_screen.pack(fill=tk.BOTH, expand=True)
+
     # Callbacks para recuperación
     def open_recovery_suppliers() -> None:
         recovery_screen.pack_forget()
@@ -108,6 +119,14 @@ def main() -> None:
     def open_recovery_inventory() -> None:
         recovery_screen.pack_forget()
         recovery_inventory_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_recovery_service_requests() -> None:
+        recovery_screen.pack_forget()
+        recovery_service_requests_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_recovery_services() -> None:
+        recovery_screen.pack_forget()
+        recovery_services_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para regresar al home
     def open_home_from_inventory() -> None:
@@ -154,6 +173,10 @@ def main() -> None:
         recovery_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_home_from_billing() -> None:  # Nueva función
+        billing_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
     # Callbacks para regresar desde pantallas de recuperación
     def open_recovery_from_suppliers() -> None:
         recovery_suppliers_screen.pack_forget()
@@ -163,17 +186,9 @@ def main() -> None:
         recovery_inventory_screen.pack_forget()
         recovery_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_recovery_service_requests() -> None:
-        recovery_screen.pack_forget()
-        recovery_service_requests_screen.pack(fill=tk.BOTH, expand=True)
-
     def open_recovery_from_service_requests() -> None:
         recovery_service_requests_screen.pack_forget()
         recovery_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_services() -> None:
-        recovery_screen.pack_forget()
-        recovery_services_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_recovery_from_services() -> None:
         recovery_services_screen.pack_forget()
@@ -192,7 +207,8 @@ def main() -> None:
         open_services,
         open_config,
         open_maintenance,
-        open_recovery
+        open_recovery,
+        open_billing  # Nuevo callback
     )
     
     inventory_screen = Inventory(app, open_home_from_inventory)
@@ -211,12 +227,13 @@ def main() -> None:
         open_recovery_suppliers,
         open_recovery_inventory,
         open_recovery_service_requests,
-        open_recovery_services  # Nuevo callback
+        open_recovery_services
     )
     recovery_suppliers_screen = RecoverySuppliers(app, open_recovery_from_suppliers)
     recovery_inventory_screen = RecoveryInventory(app, open_recovery_from_inventory)
     recovery_service_requests_screen = RecoveryServiceRequests(app, open_recovery_from_service_requests)
     recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
+    billing_screen = BillingScreen(app, open_home_from_billing)  # Nueva pantalla
 
     # Mostrar pantalla de login al iniciar
     login_screen.pack(fill=tk.BOTH, expand=True)
