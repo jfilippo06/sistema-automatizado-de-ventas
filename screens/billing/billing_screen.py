@@ -323,6 +323,7 @@ class BillingScreen(tk.Frame):
 
     def go_back(self) -> None:
         self.pack_forget()
+        self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
 
     def checkout(self) -> None:
@@ -374,8 +375,8 @@ class BillingScreen(tk.Frame):
 
     def register_new_customer(self, id_number: str) -> None:
         def on_customer_created():
-            self.search_customer()
-        
+            self.search_customer()  # Volver a buscar después de crear
+
         CrudCustomer(
             self,
             mode="create",
@@ -384,6 +385,15 @@ class BillingScreen(tk.Frame):
         )
 
     def on_product_click(self, event) -> None:
+        if not self.current_customer:
+            messagebox.showwarning(
+                "Cliente requerido", 
+                "Debe seleccionar un cliente antes de agregar productos al carrito.\n"
+                "Por favor busque o registre un cliente usando el campo de cédula.",
+                parent=self
+            )
+            return
+        
         selected = self.products_tree.identify_row(event.y)
         if not selected:
             return

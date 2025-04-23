@@ -35,6 +35,7 @@ class HomeScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
+        self.parent.state('normal')  # Ensure normal state when showing home screen
         self.parent.geometry("700x600")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
