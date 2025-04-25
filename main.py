@@ -17,6 +17,7 @@ from screens.recovery.recovery_inventory import RecoveryInventory
 from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
+from screens.reports.reports_screen import ReportsScreen
 
 def main() -> None:
     app = tk.Tk()
@@ -37,7 +38,8 @@ def main() -> None:
         recovery_inventory_screen.pack_forget()
         recovery_service_requests_screen.pack_forget()
         recovery_services_screen.pack_forget()
-        billing_screen.pack_forget()  # Nueva línea
+        billing_screen.pack_forget()
+        reports_screen.pack_forget()  # Nueva línea
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -58,6 +60,7 @@ def main() -> None:
         recovery_service_requests_screen.pack_forget()
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
+        reports_screen.pack_forget()  # Nueva línea
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -107,9 +110,13 @@ def main() -> None:
         home_screen.pack_forget()
         recovery_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_billing() -> None:  # Nueva función
+    def open_billing() -> None:
         home_screen.pack_forget()
         billing_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_reports() -> None:  # Nueva función
+        home_screen.pack_forget()
+        reports_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para recuperación
     def open_recovery_suppliers() -> None:
@@ -173,8 +180,12 @@ def main() -> None:
         recovery_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_home_from_billing() -> None:  # Nueva función
+    def open_home_from_billing() -> None:
         billing_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_home_from_reports() -> None:  # Nueva función
+        reports_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para regresar desde pantallas de recuperación
@@ -208,7 +219,8 @@ def main() -> None:
         open_config,
         open_maintenance,
         open_recovery,
-        open_billing  # Nuevo callback
+        open_billing,
+        open_reports  # Nuevo callback
     )
     
     inventory_screen = Inventory(app, open_home_from_inventory)
@@ -233,7 +245,8 @@ def main() -> None:
     recovery_inventory_screen = RecoveryInventory(app, open_recovery_from_inventory)
     recovery_service_requests_screen = RecoveryServiceRequests(app, open_recovery_from_service_requests)
     recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
-    billing_screen = BillingScreen(app, open_home_from_billing)  # Nueva pantalla
+    billing_screen = BillingScreen(app, open_home_from_billing)
+    reports_screen = ReportsScreen(app, open_home_from_reports)  # Nueva pantalla
 
     # Mostrar pantalla de login al iniciar
     login_screen.pack(fill=tk.BOTH, expand=True)
