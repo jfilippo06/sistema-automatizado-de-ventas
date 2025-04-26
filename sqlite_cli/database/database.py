@@ -26,7 +26,7 @@ def init_db() -> None:
     conn: sqlite3.Connection = get_db_connection()
     cursor: sqlite3.Cursor = conn.cursor()
     
-    # Create status table
+    # Tabla de estados
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS status (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +35,7 @@ def init_db() -> None:
         )
     ''')
 
-    # Create roles table
+    # Tabla de roles
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS roles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +44,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create person table
+    # Tabla de personas
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS person (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +61,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create users table
+    # Tabla de usuarios
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,7 +78,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create suppliers table
+    # Tabla de proveedores
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS suppliers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,7 +98,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create inventory table with all fields
+    # Tabla de inventario
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,7 +120,7 @@ def init_db() -> None:
         )
     ''')
 
-    # Create customers table
+    # Tabla de clientes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,7 +137,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create services table
+    # Tabla de servicios
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -152,7 +152,7 @@ def init_db() -> None:
         )
     ''')
     
-    # Create request_status table
+    # Tabla de estados de solicitud
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS request_status (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -161,7 +161,7 @@ def init_db() -> None:
         )
     ''')
 
-    # Create service_requests table
+    # Tabla de solicitudes de servicio
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS service_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,7 +184,7 @@ def init_db() -> None:
         )
     ''')
 
-    # Create currencies table
+    # Tabla de monedas
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS currencies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -198,7 +198,7 @@ def init_db() -> None:
         )
     ''')
 
-    # Create taxes table
+    # Tabla de impuestos
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS taxes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -208,6 +208,49 @@ def init_db() -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (status_id) REFERENCES status(id)
+        )
+    ''')
+    
+        # Invoice status table (English)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invoice_status (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Invoices table (English)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invoices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER NOT NULL,
+            issue_date TEXT NOT NULL,
+            subtotal REAL NOT NULL,
+            taxes REAL NOT NULL,
+            total REAL NOT NULL,
+            status_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (customer_id) REFERENCES customers(id),
+            FOREIGN KEY (status_id) REFERENCES invoice_status(id)
+        )
+    ''')
+
+    # Invoice details table (English)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invoice_details (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            invoice_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            unit_price REAL NOT NULL,
+            subtotal REAL NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+            FOREIGN KEY (product_id) REFERENCES inventory(id)
         )
     ''')
     
