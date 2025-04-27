@@ -120,6 +120,40 @@ def init_db() -> None:
         )
     ''')
 
+    # Tabla de tipos de movimiento (simplificada)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS movement_types (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,          -- Ej: "Compra", "Venta", "Ajuste"
+            affects_quantity BOOLEAN NOT NULL,   -- ¿Afecta existencia física?
+            affects_stock BOOLEAN NOT NULL      -- ¿Afecta disponible para venta?
+        )
+    ''')
+
+    # Tabla de movimientos (registra cambios en quantity/stock por separado)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS inventory_movements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inventory_id INTEGER NOT NULL,
+            movement_type_id INTEGER NOT NULL,
+            quantity_change INTEGER DEFAULT 0,   -- Cambio en existencia física
+            stock_change INTEGER DEFAULT 0,      -- Cambio en disponible para venta
+            previous_quantity INTEGER NOT NULL,
+            new_quantity INTEGER NOT NULL,
+            previous_stock INTEGER NOT NULL,
+            new_stock INTEGER NOT NULL,
+            reference_id INTEGER NULL,           -- ID de factura/compra (ahora nullable)
+            reference_type TEXT,                 -- Tipo de referencia (invoice, purchase, adjustment)
+            user_id INTEGER NOT NULL,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (inventory_id) REFERENCES inventory(id),
+            FOREIGN KEY (movement_type_id) REFERENCES movement_types(id),
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (reference_id) REFERENCES invoices(id) ON DELETE SET NULL  -- Relación opcional
+        )
+    ''')
+
     # Tabla de clientes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS customers (
