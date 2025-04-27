@@ -2,6 +2,7 @@ import tkinter as tk
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from typing import Any, Callable
+from utils.session_manager import SessionManager
 
 class HomeScreen(tk.Frame):
     def __init__(
@@ -37,6 +38,11 @@ class HomeScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
+        """Sobrescribimos pack para verificar autenticación"""
+        if not SessionManager.is_authenticated():
+            self.open_login_screen_callback()
+            return
+            
         self.parent.state('normal')  # Ensure normal state when showing home screen
         self.parent.geometry("700x600")
         self.parent.resizable(False, False)
@@ -127,4 +133,5 @@ class HomeScreen(tk.Frame):
         self.open_config_callback()
 
     def exit(self) -> None:
+        SessionManager.logout()
         self.open_login_screen_callback()

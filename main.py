@@ -18,6 +18,7 @@ from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
+from utils.session_manager import SessionManager
 
 def main() -> None:
     app = tk.Tk()
@@ -25,6 +26,13 @@ def main() -> None:
     app.geometry("800x600")
     app.resizable(True, True)
     
+    # Función para verificar autenticación
+    def check_auth_and_show_home():
+        if SessionManager.is_authenticated():
+            open_home_screen()
+        else:
+            open_login_screen()
+
     # Callbacks para navegación
     def open_home_screen() -> None:
         login_screen.pack_forget()
@@ -39,7 +47,7 @@ def main() -> None:
         recovery_service_requests_screen.pack_forget()
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
-        reports_screen.pack_forget()  # Nueva línea
+        reports_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -60,7 +68,7 @@ def main() -> None:
         recovery_service_requests_screen.pack_forget()
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
-        reports_screen.pack_forget()  # Nueva línea
+        reports_screen.pack_forget()
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -114,7 +122,7 @@ def main() -> None:
         home_screen.pack_forget()
         billing_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_reports() -> None:  # Nueva función
+    def open_reports() -> None:
         home_screen.pack_forget()
         reports_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -184,7 +192,7 @@ def main() -> None:
         billing_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_home_from_reports() -> None:  # Nueva función
+    def open_home_from_reports() -> None:
         reports_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -206,7 +214,7 @@ def main() -> None:
         recovery_screen.pack(fill=tk.BOTH, expand=True)
 
     # Creación de todas las pantallas
-    login_screen = LoginScreen(app, open_home_screen)
+    login_screen = LoginScreen(app, check_auth_and_show_home)
     
     home_screen = HomeScreen(
         app, 
@@ -220,7 +228,7 @@ def main() -> None:
         open_maintenance,
         open_recovery,
         open_billing,
-        open_reports  # Nuevo callback
+        open_reports
     )
     
     inventory_screen = Inventory(app, open_home_from_inventory)
@@ -246,10 +254,10 @@ def main() -> None:
     recovery_service_requests_screen = RecoveryServiceRequests(app, open_recovery_from_service_requests)
     recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
     billing_screen = BillingScreen(app, open_home_from_billing)
-    reports_screen = ReportsScreen(app, open_home_from_reports)  # Nueva pantalla
+    reports_screen = ReportsScreen(app, open_home_from_reports)
 
-    # Mostrar pantalla de login al iniciar
-    login_screen.pack(fill=tk.BOTH, expand=True)
+    # Mostrar pantalla inicial basada en autenticación
+    check_auth_and_show_home()
     app.mainloop()
 
 if __name__ == "__main__":
