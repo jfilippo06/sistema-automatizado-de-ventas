@@ -122,13 +122,14 @@ def init_db() -> None:
 
     # Tabla de tipos de movimiento (simplificada)
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS movement_types (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,          -- Ej: "Compra", "Venta", "Ajuste"
-            affects_quantity BOOLEAN NOT NULL,   -- ¿Afecta existencia física?
-            affects_stock BOOLEAN NOT NULL      -- ¿Afecta disponible para venta?
-        )
-    ''')
+    CREATE TABLE IF NOT EXISTS movement_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        affects_quantity BOOLEAN NOT NULL,
+        affects_stock BOOLEAN NOT NULL,
+        description TEXT  -- Columna añadida
+    )
+''')
 
     # Tabla de movimientos (registra cambios en quantity/stock por separado)
     cursor.execute('''

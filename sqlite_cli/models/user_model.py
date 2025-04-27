@@ -158,3 +158,27 @@ class User:
         ''', (status_id, user_id))
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def get_by_username(username: str) -> Optional[Dict]:
+        """Obtiene un usuario por su nombre de usuario.
+        
+        Args:
+            username: Nombre de usuario a buscar
+        
+        Returns:
+            Un diccionario con los datos del usuario o None si no se encuentra
+        """
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT u.*, p.first_name, p.last_name, p.email, r.name as role_name, s.name as status_name
+            FROM users u
+            JOIN person p ON u.person_id = p.id
+            JOIN roles r ON u.role_id = r.id
+            JOIN status s ON u.status_id = s.id
+            WHERE u.username = ?
+        ''', (username,))
+        user = cursor.fetchone()
+        conn.close()
+        return dict(user) if user else None

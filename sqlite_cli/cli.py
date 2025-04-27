@@ -14,6 +14,8 @@ from seeds.user_seeds import seed_users
 from seeds.currency_seeds import seed_currencies
 from seeds.tax_seeds import seed_taxes
 from seeds.invoice_status_seeds import seed_invoice_status
+from seeds.movement_type_seeds import seed_movement_types
+from seeds.inventory_movement_seeds import seed_initial_inventory_movements
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CLI para gestionar el inventario.")
@@ -25,35 +27,61 @@ def main() -> None:
         init_db()
         print("Base de datos inicializada.")
     elif args.command == 'seed':
+        # Semillas básicas
         seed_status()
         seed_roles()
         seed_persons()
         seed_users()
+        
+        # Semillas de configuración
         seed_request_status()
+        seed_invoice_status()
+        seed_movement_types()  # Nueva semilla
+        
+        # Semillas de entidades
         seed_suppliers()
         seed_inventory()
         seed_customers()
         seed_services()
+        
+        # Semillas de relaciones
         seed_service_requests()
+        seed_initial_inventory_movements()  # Nueva semilla
+        
+        # Semillas de configuración adicional
         seed_currencies()
         seed_taxes()
-        seed_invoice_status()
+        
         print("Datos iniciales insertados.")
     elif args.command == 'reset':
+        # Reinicialización completa
         init_db()
+        
+        # Semillas básicas
         seed_status()
         seed_roles()
         seed_persons()
         seed_users()
+        
+        # Semillas de configuración
         seed_request_status()
+        seed_invoice_status()
+        seed_movement_types()  # Nueva semilla
+        
+        # Semillas de entidades
         seed_suppliers()
         seed_inventory()
         seed_customers()
         seed_services()
+        
+        # Semillas de relaciones
         seed_service_requests()
+        seed_initial_inventory_movements()  # Nueva semilla
+        
+        # Semillas de configuración adicional
         seed_currencies()
         seed_taxes()
-        seed_invoice_status()
+        
         print("Base de datos reinicializada con datos de ejemplo.")
 
 if __name__ == "__main__":
