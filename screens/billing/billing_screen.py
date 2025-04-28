@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
+from sqlite_cli.models.invoice_model import Invoice
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -326,6 +327,7 @@ class BillingScreen(tk.Frame):
         self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
 
+    # screens/billing/billing_screen.py (solo el método checkout modificado)
     def checkout(self) -> None:
         if not self.current_customer:
             messagebox.showwarning("Advertencia", "Debe seleccionar un cliente para realizar la compra", parent=self)
@@ -337,17 +339,58 @@ class BillingScreen(tk.Frame):
             
         response = messagebox.askyesno(
             "Confirmar Compra", 
-            "¿Está seguro que desea realizar la compra?",
+            "¿Está seguro que desea realizar la compra?\nLa factura se marcará como Pagada Completamente.",
             parent=self
         )
         
         if response:
             try:
-                # Aquí iría la lógica para guardar la factura en la base de datos
-                messagebox.showinfo("Éxito", "Compra realizada correctamente", parent=self)
+                # Calcular totales
+                iva_tax = Tax.get_by_name("IVA")
+                subtotal = sum(item['total'] for item in self.cart_items)
+                
+                if iva_tax and iva_tax.get('status_name') == 'active':
+                    taxes = subtotal * (iva_tax['value'] / 100)
+                else:
+                    taxes = 0.0
+                    
+                total = subtotal + taxes
+                
+                # Preparar items para la factura
+                invoice_items = [{
+                    'id': item['id'],
+                    'quantity': item['quantity'],
+                    'unit_price': item['unit_price'],
+                    'total': item['total']
+                } for item in self.cart_items]
+                
+                # Crear la factura como pagada completamente
+                invoice_id = Invoice.create_paid_invoice(
+                    customer_id=self.current_customer['id'],
+                    subtotal=subtotal,
+                    taxes=taxes,
+                    total=total,
+                    items=invoice_items
+                )
+                
+                # Mostrar mensaje de éxito con el número de factura
+                messagebox.showinfo(
+                    "Éxito", 
+                    f"Compra realizada y facturada correctamente\nNúmero de factura: {invoice_id}\nEstado: Pagada completamente",
+                    parent=self
+                )
+                
+                # Limpiar y actualizar
                 self.refresh_data()
+                
+            except ValueError as e:
+                messagebox.showerror("Error de validación", str(e), parent=self)
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo completar la compra: {str(e)}", parent=self)
+                messagebox.showerror(
+                    "Error", 
+                    f"No se pudo completar la compra: {str(e)}", 
+                    parent=self
+                )
 
     def search_customer(self) -> None:
         id_number = self.customer_id_var.get().strip()
