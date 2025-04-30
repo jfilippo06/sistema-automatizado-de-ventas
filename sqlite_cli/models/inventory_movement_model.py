@@ -1,4 +1,3 @@
-# models/inventory_movement_model.py
 from sqlite_cli.database.database import get_db_connection
 from typing import List, Dict, Optional
 
@@ -8,7 +7,30 @@ class InventoryMovement:
         """Obtiene todos los movimientos de inventario."""
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM inventory_movements')
+        cursor.execute('''
+            SELECT im.*, mt.name as movement_type, u.username as user_name
+            FROM inventory_movements im
+            JOIN movement_types mt ON im.movement_type_id = mt.id
+            LEFT JOIN users u ON im.user_id = u.id
+            ORDER BY im.created_at DESC
+        ''')
+        movements = cursor.fetchall()
+        conn.close()
+        return [dict(movement) for movement in movements]
+    
+    @staticmethod
+    def get_by_inventory(inventory_id: int) -> List[Dict]:
+        """Obtiene los movimientos de un producto específico"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT im.*, mt.name as movement_type, u.username as user_name
+            FROM inventory_movements im
+            JOIN movement_types mt ON im.movement_type_id = mt.id
+            LEFT JOIN users u ON im.user_id = u.id
+            WHERE im.inventory_id = ?
+            ORDER BY im.created_at DESC
+        ''', (inventory_id,))
         movements = cursor.fetchall()
         conn.close()
         return [dict(movement) for movement in movements]

@@ -3,6 +3,8 @@ from typing import List, Dict, Optional
 import os
 import shutil
 from datetime import datetime
+from sqlite_cli.models.movement_type_model import MovementType
+from sqlite_cli.models.inventory_movement_model import InventoryMovement
 
 class InventoryItem:
     IMAGE_FOLDER = "inventory_images"
@@ -65,6 +67,25 @@ class InventoryItem:
             code, product, quantity, stock, min_stock, max_stock, price, 
             supplier_id, expiration_date, saved_image_path
         ))
+        
+        # Registrar movimiento de entrada inicial
+        item_id = cursor.lastrowid
+        movement_type = MovementType.get_by_name("Entrada inicial")
+        
+        if movement_type:
+            InventoryMovement.create(
+                inventory_id=item_id,
+                movement_type_id=movement_type['id'],
+                quantity_change=quantity,
+                stock_change=stock,
+                previous_quantity=0,
+                new_quantity=quantity,
+                previous_stock=0,
+                new_stock=stock,
+                user_id=1,  # TODO: Reemplazar con ID de usuario real
+                notes="Entrada inicial del producto"
+            )
+        
         conn.commit()
         conn.close()
 
@@ -79,6 +100,7 @@ class InventoryItem:
             JOIN status st ON i.status_id = st.id
             LEFT JOIN suppliers sp ON i.supplier_id = sp.id
             WHERE st.name = 'active'
+            ORDER BY i.product ASC
         ''')
         items = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -133,7 +155,7 @@ class InventoryItem:
                             base_query += " AND 1 = 0"
                     else:
                         base_query += f" AND LOWER({field_name}) LIKE ?"
-                        params.append(f"%{search_term}%")
+                        params.append(f"%{search_term.lower()}%")
             else:
                 base_query += '''
                     AND (LOWER(i.code) LIKE ? OR 
@@ -146,8 +168,9 @@ class InventoryItem:
                         CAST(i.price AS TEXT) LIKE ? OR
                         i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term}%"] * 9)
+                params.extend([f"%{search_term.lower()}%"] * 9)
         
+        base_query += " ORDER BY i.product ASC"
         cursor.execute(base_query, params)
         items = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -201,7 +224,7 @@ class InventoryItem:
                             base_query += " AND 1 = 0"
                     else:
                         base_query += f" AND LOWER({field_name}) LIKE ?"
-                        params.append(f"%{search_term}%")
+                        params.append(f"%{search_term.lower()}%")
             else:
                 base_query += '''
                     AND (LOWER(i.code) LIKE ? OR 
@@ -214,8 +237,9 @@ class InventoryItem:
                         CAST(i.price AS TEXT) LIKE ? OR
                         i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term}%"] * 9)
+                params.extend([f"%{search_term.lower()}%"] * 9)
         
+        base_query += " ORDER BY i.product ASC"
         cursor.execute(base_query, params)
         items = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -236,6 +260,11 @@ class InventoryItem:
         item = cursor.fetchone()
         conn.close()
         return dict(item) if item else None
+
+    @staticmethod
+    def get_movements(item_id: int) -> List[Dict]:
+        """Obtiene el historial de movimientos de un producto"""
+        return InventoryMovement.get_by_inventory(item_id)
 
     @staticmethod
     def update(

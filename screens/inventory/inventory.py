@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from typing import Callable, List, Dict, Any
 from screens.inventory.crud_inventory import CrudInventory
+from screens.inventory.adjust_inventory import AdjustInventory
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
@@ -96,15 +97,37 @@ class Inventory(tk.Frame):
         action_frame = tk.Frame(top_frame)
         action_frame.pack(side=tk.RIGHT)
 
-        btn_add = CustomButton(
+        # Botón para entrada inicial
+        btn_initial = CustomButton(
             action_frame,
-            text="Agregar",
+            text="Entrada Inicial",
             command=self.add_item,
+            padding=8,
+            width=12
+        )
+        btn_initial.pack(side=tk.RIGHT, padx=5)
+
+        # Botón para ajuste positivo
+        btn_positive = CustomButton(
+            action_frame,
+            text="Ajuste (+)",
+            command=lambda: self.adjust_item("positive"),
             padding=8,
             width=10
         )
-        btn_add.pack(side=tk.RIGHT, padx=5)
+        btn_positive.pack(side=tk.RIGHT, padx=5)
 
+        # Botón para ajuste negativo
+        btn_negative = CustomButton(
+            action_frame,
+            text="Ajuste (-)",
+            command=lambda: self.adjust_item("negative"),
+            padding=8,
+            width=10
+        )
+        btn_negative.pack(side=tk.RIGHT, padx=5)
+
+        # Botón para editar (con campos bloqueados)
         btn_edit = CustomButton(
             action_frame,
             text="Editar",
@@ -114,6 +137,7 @@ class Inventory(tk.Frame):
         )
         btn_edit.pack(side=tk.RIGHT, padx=5)
 
+        # Botón para deshabilitar
         btn_disable = CustomButton(
             action_frame,
             text="Deshabilitar",
@@ -174,8 +198,6 @@ class Inventory(tk.Frame):
 
         # Bind selection event
         self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
-
-        self.refresh_data()
 
     def on_item_selected(self, event):
         selected = self.tree.selection()
@@ -258,6 +280,7 @@ class Inventory(tk.Frame):
         self.clear_image()
 
     def refresh_data(self) -> None:
+        """Actualiza los datos del inventario desde la base de datos"""
         self.search_var.set("")
         self.search_field_var.set("Todos los campos")
         self.on_search()
@@ -267,9 +290,11 @@ class Inventory(tk.Frame):
         self.open_previous_screen_callback()
 
     def add_item(self) -> None:
+        """Abre la pantalla para entrada inicial de productos"""
         CrudInventory(self, mode="create", refresh_callback=self.refresh_data)
 
     def edit_item(self) -> None:
+        """Abre la pantalla para editar un producto (con campos bloqueados)"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
@@ -278,7 +303,36 @@ class Inventory(tk.Frame):
         item_id = self.tree.item(selected[0])['values'][0]
         CrudInventory(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
 
+    def adjust_item(self, adjustment_type: str) -> None:
+        """Abre la pantalla para ajuste positivo/negativo"""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
+            return
+            
+        item_id = self.tree.item(selected[0])['values'][0]
+        
+        # Centrar la ventana de ajuste
+        adjust_window = AdjustInventory(
+            self, 
+            adjustment_type=adjustment_type, 
+            item_id=item_id, 
+            refresh_callback=self.refresh_data
+        )
+        
+        # Calcular posición para centrar
+        window_width = 400
+        window_height = 300
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        adjust_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
     def disable_item(self) -> None:
+        """Deshabilita un producto seleccionado"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)

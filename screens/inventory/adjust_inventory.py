@@ -1,0 +1,270 @@
+import tkinter as tk
+from tkinter import messagebox
+from typing import Callable, Optional
+from sqlite_cli.models.inventory_model import InventoryItem
+from sqlite_cli.models.inventory_movement_model import InventoryMovement
+from sqlite_cli.models.movement_type_model import MovementType
+from widgets.custom_button import CustomButton
+from widgets.custom_label import CustomLabel
+from widgets.custom_entry import CustomEntry
+from utils.valdations import Validations
+
+class AdjustInventory(tk.Toplevel):
+    def __init__(
+        self, 
+        parent: tk.Widget,
+        adjustment_type: str,
+        item_id: int,
+        refresh_callback: Optional[Callable[[], None]] = None
+    ) -> None:
+        super().__init__(parent)
+        self.adjustment_type = adjustment_type
+        self.item_id = item_id
+        self.refresh_callback = refresh_callback
+        
+        self.title("Ajuste de Inventario")
+        self.geometry("400x400")
+        self.resizable(False, False)
+        
+        self.transient(parent)
+        self.grab_set()
+        
+        # Variables para los campos
+        self.quantity_var = tk.StringVar(value="0")
+        self.stock_var = tk.StringVar(value="0")
+        
+        self.configure_ui()
+        self.load_item_data()
+        self.center_window()
+
+    def center_window(self):
+        """Centra la ventana en la pantalla"""
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'+{x}+{y}')
+
+    def configure_ui(self) -> None:
+        main_frame = tk.Frame(self, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Título
+        title_text = f"Ajuste {'Positivo (+)' if self.adjustment_type == 'positive' else 'Negativo (-)'}"
+        title_label = CustomLabel(
+            main_frame,
+            text=title_text,
+            font=("Arial", 14, "bold"),
+            fg="#333"
+        )
+        title_label.pack(pady=(0, 15))
+        
+        # Info del producto
+        self.product_info_frame = tk.Frame(main_frame, bd=1, relief=tk.SOLID, padx=10, pady=10)
+        self.product_info_frame.pack(fill=tk.X, pady=5)
+        
+        self.product_label = CustomLabel(
+            self.product_info_frame,
+            text="",
+            font=("Arial", 10),
+            fg="#555",
+            justify=tk.LEFT
+        )
+        self.product_label.pack(anchor=tk.W)
+        
+        # Frame para los campos de ajuste
+        adjust_frame = tk.Frame(main_frame)
+        adjust_frame.pack(fill=tk.X, pady=10)
+        
+        # Cantidad
+        quantity_frame = tk.Frame(adjust_frame)
+        quantity_frame.pack(fill=tk.X, pady=5)
+        
+        quantity_label = CustomLabel(
+            quantity_frame,
+            text="Cambio en Cantidad:",
+            font=("Arial", 10),
+            fg="#555"
+        )
+        quantity_label.pack(side=tk.LEFT, padx=5)
+        
+        self.quantity_entry = CustomEntry(
+            quantity_frame,
+            textvariable=self.quantity_var,
+            font=("Arial", 10),
+            width=15
+        )
+        self.quantity_entry.configure(validate="key")
+        self.quantity_entry.configure(validatecommand=(
+            self.quantity_entry.register(self.validate_integer), 
+            '%P'
+        ))
+        self.quantity_entry.pack(side=tk.RIGHT, padx=5)
+        
+        # Existencias
+        stock_frame = tk.Frame(adjust_frame)
+        stock_frame.pack(fill=tk.X, pady=5)
+        
+        stock_label = CustomLabel(
+            stock_frame,
+            text="Cambio en Existencias:",
+            font=("Arial", 10),
+            fg="#555"
+        )
+        stock_label.pack(side=tk.LEFT, padx=5)
+        
+        self.stock_entry = CustomEntry(
+            stock_frame,
+            textvariable=self.stock_var,
+            font=("Arial", 10),
+            width=15
+        )
+        self.stock_entry.configure(validate="key")
+        self.stock_entry.configure(validatecommand=(
+            self.stock_entry.register(self.validate_integer), 
+            '%P'
+        ))
+        self.stock_entry.pack(side=tk.RIGHT, padx=5)
+        
+        # Notas
+        notes_frame = tk.Frame(main_frame)
+        notes_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        notes_label = CustomLabel(
+            notes_frame,
+            text="Notas/Observaciones:",
+            font=("Arial", 10),
+            fg="#555"
+        )
+        notes_label.pack(anchor=tk.W, pady=5)
+        
+        self.notes_text = tk.Text(
+            notes_frame,
+            height=5,
+            width=40,
+            wrap=tk.WORD,
+            font=("Arial", 10),
+            padx=5,
+            pady=5
+        )
+        self.notes_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Frame para los botones
+        btn_frame = tk.Frame(main_frame)
+        btn_frame.pack(pady=(15, 5))
+        
+        # Botón Aplicar
+        btn_apply = CustomButton(
+            btn_frame, 
+            text="Aplicar Ajuste", 
+            command=self.apply_adjustment,
+            padding=8,
+            width=15
+        )
+        btn_apply.pack(side=tk.LEFT, padx=5)
+        
+        # Botón Cancelar
+        btn_cancel = CustomButton(
+            btn_frame, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=8,
+            width=15
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=5)
+
+    def validate_integer(self, text: str) -> bool:
+        return Validations.validate_integer(text)
+
+    def load_item_data(self):
+        item = InventoryItem.get_by_id(self.item_id)
+        if not item:
+            messagebox.showerror("Error", "No se pudo cargar el producto", parent=self)
+            self.destroy()
+            return
+        
+        self.product_label.configure(
+            text=f"Producto: {item['product']}\n"
+                 f"Código: {item['code']}\n"
+                 f"Cantidad actual: {item['quantity']}\n"
+                 f"Existencias actuales: {item['stock']}"
+        )
+
+    def apply_adjustment(self):
+        try:
+            quantity_change = int(self.quantity_var.get())
+            stock_change = int(self.stock_var.get())
+            notes = self.notes_text.get("1.0", tk.END).strip()
+            
+            if quantity_change == 0 and stock_change == 0:
+                messagebox.showwarning("Advertencia", "Debe especificar al menos un cambio", parent=self)
+                return
+            
+            # Obtener el producto actual
+            item = InventoryItem.get_by_id(self.item_id)
+            if not item:
+                raise ValueError("Producto no encontrado")
+            
+            # Determinar el tipo de movimiento
+            if self.adjustment_type == "positive":
+                movement_type = MovementType.get_by_name("Ajuste positivo")
+                # Forzar valores positivos
+                quantity_change = abs(quantity_change)
+                stock_change = abs(stock_change)
+            else:
+                movement_type = MovementType.get_by_name("Ajuste negativo")
+                # Forzar valores negativos
+                quantity_change = -abs(quantity_change)
+                stock_change = -abs(stock_change)
+            
+            if not movement_type:
+                raise ValueError("Tipo de movimiento no encontrado")
+            
+            # Calcular nuevos valores
+            new_quantity = item['quantity'] + quantity_change
+            new_stock = item['stock'] + stock_change
+            
+            # Validar que no queden valores negativos
+            if new_quantity < 0 or new_stock < 0:
+                messagebox.showwarning("Advertencia", "Los valores resultantes no pueden ser negativos", parent=self)
+                return
+            
+            # Actualizar el inventario
+            InventoryItem.update(
+                item_id=self.item_id,
+                code=item['code'],
+                product=item['product'],
+                quantity=new_quantity,
+                stock=new_stock,
+                min_stock=item['min_stock'],
+                max_stock=item['max_stock'],
+                price=item['price'],
+                supplier_id=item.get('supplier_id'),
+                expiration_date=item.get('expiration_date'),
+                image_path=item.get('image_path')
+            )
+            
+            # Registrar el movimiento en el historial
+            InventoryMovement.create(
+                inventory_id=self.item_id,
+                movement_type_id=movement_type['id'],
+                quantity_change=quantity_change,
+                stock_change=stock_change,
+                previous_quantity=item['quantity'],
+                new_quantity=new_quantity,
+                previous_stock=item['stock'],
+                new_stock=new_stock,
+                user_id=1,  # TODO: Reemplazar con ID de usuario real
+                notes=notes
+            )
+            
+            messagebox.showinfo("Éxito", "Ajuste aplicado correctamente", parent=self)
+            if self.refresh_callback:
+                self.refresh_callback()
+            self.destroy()
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Valor inválido: {str(e)}", parent=self)
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo aplicar el ajuste: {str(e)}", parent=self)

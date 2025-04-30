@@ -70,10 +70,10 @@ class CrudInventory(tk.Toplevel):
         
         # Campos del formulario
         fields = [
-            ("Código:", self.code_var, 'text', not (self.mode == "edit")),
+            ("Código:", self.code_var, 'text', not (self.mode == "edit")),  # Código no editable en edición
             ("Producto:", self.product_var, 'text', True),
-            ("Cantidad:", self.quantity_var, 'number', True),
-            ("Existencias:", self.stock_var, 'number', True),
+            ("Cantidad:", self.quantity_var, 'number', self.mode == "create"),  # Solo editable en creación
+            ("Existencias:", self.stock_var, 'number', self.mode == "create"),  # Solo editable en creación
             ("Stock mínimo:", self.min_stock_var, 'number', True),
             ("Stock máximo:", self.max_stock_var, 'number', True),
             ("Precio:", self.price_var, 'decimal', True),
@@ -200,6 +200,19 @@ class CrudInventory(tk.Toplevel):
         # Etiqueta para mostrar la imagen
         self.image_label = tk.Label(img_container, bg='white', width=300, height=300)
         self.image_label.pack(fill=tk.BOTH, expand=True)
+        
+        # Mensaje informativo si estamos en modo edición
+        if self.mode == "edit":
+            info_frame = tk.Frame(form_frame)
+            info_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(10, 0))
+            
+            info_label = CustomLabel(
+                info_frame,
+                text="Nota: Para modificar cantidad/existencias, use los botones de ajuste",
+                font=("Arial", 9),
+                fg="#666"
+            )
+            info_label.pack()
 
     def validate_date_input(self, new_text: str, action_code: str, index: str, char: str) -> bool:
         """
