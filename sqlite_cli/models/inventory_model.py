@@ -58,6 +58,8 @@ class InventoryItem:
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Primero insertamos el producto
         cursor.execute('''
             INSERT INTO inventory (
                 code, product, quantity, stock, min_stock, max_stock, price, 
@@ -68,23 +70,33 @@ class InventoryItem:
             supplier_id, expiration_date, saved_image_path
         ))
         
-        # Registrar movimiento de entrada inicial
+        # Obtenemos el ID del producto recién creado
         item_id = cursor.lastrowid
-        movement_type = MovementType.get_by_name("Entrada inicial")
+        
+        # Buscamos el tipo de movimiento "Entrada inicial"
+        cursor.execute("SELECT id FROM movement_types WHERE name = 'Entrada inicial'")
+        movement_type = cursor.fetchone()
         
         if movement_type:
-            InventoryMovement.create(
-                inventory_id=item_id,
-                movement_type_id=movement_type['id'],
-                quantity_change=quantity,
-                stock_change=stock,
-                previous_quantity=0,
-                new_quantity=quantity,
-                previous_stock=0,
-                new_stock=stock,
-                user_id=1,  # TODO: Reemplazar con ID de usuario real
-                notes="Entrada inicial del producto"
-            )
+            # Insertamos directamente el movimiento de inventario
+            cursor.execute('''
+                INSERT INTO inventory_movements (
+                    inventory_id, movement_type_id, quantity_change, stock_change,
+                    previous_quantity, new_quantity, previous_stock, new_stock,
+                    user_id, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                item_id, 
+                movement_type['id'], 
+                quantity, 
+                stock,
+                0,  # previous_quantity
+                quantity,  # new_quantity
+                0,  # previous_stock
+                stock,  # new_stock
+                1,  # TODO: Reemplazar con ID de usuario real
+                "Entrada inicial del producto"
+            ))
         
         conn.commit()
         conn.close()

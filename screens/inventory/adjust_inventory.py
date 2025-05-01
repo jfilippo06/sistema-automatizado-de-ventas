@@ -8,6 +8,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from utils.valdations import Validations
+from utils.session_manager import SessionManager
 
 class AdjustInventory(tk.Toplevel):
     def __init__(
@@ -23,8 +24,8 @@ class AdjustInventory(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Ajuste de Inventario")
-        self.geometry("400x400")
-        self.resizable(False, False)
+        self.geometry("500x500")  # Tamaño inicial adecuado
+        self.minsize(400, 450)   # Tamaño mínimo permitido
         
         self.transient(parent)
         self.grab_set()
@@ -141,7 +142,7 @@ class AdjustInventory(tk.Toplevel):
         
         self.notes_text = tk.Text(
             notes_frame,
-            height=5,
+            height=2,
             width=40,
             wrap=tk.WORD,
             font=("Arial", 10),
@@ -150,29 +151,26 @@ class AdjustInventory(tk.Toplevel):
         )
         self.notes_text.pack(fill=tk.BOTH, expand=True)
         
-        # Frame para los botones
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.pack(pady=(15, 5))
-        
+        # Botones directamente debajo de las notas
         # Botón Aplicar
         btn_apply = CustomButton(
-            btn_frame, 
+            main_frame,
             text="Aplicar Ajuste", 
             command=self.apply_adjustment,
             padding=8,
             width=15
         )
-        btn_apply.pack(side=tk.LEFT, padx=5)
+        btn_apply.pack(side=tk.RIGHT, padx=5, pady=(0, 10))
         
         # Botón Cancelar
         btn_cancel = CustomButton(
-            btn_frame, 
+            main_frame,
             text="Cancelar", 
             command=self.destroy,
             padding=8,
             width=15
         )
-        btn_cancel.pack(side=tk.LEFT, padx=5)
+        btn_cancel.pack(side=tk.RIGHT, padx=5, pady=(0, 10))
 
     def validate_integer(self, text: str) -> bool:
         return Validations.validate_integer(text)
@@ -206,15 +204,15 @@ class AdjustInventory(tk.Toplevel):
             if not item:
                 raise ValueError("Producto no encontrado")
             
-            # Determinar el tipo de movimiento
+            # Determinar el tipo de movimiento y referencia
             if self.adjustment_type == "positive":
                 movement_type = MovementType.get_by_name("Ajuste positivo")
-                # Forzar valores positivos
+                reference_type = "positive_adjustment"
                 quantity_change = abs(quantity_change)
                 stock_change = abs(stock_change)
             else:
                 movement_type = MovementType.get_by_name("Ajuste negativo")
-                # Forzar valores negativos
+                reference_type = "negative_adjustment"
                 quantity_change = -abs(quantity_change)
                 stock_change = -abs(stock_change)
             
@@ -229,6 +227,11 @@ class AdjustInventory(tk.Toplevel):
             if new_quantity < 0 or new_stock < 0:
                 messagebox.showwarning("Advertencia", "Los valores resultantes no pueden ser negativos", parent=self)
                 return
+            
+            # Obtener ID de usuario de la sesión
+            user_id = SessionManager.get_user_id()
+            if not user_id:
+                raise ValueError("No se pudo obtener el ID del usuario")
             
             # Actualizar el inventario
             InventoryItem.update(
@@ -255,7 +258,9 @@ class AdjustInventory(tk.Toplevel):
                 new_quantity=new_quantity,
                 previous_stock=item['stock'],
                 new_stock=new_stock,
-                user_id=1,  # TODO: Reemplazar con ID de usuario real
+                user_id=user_id,
+                reference_id=self.item_id,
+                reference_type=reference_type,
                 notes=notes
             )
             

@@ -103,7 +103,7 @@ class Inventory(tk.Frame):
             text="Entrada Inicial",
             command=self.add_item,
             padding=8,
-            width=12
+            width=14
         )
         btn_initial.pack(side=tk.RIGHT, padx=5)
 
