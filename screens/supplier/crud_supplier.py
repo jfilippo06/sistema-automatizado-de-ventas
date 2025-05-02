@@ -15,6 +15,7 @@ class CrudSupplier(tk.Toplevel):
         parent: tk.Widget, 
         mode: str = "create", 
         supplier_id: Optional[int] = None, 
+        initial_id_number: Optional[str] = None,  # Nuevo parámetro
         refresh_callback: Optional[Callable[[], None]] = None
     ) -> None:
         super().__init__(parent)
@@ -31,7 +32,7 @@ class CrudSupplier(tk.Toplevel):
         
         # Variables para los campos
         self.code_var = tk.StringVar()
-        self.id_number_var = tk.StringVar()
+        self.id_number_var = tk.StringVar(value=initial_id_number if initial_id_number else "")  # Usamos initial_id_number aquí
         self.first_name_var = tk.StringVar()
         self.last_name_var = tk.StringVar()
         self.address_var = tk.StringVar()

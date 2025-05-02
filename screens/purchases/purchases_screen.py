@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
+from sqlite_cli.models.purchase_model import Purchase
+from utils.session_manager import SessionManager
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -356,7 +358,7 @@ class PurchasesScreen(tk.Frame):
 
     def checkout(self) -> None:
         if not self.current_supplier:
-            messagebox.showwarning("Advertencia", "Debe seleccionar un proveedor para realizar la venta", parent=self)
+            messagebox.showwarning("Advertencia", "Debe seleccionar un proveedor para realizar la compra", parent=self)
             return
             
         if not self.cart_items:
@@ -364,8 +366,8 @@ class PurchasesScreen(tk.Frame):
             return
             
         response = messagebox.askyesno(
-            "Confirmar Venta", 
-            "¿Está seguro que desea realizar la venta?",
+            "Confirmar Compra", 
+            "¿Está seguro que desea realizar la compra?",
             parent=self
         )
         
@@ -382,13 +384,25 @@ class PurchasesScreen(tk.Frame):
                     
                 total = subtotal + taxes
                 
-                # TODO: Implementar la lógica para registrar la venta
-                # Aquí deberías crear un registro de venta en la base de datos
+                # Obtener ID del usuario actual
+                user_id = SessionManager.get_user_id()
+                if not user_id:
+                    raise ValueError("Usuario no autenticado")
+                
+                # Registrar la compra
+                purchase_id = Purchase.create_complete_purchase(
+                    supplier_id=self.current_supplier['id'],
+                    user_id=user_id,
+                    subtotal=subtotal,
+                    taxes=taxes,
+                    total=total,
+                    items=self.cart_items
+                )
                 
                 # Mostrar mensaje de éxito
                 messagebox.showinfo(
                     "Éxito", 
-                    f"Venta realizada correctamente\nTotal: {total:.2f}",
+                    f"Compra realizada correctamente\nNúmero de compra: {purchase_id}\nTotal: {total:.2f}",
                     parent=self
                 )
                 
@@ -400,7 +414,7 @@ class PurchasesScreen(tk.Frame):
             except Exception as e:
                 messagebox.showerror(
                     "Error", 
-                    f"No se pudo completar la venta: {str(e)}", 
+                    f"No se pudo completar la compra: {str(e)}", 
                     parent=self
                 )
 
@@ -432,16 +446,24 @@ class PurchasesScreen(tk.Frame):
             messagebox.showerror("Error", f"No se pudo buscar el proveedor: {str(e)}", parent=self)
 
     def update_supplier_products_tree(self) -> None:
+        # Limpiar la tabla
         for item in self.supplier_products_tree.get_children():
             self.supplier_products_tree.delete(item)
-            
+        
         if not self.current_supplier:
             return
-            
-        # Buscar productos que tengan este proveedor asociado
-        items = InventoryItem.search_active(field="Proveedor", search_term=str(self.current_supplier['id']))
         
-        for item in items:
+        # Obtener todos los productos activos
+        all_products = InventoryItem.search_active()
+        
+        # Filtrar los productos que pertenecen al proveedor actual
+        supplier_products = [
+            p for p in all_products 
+            if p.get('supplier_id') == self.current_supplier['id']
+        ]
+        
+        # Mostrar los productos en la tabla
+        for item in supplier_products:
             self.supplier_products_tree.insert("", tk.END, values=(
                 item['id'],
                 item['code'],
@@ -452,7 +474,7 @@ class PurchasesScreen(tk.Frame):
                 f"{float(item['price']):.2f}" if item['price'] else "0.00"
             ))
         
-        self.status_bar.configure(text=f"Mostrando {len(items)} productos del proveedor")
+        self.status_bar.configure(text=f"Mostrando {len(supplier_products)} productos del proveedor")
 
     def register_new_supplier(self, id_number: str) -> None:
         def on_supplier_created():
@@ -461,7 +483,7 @@ class PurchasesScreen(tk.Frame):
         CrudSupplier(
             self,
             mode="create",
-            initial_id_number=id_number,
+            initial_id_number=id_number,  # Pasar el id_number aquí
             refresh_callback=on_supplier_created
         )
 
