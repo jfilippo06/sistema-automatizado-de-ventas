@@ -328,13 +328,18 @@ class PurchasesScreen(tk.Frame):
         self.search_var.set("")
         self.search_field_var.set("Todos los campos")
         self.supplier_id_var.set("")
-        self.lbl_supplier_info.configure(text="")
+        self.lbl_supplier_info.configure(text="Seleccione un proveedor")
         self.current_supplier = None
         self.cart_items = []
-        self.update_supplier_products_tree()
+        
+        # Limpiar tablas
+        self.supplier_products_tree.delete(*self.supplier_products_tree.get_children())
         self.update_cart_tree()
         self.on_search()
         self.update_totals()
+        
+        # Enfocar en campo de búsqueda
+        self.entry_supplier.focus_set()
 
     def cancel_purchase(self) -> None:
         if not self.cart_items:
@@ -421,19 +426,22 @@ class PurchasesScreen(tk.Frame):
     def search_supplier(self) -> None:
         id_number = self.supplier_id_var.get().strip()
         if not id_number:
-            messagebox.showwarning("Advertencia", "Ingrese una cédula/RIF para buscar", parent=self)
+            messagebox.showwarning("Advertencia", "Ingrese una cédula para buscar", parent=self)
+            self.entry_supplier.focus_set()
             return
         
         try:
             supplier = Supplier.get_by_id_number(id_number)
             if supplier:
                 self.current_supplier = supplier
-                # Mostrar nombre de la empresa o nombre del proveedor si no tiene empresa
                 supplier_name = supplier.get('company') or f"{supplier.get('first_name', '')} {supplier.get('last_name', '')}"
                 self.lbl_supplier_info.configure(
                     text=f"{supplier_name} - {supplier.get('id_number', '')}"
                 )
                 self.update_supplier_products_tree()
+                # Habilitar interacción con productos
+                self.products_tree.bind("<Button-1>", self.on_product_click)
+                self.supplier_products_tree.bind("<Button-1>", self.on_supplier_product_click)
             else:
                 response = messagebox.askyesno(
                     "Proveedor no encontrado", 
@@ -476,18 +484,48 @@ class PurchasesScreen(tk.Frame):
         
         self.status_bar.configure(text=f"Mostrando {len(supplier_products)} productos del proveedor")
 
-    def register_new_supplier(self, id_number: str) -> None:
-        def on_supplier_created():
-            self.search_supplier()  # Volver a buscar después de crear
-
-        CrudSupplier(
-            self,
-            mode="create",
-            initial_id_number=id_number,  # Pasar el id_number aquí
-            refresh_callback=on_supplier_created
-        )
+    def search_supplier(self) -> None:
+        id_number = self.supplier_id_var.get().strip()
+        if not id_number:
+            messagebox.showwarning(
+                "Campo requerido",
+                "Por favor ingrese la cédula/RIF del proveedor para buscar",
+                parent=self
+            )
+            self.entry_supplier.focus_set()
+            return
+        
+        try:
+            supplier = Supplier.get_by_id_number(id_number)
+            if supplier:
+                self.current_supplier = supplier
+                supplier_name = supplier.get('company') or f"{supplier.get('first_name', '')} {supplier.get('last_name', '')}"
+                self.lbl_supplier_info.configure(
+                    text=f"{supplier_name} - {supplier.get('id_number', '')}"
+                )
+                self.update_supplier_products_tree()
+            else:
+                response = messagebox.askyesno(
+                    "Proveedor no encontrado", 
+                    "No existe un proveedor con esta cédula/RIF.\n\n"
+                    "¿Desea registrar un nuevo proveedor ahora?",
+                    parent=self
+                )
+                if response:
+                    self.register_new_supplier(id_number)
+                    
+        except Exception as e:
+            messagebox.showerror(
+                "Error en búsqueda",
+                f"No se pudo completar la búsqueda:\n{str(e)}",
+                parent=self
+            )
 
     def on_supplier_product_click(self, event) -> None:
+        if not self.current_supplier:
+            self.show_no_supplier_warning()
+            return
+            
         selected = self.supplier_products_tree.identify_row(event.y)
         if not selected:
             return
@@ -496,6 +534,10 @@ class PurchasesScreen(tk.Frame):
         self.show_product_quantity_dialog(item_data)
 
     def on_product_click(self, event) -> None:
+        if not self.current_supplier:
+            self.show_no_supplier_warning()
+            return
+            
         selected = self.products_tree.identify_row(event.y)
         if not selected:
             return
@@ -503,12 +545,23 @@ class PurchasesScreen(tk.Frame):
         item_data = self.products_tree.item(selected)['values']
         self.show_product_quantity_dialog(item_data)
 
+    def show_no_supplier_warning(self) -> None:
+        messagebox.showwarning(
+            "Proveedor requerido", 
+            "Debe seleccionar un proveedor antes de agregar productos al carrito.\n\n"
+            "Por favor:\n"
+            "1. Ingrese la cédula/RIF del proveedor\n"
+            "2. Haga click en 'Buscar'\n"
+            "3. Si no existe, regístrelo con el botón 'Buscar'",
+            parent=self
+        )
+        self.entry_supplier.focus_set()
+        self.entry_supplier.selection_range(0, tk.END)
+
     def show_product_quantity_dialog(self, item_data) -> None:
         item_id = item_data[0]
         product_name = item_data[2]
         stock = int(item_data[3])
-        min_stock = int(item_data[4])
-        max_stock = int(item_data[5])
         price = float(item_data[6])
         
         # Verificar si el producto ya está en el carrito
@@ -520,7 +573,7 @@ class PurchasesScreen(tk.Frame):
         
         # Calcular posición para centrar la ventana
         window_width = 350
-        window_height = 325
+        window_height = 250  # Reducida al eliminar elementos
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         center_x = int(screen_width/2 - window_width/2)
@@ -550,12 +603,6 @@ class PurchasesScreen(tk.Frame):
         
         tk.Label(
             main_frame, 
-            text=f"Rango permitido: {min_stock} - {max_stock}",
-            font=("Arial", 10)
-        ).pack(pady=5)
-        
-        tk.Label(
-            main_frame, 
             text=f"Precio unitario: {price:.2f}",
             font=("Arial", 10)
         ).pack(pady=5)
@@ -568,9 +615,10 @@ class PurchasesScreen(tk.Frame):
             quantity_frame, 
             text="Cantidad:",
             font=("Arial", 10)
-        ).pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT, padx=5)
         
-        quantity_var = tk.StringVar(value=str(min_stock if not existing_item else existing_item['quantity']))
+        # Siempre mostrar 1 como valor inicial
+        quantity_var = tk.StringVar(value="1")
         quantity_entry = CustomEntry(
             quantity_frame,
             textvariable=quantity_var,
@@ -585,18 +633,11 @@ class PurchasesScreen(tk.Frame):
             try:
                 quantity = int(quantity_var.get())
                 
-                if quantity < min_stock:
+                # Validación básica
+                if quantity < 1:
                     messagebox.showwarning(
                         "Advertencia", 
-                        f"La cantidad mínima permitida es {min_stock}", 
-                        parent=quantity_window
-                    )
-                    return
-                    
-                if quantity > max_stock:
-                    messagebox.showwarning(
-                        "Advertencia", 
-                        f"La cantidad máxima permitida es {max_stock}", 
+                        "La cantidad mínima permitida es 1", 
                         parent=quantity_window
                     )
                     return
