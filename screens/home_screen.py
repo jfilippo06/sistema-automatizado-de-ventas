@@ -18,7 +18,8 @@ class HomeScreen(tk.Frame):
         open_maintenance_callback: Callable[[], None],
         open_recovery_callback: Callable[[], None],
         open_billing_callback: Callable[[], None],
-        open_reports_callback: Callable[[], None]  # Nuevo callback para reportes
+        open_reports_callback: Callable[[], None],
+        open_purchases_callback: Callable[[], None]
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -32,7 +33,8 @@ class HomeScreen(tk.Frame):
         self.open_maintenance_callback = open_maintenance_callback
         self.open_recovery_callback = open_recovery_callback
         self.open_billing_callback = open_billing_callback
-        self.open_reports_callback = open_reports_callback  # Nuevo callback
+        self.open_reports_callback = open_reports_callback
+        self.open_purchases_callback = open_purchases_callback
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()
@@ -64,8 +66,8 @@ class HomeScreen(tk.Frame):
         buttons = [
             ("Gestión de proveedores", self.suppliers_control),
             ("Inventario de productos", self.inventory_control),
-            ("Gestión de ventas", self.purchases_module),
-            ("Reportes", self.reports_control),  # Modificado para usar el nuevo callback
+            ("Gestión de ventas", self.purchases_control),
+            ("Reportes", self.reports_control),
             ("Facturación", self.billing_control),
             ("Gestión de clientes", self.customers_control),
             ("Solicitudes de servicio", self.service_requests_control),
@@ -102,10 +104,10 @@ class HomeScreen(tk.Frame):
     def inventory_control(self) -> None:
         self.open_inventory_callback()
 
-    def purchases_module(self) -> None:
-        print("Function: Módulo de compras")
+    def purchases_control(self) -> None:
+        self.open_purchases_callback()
 
-    def reports_control(self) -> None:  # Nueva función
+    def reports_control(self) -> None:
         self.open_reports_callback()
 
     def billing_control(self) -> None:

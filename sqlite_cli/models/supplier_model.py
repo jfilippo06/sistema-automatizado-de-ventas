@@ -196,3 +196,18 @@ class Supplier:
         ''', (status_id, supplier_id))
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def get_by_id_number(id_number: str) -> Optional[Dict]:
+        """Obtiene un proveedor por su número de cédula/RIF"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT s.*, st.name as status_name 
+            FROM suppliers s
+            JOIN status st ON s.status_id = st.id
+            WHERE s.id_number = ?
+        ''', (id_number,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
