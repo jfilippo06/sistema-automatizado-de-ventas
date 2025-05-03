@@ -26,6 +26,7 @@ class Inventory(tk.Frame):
     def pack(self, **kwargs: Any) -> None:
         self.parent.state('zoomed')
         super().pack(fill=tk.BOTH, expand=True)
+        self.refresh_data()
 
     def configure_ui(self) -> None:
         # Header con título
