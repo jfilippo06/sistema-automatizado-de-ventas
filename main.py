@@ -18,7 +18,7 @@ from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
-from screens.purchases.purchases_screen import PurchasesScreen
+from screens.sales.sales_screen import SalesScreen
 from utils.session_manager import SessionManager
 
 def main() -> None:
@@ -49,7 +49,7 @@ def main() -> None:
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
         reports_screen.pack_forget()
-        purchases_screen.pack_forget()
+        sales_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -71,7 +71,7 @@ def main() -> None:
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
         reports_screen.pack_forget()
-        purchases_screen.pack_forget()
+        sales_screen.pack_forget()
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -131,7 +131,7 @@ def main() -> None:
 
     def open_purchases() -> None:
         home_screen.pack_forget()
-        purchases_screen.pack(fill=tk.BOTH, expand=True)
+        sales_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para recuperación
     def open_recovery_suppliers() -> None:
@@ -204,7 +204,7 @@ def main() -> None:
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_home_from_purchases() -> None:
-        purchases_screen.pack_forget()
+        sales_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para regresar desde pantallas de recuperación
@@ -267,7 +267,7 @@ def main() -> None:
     recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
     billing_screen = BillingScreen(app, open_home_from_billing)
     reports_screen = ReportsScreen(app, open_home_from_reports)
-    purchases_screen = PurchasesScreen(app, open_home_from_purchases)
+    sales_screen = SalesScreen(app, open_home_from_purchases)
 
     # Mostrar pantalla inicial basada en autenticación
     check_auth_and_show_home()

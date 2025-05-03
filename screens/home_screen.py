@@ -66,7 +66,7 @@ class HomeScreen(tk.Frame):
         buttons = [
             ("Gestión de proveedores", self.suppliers_control),
             ("Inventario de productos", self.inventory_control),
-            ("Gestión de ventas", self.purchases_control),
+            ("Gestión de compras", self.purchases_control),
             ("Reportes", self.reports_control),
             ("Facturación", self.billing_control),
             ("Gestión de clientes", self.customers_control),

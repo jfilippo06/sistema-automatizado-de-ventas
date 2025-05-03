@@ -8,7 +8,7 @@ from sqlite_cli.models.inventory_movement_model import InventoryMovement
 from sqlite_cli.models.movement_type_model import MovementType
 from utils.session_manager import SessionManager
 
-class Purchase:
+class Sales:
     BUSY_TIMEOUT = 5000  # 5 segundos (en milisegundos)
     MAX_RETRIES = 3      # Intentos máximos por operación
 
@@ -20,12 +20,12 @@ class Purchase:
 
         conn = sqlite3.connect(
             db_path,
-            timeout=Purchase.BUSY_TIMEOUT / 1000,
+            timeout=Sales.BUSY_TIMEOUT / 1000,
             isolation_level=None,
             check_same_thread=False
         )
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute(f"PRAGMA busy_timeout={Purchase.BUSY_TIMEOUT}")
+        conn.execute(f"PRAGMA busy_timeout={Sales.BUSY_TIMEOUT}")
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -37,13 +37,23 @@ class Purchase:
     ) -> Union[List[Dict], int, None]:
         """
         Ejecuta una consulta SQL con manejo de errores y reintentos.
+        
+        Args:
+            query: Consulta SQL a ejecutar
+            params: Parámetros para la consulta
+            fetch: Si es True, retorna los resultados
+            
+        Returns:
+            - Lista de diccionarios si fetch=True
+            - ID del último registro si es INSERT
+            - None para otras operaciones
         """
         conn = None
         last_exception = None
         
-        for attempt in range(Purchase.MAX_RETRIES):
+        for attempt in range(Sales.MAX_RETRIES):
             try:
-                conn = Purchase.get_db_connection()
+                conn = Sales.get_db_connection()
                 cursor = conn.cursor()
                 
                 if params:
@@ -64,7 +74,7 @@ class Purchase:
                 
             except sqlite3.OperationalError as e:
                 last_exception = e
-                if "locked" in str(e).lower() and attempt < Purchase.MAX_RETRIES - 1:
+                if "locked" in str(e).lower() and attempt < Sales.MAX_RETRIES - 1:
                     time.sleep(0.2 * (attempt + 1))
                     continue
                 raise last_exception
@@ -82,60 +92,65 @@ class Purchase:
     ) -> int:
         """
         Crea una compra completa, trabajando secuencialmente:
-        1. Registra la compra principal
-        2. Procesa cada item (detalle + inventario + movimiento)
+        1. Registra la compra principal en invoices (como tipo compra)
+        2. Procesa cada item (detalle en invoice_details + inventario + movimiento)
         """
-        # 1. Registrar compra principal
-        purchase_id = Purchase._create_purchase(supplier_id, subtotal, taxes, total)
+        # 1. Registrar compra principal (como factura con tipo 'purchase')
+        invoice_id = Sales._create_purchase_invoice(supplier_id, subtotal, taxes, total)
         
         # 2. Procesar cada item secuencialmente
         for item in items:
-            Purchase._process_purchase_item(purchase_id, item)
+            Sales._process_purchase_item(invoice_id, item)
         
-        return purchase_id
+        return invoice_id
 
     @staticmethod
-    def _create_purchase(
+    def _create_purchase_invoice(
         supplier_id: int,
         subtotal: float,
         taxes: float,
         total: float
     ) -> int:
-        """Registra la compra principal en la tabla 'purchases'."""
-        status_id = Purchase._get_status_id("Completed")
-        purchase_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Registra la compra principal en la tabla 'invoices'."""
+        # Usamos el customer_id para almacenar el supplier_id ya que la tabla invoices
+        # está diseñada para clientes, pero la reutilizaremos para compras
+        status_id = Sales._get_invoice_status_id("Paid")
+        issue_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        return Purchase._execute_sql(
+        return Sales._execute_sql(
             '''
-            INSERT INTO purchases (
-                supplier_id, purchase_date, subtotal, taxes, total, status_id
+            INSERT INTO invoices (
+                customer_id, issue_date, subtotal, taxes, total, status_id
             ) VALUES (?, ?, ?, ?, ?, ?)
             ''',
-            (supplier_id, purchase_date, subtotal, taxes, total, status_id)
+            (supplier_id, issue_date, subtotal, taxes, total, status_id)
         )
 
     @staticmethod
     def _process_purchase_item(purchase_id: int, item: Dict) -> None:
         """Procesa un item completo (detalle + inventario + movimiento)."""
         # 1. Registrar detalle
-        Purchase._create_purchase_detail(purchase_id, item)
+        Sales._create_purchase_detail(purchase_id, item)
         
-        # 2. Actualizar inventario (aumentar stock)
+        # 2. Actualizar solo quantity (no stock)
         product = InventoryItem.get_by_id(item['id'])
         if not product:
             raise ValueError(f"Producto ID {item['id']} no encontrado")
         
         new_quantity = product['quantity'] + item['quantity']
-        new_stock = product['stock'] + item['quantity']
         
-        Purchase._update_inventory(item['id'], new_quantity, new_stock)
+        Sales._update_inventory(
+            product_id=item['id'],
+            new_quantity=new_quantity,
+            new_stock=product['stock']  # Mantener el stock igual
+        )
         
-        # 3. Registrar movimiento (entrada)
+        # 3. Registrar movimiento (solo cambio en quantity)
         user_id = SessionManager.get_user_id()
         if not user_id:
             raise ValueError("Usuario no autenticado")
         
-        movement_type = MovementType.get_by_name("Entrada por compra")
+        movement_type = MovementType.get_by_name("Compra")
         if not movement_type:
             raise ValueError("Tipo de movimiento 'Entrada por compra' no encontrado")
         
@@ -143,11 +158,11 @@ class Purchase:
             inventory_id=item['id'],
             movement_type_id=movement_type['id'],
             quantity_change=item['quantity'],
-            stock_change=item['quantity'],
+            stock_change=0,  # No cambia el stock
             previous_quantity=product['quantity'],
             new_quantity=new_quantity,
             previous_stock=product['stock'],
-            new_stock=new_stock,
+            new_stock=product['stock'],  # Stock permanece igual
             reference_id=purchase_id,
             reference_type="purchase",
             user_id=user_id,
@@ -155,36 +170,35 @@ class Purchase:
         )
 
     @staticmethod
-    def _create_purchase_detail(purchase_id: int, item: Dict) -> None:
-        """Registra un detalle de compra en 'purchase_details'."""
-        Purchase._execute_sql(
+    def _create_purchase_detail(invoice_id: int, item: Dict) -> None:
+        """Registra un detalle de compra en 'invoice_details'."""
+        Sales._execute_sql(
             '''
-            INSERT INTO purchase_details (
-                purchase_id, product_id, quantity, unit_price, subtotal
+            INSERT INTO invoice_details (
+                invoice_id, product_id, quantity, unit_price, subtotal
             ) VALUES (?, ?, ?, ?, ?)
             ''',
-            (purchase_id, item['id'], item['quantity'], item['unit_price'], item['total'])
+            (invoice_id, item['id'], item['quantity'], item['unit_price'], item['total'])
         )
 
     @staticmethod
     def _update_inventory(product_id: int, new_quantity: int, new_stock: int) -> None:
-        """Actualiza el inventario para un producto."""
-        Purchase._execute_sql(
+        """Actualiza solo la cantidad en el inventario."""
+        Sales._execute_sql(
             '''
             UPDATE inventory SET
                 quantity = ?,
-                stock = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             ''',
-            (new_quantity, new_stock, product_id)
+            (new_quantity, product_id)
         )
 
     @staticmethod
-    def _get_status_id(status_name: str) -> int:
-        """Obtiene el ID de un estado de compra."""
-        result = Purchase._execute_sql(
-            "SELECT id FROM purchase_status WHERE name = ? LIMIT 1",
+    def _get_invoice_status_id(status_name: str) -> int:
+        """Obtiene el ID de un estado de factura."""
+        result = Sales._execute_sql(
+            "SELECT id FROM invoice_status WHERE name = ? LIMIT 1",
             (status_name,),
             fetch=True
         )
@@ -195,17 +209,17 @@ class Purchase:
     @staticmethod
     def get_by_id(purchase_id: int) -> Optional[Dict]:
         """Obtiene una compra por su ID con información del proveedor."""
-        result = Purchase._execute_sql(
+        result = Sales._execute_sql(
             '''
             SELECT 
-                p.*,
+                i.*,
                 s.company as supplier_name,
                 s.id_number as supplier_id_number,
                 st.name as status_name
-            FROM purchases p
-            JOIN suppliers s ON p.supplier_id = s.id
-            JOIN purchase_status st ON p.status_id = st.id
-            WHERE p.id = ?
+            FROM invoices i
+            JOIN suppliers s ON i.customer_id = s.id
+            JOIN invoice_status st ON i.status_id = st.id
+            WHERE i.id = ?
             ''',
             (purchase_id,),
             fetch=True
@@ -215,15 +229,15 @@ class Purchase:
     @staticmethod
     def get_details(purchase_id: int) -> List[Dict]:
         """Obtiene los detalles de una compra con información de productos."""
-        return Purchase._execute_sql(
+        return Sales._execute_sql(
             '''
             SELECT 
                 d.*,
-                i.product as product_name,
-                i.code as product_code
-            FROM purchase_details d
-            JOIN inventory i ON d.product_id = i.id
-            WHERE d.purchase_id = ?
+                inv.product as product_name,
+                inv.code as product_code
+            FROM invoice_details d
+            JOIN inventory inv ON d.product_id = inv.id
+            WHERE d.invoice_id = ?
             ''',
             (purchase_id,),
             fetch=True
@@ -232,15 +246,15 @@ class Purchase:
     @staticmethod
     def update_status(purchase_id: int, new_status: str) -> bool:
         """Actualiza el estado de una compra."""
-        valid_statuses = ["Completed", "Pending", "Cancelled", "Partial"]
+        valid_statuses = ["Paid", "Pending", "Cancelled", "Partial"]
         if new_status not in valid_statuses:
             raise ValueError(f"Estado inválido. Opciones: {', '.join(valid_statuses)}")
         
-        status_id = Purchase._get_status_id(new_status)
+        status_id = Sales._get_invoice_status_id(new_status)
         
-        Purchase._execute_sql(
+        Sales._execute_sql(
             '''
-            UPDATE purchases
+            UPDATE invoices
             SET status_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             ''',
@@ -248,14 +262,14 @@ class Purchase:
         )
         
         if new_status == "Cancelled":
-            Purchase._handle_cancellation(purchase_id)
+            Sales._handle_cancellation(purchase_id)
         
         return True
 
     @staticmethod
     def _handle_cancellation(purchase_id: int) -> None:
         """Maneja la lógica de cancelación de compras."""
-        details = Purchase.get_details(purchase_id)
+        details = Sales.get_details(purchase_id)
         user_id = SessionManager.get_user_id()
         if not user_id:
             raise ValueError("Usuario no autenticado")
@@ -276,7 +290,7 @@ class Purchase:
             if new_quantity < 0 or new_stock < 0:
                 raise ValueError(f"No se puede cancelar - stock insuficiente para el producto ID {detail['product_id']}")
             
-            Purchase._update_inventory(detail['product_id'], new_quantity, new_stock)
+            Sales._update_inventory(detail['product_id'], new_quantity, new_stock)
             
             InventoryMovement.create(
                 inventory_id=detail['product_id'],
@@ -304,18 +318,18 @@ class Purchase:
         """Busca compras con filtros opcionales."""
         query = '''
             SELECT 
-                p.*,
+                i.*,
                 s.company as supplier_name,
                 st.name as status_name
-            FROM purchases p
-            JOIN suppliers s ON p.supplier_id = s.id
-            JOIN purchase_status st ON p.status_id = st.id
+            FROM invoices i
+            JOIN suppliers s ON i.customer_id = s.id
+            JOIN invoice_status st ON i.status_id = st.id
             WHERE 1=1
         '''
         params = []
         
         if supplier_id:
-            query += " AND p.supplier_id = ?"
+            query += " AND i.customer_id = ?"
             params.append(supplier_id)
         
         if status:
@@ -323,18 +337,18 @@ class Purchase:
             params.append(status)
         
         if start_date:
-            query += " AND DATE(p.purchase_date) >= ?"
+            query += " AND DATE(i.issue_date) >= ?"
             params.append(start_date)
         
         if end_date:
-            query += " AND DATE(p.purchase_date) <= ?"
+            query += " AND DATE(i.issue_date) <= ?"
             params.append(end_date)
         
         if search_term:
-            query += " AND (p.id LIKE ? OR s.company LIKE ? OR s.id_number LIKE ?)"
+            query += " AND (i.id LIKE ? OR s.company LIKE ? OR s.id_number LIKE ?)"
             search_param = f"%{search_term}%"
             params.extend([search_param] * 3)
         
-        query += " ORDER BY p.purchase_date DESC"
+        query += " ORDER BY i.issue_date DESC"
         
-        return Purchase._execute_sql(query, tuple(params), fetch=True) or []
+        return Sales._execute_sql(query, tuple(params), fetch=True) or []

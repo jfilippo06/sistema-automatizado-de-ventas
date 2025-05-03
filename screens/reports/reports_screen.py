@@ -48,7 +48,7 @@ class ReportsScreen(tk.Frame):
         buttons = [
             ("Gestión de proveedores", self.suppliers_report),
             ("Inventario de productos", self.inventory_report),
-            ("Gestión de ventas", self.sales_report),
+            ("Gestión de compras", self.sales_report),
             ("Facturas", self.invoices_report),
             ("Clientes", self.customers_report),
             ("Solicitud de servicios", self.service_requests_report),
@@ -74,7 +74,7 @@ class ReportsScreen(tk.Frame):
         print("Generando reporte de inventario")
 
     def sales_report(self) -> None:
-        print("Generando reporte de ventas")
+        print("Generando reporte de compras")
 
     def invoices_report(self) -> None:
         print("Generando reporte de facturas")

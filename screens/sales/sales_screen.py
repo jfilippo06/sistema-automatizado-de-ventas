@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
-from sqlite_cli.models.purchase_model import Purchase
-from utils.session_manager import SessionManager
+from sqlite_cli.models.sales_model import Sales
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -11,9 +10,8 @@ from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.supplier_model import Supplier
 from sqlite_cli.models.tax_model import Tax
 from sqlite_cli.models.currency_model import Currency
-from screens.supplier.crud_supplier import CrudSupplier
 
-class PurchasesScreen(tk.Frame):
+class SalesScreen(tk.Frame):
     def __init__(self, parent: tk.Widget, open_previous_screen_callback: Callable[[], None]) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -38,7 +36,7 @@ class PurchasesScreen(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Gestión de Ventas",
+            text="Gestión de Compras",
             font=("Arial", 16, "bold"),
             fg="#333"
         )
@@ -63,7 +61,7 @@ class PurchasesScreen(tk.Frame):
 
         btn_checkout = CustomButton(
             button_frame,
-            text="Realizar Venta",
+            text="Realizar Compra",
             command=self.checkout,
             padding=8,
             width=18
@@ -154,17 +152,14 @@ class PurchasesScreen(tk.Frame):
         supplier_products_frame.pack(fill=tk.X, pady=(0, 5))
 
         self.supplier_products_tree = ttk.Treeview(supplier_products_frame, columns=(
-            "ID", "Código", "Producto", "Existencias", "Stock mínimo", 
-            "Stock máximo", "Precio"
+        "ID", "Código", "Producto", "Cantidad", "Precio"
         ), show="headings", height=5)
 
         columns = [
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
             ("Producto", 150, tk.W),
-            ("Existencias", 80, tk.CENTER),
-            ("Stock mínimo", 80, tk.CENTER),
-            ("Stock máximo", 80, tk.CENTER),
+            ("Cantidad", 80, tk.CENTER),
             ("Precio", 100, tk.CENTER)
         ]
 
@@ -191,8 +186,7 @@ class PurchasesScreen(tk.Frame):
         products_frame.pack(fill=tk.X, pady=(0, 20))
 
         self.products_tree = ttk.Treeview(products_frame, columns=(
-            "ID", "Código", "Producto", "Existencias", "Stock mínimo", 
-            "Stock máximo", "Precio"
+        "ID", "Código", "Producto", "Cantidad", "Precio"
         ), show="headings", height=5)
 
         for col, width, anchor in columns:
@@ -316,9 +310,7 @@ class PurchasesScreen(tk.Frame):
                 item['id'],
                 item['code'],
                 item['product'],
-                item['stock'],
-                item['min_stock'],
-                item['max_stock'],
+                item['quantity'],  # Mostrar quantity en lugar de stock
                 f"{float(item['price']):.2f}" if item['price'] else "0.00"
             ))
         
@@ -389,19 +381,21 @@ class PurchasesScreen(tk.Frame):
                     
                 total = subtotal + taxes
                 
-                # Obtener ID del usuario actual
-                user_id = SessionManager.get_user_id()
-                if not user_id:
-                    raise ValueError("Usuario no autenticado")
+                # Preparar items para el modelo (sin user_id)
+                purchase_items = [{
+                    'id': item['id'],
+                    'quantity': item['quantity'],
+                    'unit_price': item['unit_price'],
+                    'total': item['total']
+                } for item in self.cart_items]
                 
-                # Registrar la compra
-                purchase_id = Purchase.create_complete_purchase(
+                # Registrar la compra (sin pasar user_id)
+                purchase_id = Sales.create_complete_purchase(
                     supplier_id=self.current_supplier['id'],
-                    user_id=user_id,
                     subtotal=subtotal,
                     taxes=taxes,
                     total=total,
-                    items=self.cart_items
+                    items=purchase_items
                 )
                 
                 # Mostrar mensaje de éxito
@@ -454,31 +448,24 @@ class PurchasesScreen(tk.Frame):
             messagebox.showerror("Error", f"No se pudo buscar el proveedor: {str(e)}", parent=self)
 
     def update_supplier_products_tree(self) -> None:
-        # Limpiar la tabla
         for item in self.supplier_products_tree.get_children():
             self.supplier_products_tree.delete(item)
         
         if not self.current_supplier:
             return
         
-        # Obtener todos los productos activos
         all_products = InventoryItem.search_active()
-        
-        # Filtrar los productos que pertenecen al proveedor actual
         supplier_products = [
             p for p in all_products 
             if p.get('supplier_id') == self.current_supplier['id']
         ]
         
-        # Mostrar los productos en la tabla
         for item in supplier_products:
             self.supplier_products_tree.insert("", tk.END, values=(
                 item['id'],
                 item['code'],
                 item['product'],
-                item['stock'],
-                item['min_stock'],
-                item['max_stock'],
+                item['quantity'],  # Mostrar quantity en lugar de stock
                 f"{float(item['price']):.2f}" if item['price'] else "0.00"
             ))
         
@@ -561,8 +548,8 @@ class PurchasesScreen(tk.Frame):
     def show_product_quantity_dialog(self, item_data) -> None:
         item_id = item_data[0]
         product_name = item_data[2]
-        stock = int(item_data[3])
-        price = float(item_data[6])
+        quantity = int(item_data[3])  # Ahora usa quantity directamente
+        price = float(item_data[4])
         
         # Verificar si el producto ya está en el carrito
         existing_item = next((item for item in self.cart_items if item['id'] == item_id), None)
@@ -597,7 +584,7 @@ class PurchasesScreen(tk.Frame):
         
         tk.Label(
             main_frame, 
-            text=f"Existencias: {stock}",
+            text=f"Cantidad: {quantity}",
             font=("Arial", 10)
         ).pack(pady=5)
         
@@ -638,14 +625,6 @@ class PurchasesScreen(tk.Frame):
                     messagebox.showwarning(
                         "Advertencia", 
                         "La cantidad mínima permitida es 1", 
-                        parent=quantity_window
-                    )
-                    return
-                    
-                if quantity > stock:
-                    messagebox.showwarning(
-                        "Advertencia", 
-                        "No hay suficiente stock disponible", 
                         parent=quantity_window
                     )
                     return
