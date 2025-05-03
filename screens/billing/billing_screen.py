@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
+from reports.InvoiceViewer import InvoiceViewer
 from sqlite_cli.models.invoice_model import Invoice
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -328,7 +329,7 @@ class BillingScreen(tk.Frame):
         self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
 
-    # screens/billing/billing_screen.py (solo el método checkout modificado)
+    # Modifica el método checkout en BillingScreen para mostrar la factura
     def checkout(self) -> None:
         if not self.current_customer:
             messagebox.showwarning("Advertencia", "Debe seleccionar un cliente para realizar la compra", parent=self)
@@ -360,6 +361,7 @@ class BillingScreen(tk.Frame):
                 # Preparar items para la factura
                 invoice_items = [{
                     'id': item['id'],
+                    'name': item['name'],
                     'quantity': item['quantity'],
                     'unit_price': item['unit_price'],
                     'total': item['total']
@@ -379,6 +381,18 @@ class BillingScreen(tk.Frame):
                     "Éxito", 
                     f"Compra realizada y facturada correctamente\nNúmero de factura: {invoice_id}\nEstado: Pagada completamente",
                     parent=self
+                )
+                
+                # Mostrar factura digital
+                customer_info = f"{self.current_customer['first_name']} {self.current_customer['last_name']} - {self.current_customer['id_number']}"
+                InvoiceViewer(
+                    self,
+                    invoice_id,
+                    customer_info,
+                    invoice_items,
+                    subtotal,
+                    taxes,
+                    total
                 )
                 
                 # Limpiar y actualizar
