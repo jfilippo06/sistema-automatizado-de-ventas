@@ -1,4 +1,3 @@
-# screens/service_requests/service_requests_screen.py
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any
@@ -17,6 +16,7 @@ class ServiceRequestsScreen(tk.Frame):
         self.open_previous_screen_callback = open_previous_screen_callback
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Todos los campos")
+        self.configure(bg="#f5f5f5")  # Fondo general
         self.configure_ui()
         self.refresh_data()
 
@@ -26,49 +26,51 @@ class ServiceRequestsScreen(tk.Frame):
         self.refresh_data()
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self)
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Header con título - Estilo actualizado
+        header_frame = tk.Frame(self, bg="#4a6fa5")
+        header_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0)
         
         title_label = CustomLabel(
             header_frame,
             text="Solicitudes de Servicio",
-            font=("Arial", 16, "bold"),
-            fg="#333"
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame principal para botones y búsqueda
-        top_frame = tk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
-
-        # Frame de botones (solo para el botón Regresar)
-        button_frame = tk.Frame(top_frame)
-        button_frame.pack(side=tk.LEFT)
-
+        # Frame para botón de regreso - Estilo actualizado
+        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
+        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
+        
         btn_back = CustomButton(
-            button_frame,
+            back_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
-            width=10
+            width=10,
         )
-        btn_back.pack(side=tk.LEFT, padx=5)
+        btn_back.pack(side=tk.RIGHT)
 
-        # Frame de búsqueda (a la derecha del botón Regresar)
-        search_frame = tk.Frame(top_frame)
-        search_frame.pack(side=tk.LEFT, padx=10, expand=True, fill=tk.X)
+        # Frame principal para controles - Estilo actualizado
+        controls_frame = tk.Frame(self, bg="#f5f5f5")
+        controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
-        # Campo de búsqueda
+        # Frame de búsqueda
+        search_frame = tk.Frame(controls_frame, bg="#f5f5f5")
+        search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
+        # Campo de búsqueda - Estilo actualizado
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
-            width=40
+            width=40,
+            font=("Arial", 12)
         )
-        search_entry.pack(side=tk.LEFT, padx=5)
+        search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         search_entry.bind("<KeyRelease>", self.on_search)
 
-        # Combobox para seleccionar campo de búsqueda
+        # Combobox para seleccionar campo de búsqueda - Estilo actualizado
         search_fields = [
             "Todos los campos",
             "ID",
@@ -89,36 +91,9 @@ class ServiceRequestsScreen(tk.Frame):
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
-        # Frame para los botones de acciones (derecha)
-        action_frame = tk.Frame(top_frame)
+        # Frame para los botones de acciones (derecha) - Estilo actualizado
+        action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         action_frame.pack(side=tk.RIGHT)
-
-        btn_add = CustomButton(
-            action_frame,
-            text="Agregar",
-            command=self.add_item,
-            padding=8,
-            width=10
-        )
-        btn_add.pack(side=tk.RIGHT, padx=5)
-
-        btn_edit = CustomButton(
-            action_frame,
-            text="Editar",
-            command=self.edit_item,
-            padding=8,
-            width=10
-        )
-        btn_edit.pack(side=tk.RIGHT, padx=5)
-
-        btn_disable = CustomButton(
-            action_frame,
-            text="Deshabilitar",
-            command=self.disable_item,
-            padding=8,
-            width=12
-        )
-        btn_disable.pack(side=tk.RIGHT, padx=5)
 
         btn_update_status = CustomButton(
             action_frame,
@@ -129,9 +104,36 @@ class ServiceRequestsScreen(tk.Frame):
         )
         btn_update_status.pack(side=tk.RIGHT, padx=5)
 
-        # Treeview frame
-        tree_frame = tk.Frame(self)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        btn_disable = CustomButton(
+            action_frame,
+            text="Deshabilitar",
+            command=self.disable_item,
+            padding=8,
+            width=12,
+        )
+        btn_disable.pack(side=tk.RIGHT, padx=5)
+
+        btn_edit = CustomButton(
+            action_frame,
+            text="Editar",
+            command=self.edit_item,
+            padding=8,
+            width=10,
+        )
+        btn_edit.pack(side=tk.RIGHT, padx=5)
+
+        btn_add = CustomButton(
+            action_frame,
+            text="Agregar",
+            command=self.add_item,
+            padding=8,
+            width=10,
+        )
+        btn_add.pack(side=tk.RIGHT, padx=5)
+
+        # Treeview frame - Estilo actualizado
+        tree_frame = tk.Frame(self, bg="#f5f5f5")
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
         # Treeview para solicitudes
         self.tree = ttk.Treeview(tree_frame, columns=(
@@ -160,14 +162,15 @@ class ServiceRequestsScreen(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Barra de estado
+        # Barra de estado - Estilo actualizado
         self.status_bar = CustomLabel(
             self,
-            text="",
+            text="Listo",
             font=("Arial", 10),
-            fg="#666"
+            fg="#666",
+            bg="#f5f5f5"
         )
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
         self.refresh_data()
 
@@ -260,22 +263,38 @@ class ServiceRequestsScreen(tk.Frame):
         
         status_window = tk.Toplevel(self)
         status_window.title("Cambiar Estado de Solicitud")
-        status_window.geometry("300x200")
+        status_window.geometry("400x200")
         status_window.resizable(False, False)
+        status_window.configure(bg="#f5f5f5")
         status_window.transient(self)
         status_window.grab_set()
         
-        tk.Label(
-            status_window, 
-            text=f"Estado actual: {current_status}",
-            font=("Arial", 10)
-        ).pack(pady=10)
+        # Frame principal
+        main_frame = tk.Frame(status_window, bg="#f5f5f5", padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
         
-        tk.Label(
-            status_window, 
+        # Título
+        title_frame = tk.Frame(main_frame, bg="#4a6fa5")
+        title_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        CustomLabel(
+            title_frame,
+            text=f"Estado actual: {current_status}",
+            font=("Arial", 12),
+            fg="white",
+            bg="#4a6fa5"
+        ).pack(pady=10, padx=10, anchor="w")
+        
+        # Controles
+        control_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        control_frame.pack(fill=tk.X, pady=5)
+        
+        CustomLabel(
+            control_frame,
             text="Nuevo estado:",
-            font=("Arial", 10)
-        ).pack(pady=5)
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT, padx=(0, 10))
         
         status_var = tk.StringVar()
         
@@ -286,13 +305,14 @@ class ServiceRequestsScreen(tk.Frame):
             "Completado": "completed",
         }
         
-        status_combobox = ttk.Combobox(
-            status_window,
+        status_combobox = CustomCombobox(
+            control_frame,
             textvariable=status_var,
             values=list(status_options.keys()),
-            state="readonly"
+            state="readonly",
+            width=20
         )
-        status_combobox.pack(pady=5)
+        status_combobox.pack(side=tk.LEFT, expand=True, fill=tk.X)
         
         def apply_status():
             new_status = status_var.get()
@@ -316,21 +336,22 @@ class ServiceRequestsScreen(tk.Frame):
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo actualizar el estado: {str(e)}", parent=status_window)
         
-        btn_frame = tk.Frame(status_window)
-        btn_frame.pack(pady=10)
-        
-        CustomButton(
-            btn_frame,
-            text="Aplicar",
-            command=apply_status,
-            padding=6,
-            width=10
-        ).pack(side=tk.LEFT, padx=5)
+        # Frame de botones
+        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        btn_frame.pack(pady=15, anchor="e")
         
         CustomButton(
             btn_frame,
             text="Cancelar",
             command=status_window.destroy,
-            padding=6,
-            width=10
-        ).pack(side=tk.LEFT, padx=5)
+            padding=8,
+            width=12
+        ).pack(side=tk.RIGHT, padx=5)
+        
+        CustomButton(
+            btn_frame,
+            text="Aplicar",
+            command=apply_status,
+            padding=8,
+            width=12
+        ).pack(side=tk.RIGHT, padx=5)

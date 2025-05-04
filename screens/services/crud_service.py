@@ -23,6 +23,7 @@ class CrudService(tk.Toplevel):
         self.title("Nuevo Servicio" if mode == "create" else "Editar Servicio")
         self.geometry("400x350")
         self.resizable(False, False)
+        self.configure(bg="#f5f5f5")  # Fondo general
         
         self.transient(parent)
         self.grab_set()
@@ -30,7 +31,7 @@ class CrudService(tk.Toplevel):
         # Variables para los campos
         self.code_var = tk.StringVar()
         self.name_var = tk.StringVar()
-        self.price_var = tk.StringVar(value="0.0")
+        self.price_var = tk.StringVar(value="0.00")
         self.description_var = tk.StringVar()
         
         self.configure_ui()
@@ -39,18 +40,23 @@ class CrudService(tk.Toplevel):
             self.load_item_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=20)
+        # Frame principal con fondo gris claro
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Title
+        # Título con estilo azul
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+        
         title_text = "Nuevo Servicio" if self.mode == "create" else "Editar Servicio"
         title_label = CustomLabel(
-            main_frame,
+            title_frame,
             text=title_text,
-            font=("Arial", 14, "bold"),
-            fg="#333"
+            font=("Arial", 16, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.pack(pady=10, padx=10, anchor="w")
         
         # Campos del formulario
         fields = [
@@ -63,16 +69,23 @@ class CrudService(tk.Toplevel):
         self.entries = {}
         
         for i, (label, var, val_type, editable) in enumerate(fields, start=1):
+            # Frame para cada campo
+            field_frame = tk.Frame(main_frame, bg="#f5f5f5")
+            field_frame.grid(row=i, column=0, columnspan=2, sticky="ew", pady=5)
+            
             field_label = CustomLabel(
-                main_frame,
+                field_frame,
                 text=label,
                 font=("Arial", 10),
-                fg="#555"
+                fg="#333",
+                bg="#f5f5f5",
+                width=15,
+                anchor="w"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.pack(side=tk.LEFT, padx=(0, 10))
             
             entry = CustomEntry(
-                main_frame,
+                field_frame,
                 textvariable=var,
                 font=("Arial", 10),
                 width=30,
@@ -83,20 +96,31 @@ class CrudService(tk.Toplevel):
                 entry.configure(validate="key")
                 entry.configure(validatecommand=(entry.register(self.validate_decimal), '%P'))
                 
-            entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+            entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
             self.entries[label] = entry
 
-        # Botones
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(20, 10))
+        # Frame para botones
+        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(30, 10), sticky="e")
         
+        # Botón Cancelar
+        btn_cancel = CustomButton(
+            btn_frame, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=8,
+            width=12
+        )
+        btn_cancel.pack(side=tk.RIGHT, padx=5)
+        
+        # Botón Guardar/Actualizar
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
                 text="Guardar", 
                 command=self.create_item,
                 padding=8,
-                width=15
+                width=12
             )
         else:
             btn_action = CustomButton(
@@ -104,19 +128,9 @@ class CrudService(tk.Toplevel):
                 text="Actualizar", 
                 command=self.update_item,
                 padding=8,
-                width=15
+                width=12
             )
-            
-        btn_action.pack(side=tk.LEFT, padx=10)
-            
-        btn_cancel = CustomButton(
-            btn_frame, 
-            text="Cancelar", 
-            command=self.destroy,
-            padding=8,
-            width=15
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=10)
+        btn_action.pack(side=tk.RIGHT, padx=5)
 
     def validate_decimal(self, text: str) -> bool:
         return Validations.validate_decimal(text)
@@ -148,7 +162,7 @@ class CrudService(tk.Toplevel):
             
             self.code_var.set(service['code'])
             self.name_var.set(service['name'])
-            self.price_var.set(str(service['price']))
+            self.price_var.set(f"{service['price']:.2f}")  # Formato con 2 decimales
             self.description_var.set(service.get('description', ''))
             
         except Exception as e:

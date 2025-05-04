@@ -17,7 +17,7 @@ class CurrencyManagementScreen(tk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
-        self.configure(bg="#f0f0f0")
+        self.configure(bg="#f5f5f5")  # Mismo fondo que Suppliers
         self.currency_widgets = {}
         self.configure_ui()
 
@@ -27,35 +27,35 @@ class CurrencyManagementScreen(tk.Frame):
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self, bg="#f0f0f0")
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Header con título - Estilo similar a Suppliers
+        header_frame = tk.Frame(self, bg="#4a6fa5")  # Mismo color de header
+        header_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0)
         
         title_label = CustomLabel(
             header_frame,
             text="Gestión de Monedas",
-            font=("Arial", 16, "bold"),
-            fg="#333",
-            bg="#f0f0f0"
+            font=("Arial", 20, "bold"),  # Mismo tamaño de fuente
+            fg="white",
+            bg="#4a6fa5"  # Mismo fondo
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame para botones
-        button_frame = tk.Frame(self, bg="#f0f0f0")
-        button_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
-
+        # Frame para botón de regreso - Estilo similar
+        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
+        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
+        
         btn_back = CustomButton(
-            button_frame,
+            back_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
-            width=10
+            width=10,
         )
-        btn_back.pack(side=tk.LEFT, padx=5)
+        btn_back.pack(side=tk.RIGHT)
 
-        # Contenido principal
-        content_frame = tk.Frame(self, bg="#f0f0f0")
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        # Contenido principal - Estilo actualizado
+        content_frame = tk.Frame(self, bg="#f5f5f5")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Cargar monedas desde la base de datos
         currencies = Currency.all()
@@ -63,40 +63,59 @@ class CurrencyManagementScreen(tk.Frame):
         for currency in currencies:
             self.create_currency_widget(content_frame, currency)
 
-    def create_currency_widget(self, parent: tk.Widget, currency: Dict) -> None:
-        """Crea los widgets para una moneda específica"""
-        currency_frame = tk.Frame(parent, bg="#f0f0f0", bd=1, relief=tk.GROOVE)
-        currency_frame.pack(fill=tk.X, pady=10, padx=5, ipady=5)
+        # Barra de estado - Igual que en Suppliers
+        self.status_bar = CustomLabel(
+            self,
+            text="Listo",
+            font=("Arial", 10),
+            fg="#666",
+            bg="#f5f5f5"
+        )
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
-        # Subtítulo con nombre de la moneda
+    def create_currency_widget(self, parent: tk.Widget, currency: Dict) -> None:
+        """Crea los widgets para una moneda específica con el nuevo estilo"""
+        # Frame principal para cada moneda - Estilo actualizado
+        currency_frame = tk.Frame(
+            parent, 
+            bg="white",  # Fondo blanco para contrastar
+            bd=1, 
+            relief=tk.GROOVE,
+            padx=10,
+            pady=10
+        )
+        currency_frame.pack(fill=tk.X, pady=10, padx=20, ipady=10)
+
+        # Subtítulo con nombre de la moneda - Estilo actualizado
         subtitle = CustomLabel(
             currency_frame,
             text=f"{currency['name']} ({currency['symbol']})",
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),  # Tamaño aumentado
             fg="#333",
-            bg="#f0f0f0"
+            bg="white"
         )
-        subtitle.pack(anchor=tk.W, pady=(5, 10))
+        subtitle.pack(anchor=tk.W, pady=(0, 10))
 
-        # Frame para controles
-        controls_frame = tk.Frame(currency_frame, bg="#f0f0f0")
-        controls_frame.pack(fill=tk.X, padx=10)
+        # Frame para controles - Estilo actualizado
+        controls_frame = tk.Frame(currency_frame, bg="white")
+        controls_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        # Valor de la moneda
+        # Valor de la moneda - Estilo actualizado
         value_label = CustomLabel(
             controls_frame,
             text="Valor:",
-            font=("Arial", 10),
+            font=("Arial", 12),  # Tamaño aumentado
             fg="#333",
-            bg="#f0f0f0"
+            bg="white"
         )
-        value_label.pack(side=tk.LEFT, padx=(0, 5))
+        value_label.pack(side=tk.LEFT, padx=(0, 10))
 
         value_var = tk.StringVar(value=str(currency['value']))
         value_entry = CustomEntry(
             controls_frame,
             textvariable=value_var,
             width=15,
+            font=("Arial", 12),  # Tamaño aumentado
             state="normal" if currency['status_name'] == 'active' else "disabled"
         )
         # Configuramos la validación para números decimales
@@ -105,32 +124,39 @@ class CurrencyManagementScreen(tk.Frame):
             value_entry.register(Validations.validate_decimal),
             '%P'
         ))
-        value_entry.pack(side=tk.LEFT, padx=(0, 10))
+        value_entry.pack(side=tk.LEFT, padx=(0, 20))
 
-        # Frame para botones
-        buttons_frame = tk.Frame(controls_frame, bg="#f0f0f0")
+        # Frame para botones - Estilo actualizado
+        buttons_frame = tk.Frame(controls_frame, bg="white")
         buttons_frame.pack(side=tk.RIGHT)
 
-        # Botón de actualizar
+        # Botón de actualizar - Estilo consistente
         btn_update = CustomButton(
             buttons_frame,
             text="Actualizar",
-            command=lambda: self.update_currency_value(currency['name'], value_var.get(), currency['status_name'] == 'active'),
-            padding=5,
-            width=10
+            command=lambda: self.update_currency_value(
+                currency['name'], 
+                value_var.get(), 
+                currency['status_name'] == 'active'
+            ),
+            padding=8,  # Mismo padding que en Suppliers
+            width=12   # Mismo ancho aproximado
         )
         # Configurar estado inicial del botón
         if currency['status_name'] != 'active':
             btn_update.disable()
         btn_update.pack(side=tk.LEFT, padx=5)
 
-        # Botón de activar/desactivar
+        # Botón de activar/desactivar - Estilo consistente
         btn_toggle = CustomButton(
             buttons_frame,
             text="Desactivar" if currency['status_name'] == 'active' else "Activar",
-            command=lambda: self.toggle_currency_status(currency['name'], currency['status_name'] != 'active'),
-            padding=5,
-            width=10
+            command=lambda: self.toggle_currency_status(
+                currency['name'], 
+                currency['status_name'] != 'active'
+            ),
+            padding=8,  # Mismo padding que en Suppliers
+            width=12    # Mismo ancho aproximado
         )
         btn_toggle.pack(side=tk.LEFT, padx=5)
 
@@ -145,9 +171,8 @@ class CurrencyManagementScreen(tk.Frame):
 
     def update_currency_value(self, currency_name: str, new_value: str, is_active: bool) -> None:
         """Actualiza el valor de una moneda"""
-        # Protección adicional - aunque el botón debería estar deshabilitado
         if not is_active:
-            return  # Simplemente salir sin hacer nada
+            return
             
         try:
             value = float(new_value)
@@ -155,9 +180,15 @@ class CurrencyManagementScreen(tk.Frame):
                 raise ValueError("El valor no puede ser negativo")
             
             Currency.update_value(currency_name, value)
-            messagebox.showinfo("Éxito", f"Valor de {currency_name} actualizado correctamente", parent=self)
+            messagebox.showinfo(
+                "Éxito", 
+                f"Valor de {currency_name} actualizado correctamente", 
+                parent=self
+            )
+            self.status_bar.configure(text=f"Valor de {currency_name} actualizado")  # Actualizar barra de estado
         except ValueError as e:
             messagebox.showerror("Error", f"Valor inválido: {str(e)}", parent=self)
+            self.status_bar.configure(text=f"Error: {str(e)}")  # Actualizar barra de estado
 
     def toggle_currency_status(self, currency_name: str, activate: bool) -> None:
         """Activa o desactiva una moneda"""
@@ -173,15 +204,12 @@ class CurrencyManagementScreen(tk.Frame):
                 widgets['is_active'] = activate
                 widgets['value_entry'].config(state="normal" if activate else "disabled")
                 
-                # Actualizar botón de actualizar
                 if activate:
                     widgets['btn_update'].enable()
                 else:
                     widgets['btn_update'].disable()
-                    # Eliminar cualquier comando pendiente
                     widgets['btn_update'].command = None
                 
-                # Actualizar botón de toggle
                 widgets['btn_toggle'].label.configure(
                     text="Desactivar" if activate else "Activar"
                 )
@@ -194,8 +222,13 @@ class CurrencyManagementScreen(tk.Frame):
                 f"Moneda {currency_name} {'activada' if activate else 'desactivada'} correctamente",
                 parent=self
             )
+            self.status_bar.configure(
+                text=f"Moneda {currency_name} {'activada' if activate else 'desactivada'}"
+            )
         else:
             messagebox.showerror("Error", "No se pudo cambiar el estado de la moneda", parent=self)
+            self.status_bar.configure(text="Error al cambiar estado de la moneda")
 
     def go_back(self) -> None:
+        self.parent.state('normal')  # Restaurar tamaño de ventana como en Suppliers
         self.open_previous_screen_callback()

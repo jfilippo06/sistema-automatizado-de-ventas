@@ -1,4 +1,3 @@
-# screens/service_requests/crud_service_request.py (completo)
 import tkinter as tk
 from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any, List
@@ -32,6 +31,7 @@ class CrudServiceRequest(tk.Toplevel):
         self.title("Nueva Solicitud" if mode == "create" else "Editar Solicitud")
         self.geometry("400x400")
         self.resizable(False, False)
+        self.configure(bg="#f5f5f5")  # Fondo general
         
         self.transient(parent)
         self.grab_set()
@@ -52,18 +52,23 @@ class CrudServiceRequest(tk.Toplevel):
             self.enable_fields(False)
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=20)
+        # Frame principal con fondo gris claro
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Title
+        # Título con estilo azul
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+        
         title_text = "Nueva Solicitud" if self.mode == "create" else "Editar Solicitud"
         title_label = CustomLabel(
-            main_frame,
+            title_frame,
             text=title_text,
-            font=("Arial", 14, "bold"),
-            fg="#333"
+            font=("Arial", 16, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.pack(pady=10, padx=10, anchor="w")
         
         # Campos del formulario
         fields = [
@@ -79,24 +84,30 @@ class CrudServiceRequest(tk.Toplevel):
         self.widgets = {}
         
         for i, (label, var, val_type, command) in enumerate(fields, start=1):
+            # Frame para cada campo
+            field_frame = tk.Frame(main_frame, bg="#f5f5f5")
+            field_frame.grid(row=i, column=0, columnspan=2, sticky="ew", pady=5)
+            
             field_label = CustomLabel(
-                main_frame,
+                field_frame,
                 text=label,
                 font=("Arial", 10),
-                fg="#555"
+                fg="#333",
+                bg="#f5f5f5",
+                width=15,
+                anchor="w"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.pack(side=tk.LEFT, padx=(0, 10))
             
             if label == "Cédula Cliente:":
-                entry_frame = tk.Frame(main_frame)
-                entry_frame.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                entry_frame = tk.Frame(field_frame, bg="#f5f5f5")
+                entry_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
                 
                 entry = CustomEntry(
                     entry_frame,
                     textvariable=var,
                     font=("Arial", 10),
-                    width=20,
-                    state="normal"
+                    width=20
                 )
                 entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
                 
@@ -121,15 +132,15 @@ class CrudServiceRequest(tk.Toplevel):
                         values = [emp['name'] for emp in self.employee_users]
                     
                     entry = CustomCombobox(
-                        main_frame,
+                        field_frame,
                         textvariable=var,
                         values=values,
                         state="disabled",
-                        width=27
+                        width=25
                     )
                 else:
                     entry = CustomEntry(
-                        main_frame,
+                        field_frame,
                         textvariable=var,
                         font=("Arial", 10),
                         width=30,
@@ -139,20 +150,31 @@ class CrudServiceRequest(tk.Toplevel):
                         entry.configure(validate="key")
                         entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
                 
-                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
                 self.entries[label] = entry
 
-        # Botones
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(20, 10))
+        # Frame para botones
+        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(30, 10), sticky="e")
         
+        # Botón Cancelar
+        btn_cancel = CustomButton(
+            btn_frame, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=8,
+            width=12
+        )
+        btn_cancel.pack(side=tk.RIGHT, padx=5)
+        
+        # Botón Guardar/Actualizar
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
                 text="Guardar", 
                 command=self.create_item,
                 padding=8,
-                width=15
+                width=12
             )
         else:
             btn_action = CustomButton(
@@ -160,19 +182,9 @@ class CrudServiceRequest(tk.Toplevel):
                 text="Actualizar", 
                 command=self.update_item,
                 padding=8,
-                width=15
+                width=12
             )
-            
-        btn_action.pack(side=tk.LEFT, padx=10)
-            
-        btn_cancel = CustomButton(
-            btn_frame, 
-            text="Cancelar", 
-            command=self.destroy,
-            padding=8,
-            width=15
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=10)
+        btn_action.pack(side=tk.RIGHT, padx=5)
 
     def get_employee_users(self) -> List[Dict]:
         """Obtiene solo los usuarios con rol de empleado"""

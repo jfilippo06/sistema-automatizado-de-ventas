@@ -15,7 +15,7 @@ class CrudSupplier(tk.Toplevel):
         parent: tk.Widget, 
         mode: str = "create", 
         supplier_id: Optional[int] = None, 
-        initial_id_number: Optional[str] = None,  # Nuevo parámetro
+        initial_id_number: Optional[str] = None,
         refresh_callback: Optional[Callable[[], None]] = None
     ) -> None:
         super().__init__(parent)
@@ -23,16 +23,18 @@ class CrudSupplier(tk.Toplevel):
         self.supplier_id = supplier_id
         self.refresh_callback = refresh_callback
         
+        # Configuración de la ventana
         self.title("Guardar Proveedor" if mode == "create" else "Editar Proveedor")
-        self.geometry("380x500")
+        self.geometry("360x500")  # Tamaño más adecuado para los campos
         self.resizable(False, False)
+        self.configure(bg="#f5f5f5")  # Fondo consistente
         
         self.transient(parent)
         self.grab_set()
         
         # Variables para los campos
         self.code_var = tk.StringVar()
-        self.id_number_var = tk.StringVar(value=initial_id_number if initial_id_number else "")  # Usamos initial_id_number aquí
+        self.id_number_var = tk.StringVar(value=initial_id_number if initial_id_number else "")
         self.first_name_var = tk.StringVar()
         self.last_name_var = tk.StringVar()
         self.address_var = tk.StringVar()
@@ -48,18 +50,20 @@ class CrudSupplier(tk.Toplevel):
             self.load_supplier_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=15)
+        """Configura la interfaz de usuario"""
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título
+        # Título con estilo consistente
         title_text = "Nuevo Proveedor" if self.mode == "create" else "Editar Proveedor"
         title_label = CustomLabel(
             main_frame,
             text=title_text,
-            font=("Arial", 14, "bold"),
-            fg="#333"
+            font=("Arial", 16, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="w")
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
         # Campos del formulario
         fields = [
@@ -75,73 +79,73 @@ class CrudSupplier(tk.Toplevel):
         ]
         
         for i, (label, var, val_type, editable) in enumerate(fields, start=1):
+            # Etiqueta del campo
             field_label = CustomLabel(
                 main_frame,
                 text=label,
-                font=("Arial", 10),
-                fg="#555"
+                font=("Arial", 12),
+                fg="#555",
+                bg="#f5f5f5"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=3)
+            field_label.grid(row=i, column=0, sticky="w", pady=5)
             
+            # Campo de entrada
             entry = CustomEntry(
                 main_frame,
                 textvariable=var,
-                font=("Arial", 10),
-                width=32,
+                font=("Arial", 12),
+                width=35,
                 state="normal" if editable else "readonly"
             )
             
+            # Configurar validaciones
             if val_type == 'number':
                 entry.configure(validate="key")
                 entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
             elif val_type == 'text':
                 entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
             
-            entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
+            entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
             self.entries[label] = entry
         
-        # Botones
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(15, 5))
+        # Frame para botones
+        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 0))
         
-        if self.mode == "create":
-            btn_action = CustomButton(
-                btn_frame, 
-                text="Guadar", 
-                command=self.create_supplier,
-                padding=8,
-                width=15
-            )
-        else:
-            btn_action = CustomButton(
-                btn_frame, 
-                text="Actualizar", 
-                command=self.update_supplier,
-                padding=8,
-                width=15
-            )
-            
+        # Botón principal (Guardar/Actualizar)
+        btn_action = CustomButton(
+            btn_frame, 
+            text="Guardar" if self.mode == "create" else "Actualizar", 
+            command=self.create_supplier if self.mode == "create" else self.update_supplier,
+            padding=10,
+            width=15
+        )
         btn_action.pack(side=tk.LEFT, padx=5)
-            
+        
+        # Botón Cancelar
         btn_cancel = CustomButton(
             btn_frame, 
             text="Cancelar", 
             command=self.destroy,
-                padding=8,
-                width=15
-            )
+            padding=10,
+            width=15
+        )
         btn_cancel.pack(side=tk.LEFT, padx=5)
 
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
+        """Valida la entrada del campo"""
         Validations.validate_entry(event, validation_func)
 
     def validate_text(self, text: str) -> bool:
+        """Valida texto general"""
         return Validations.validate_text(text)
 
     def validate_integer(self, text: str) -> bool:
+        """Valida números enteros"""
         return Validations.validate_integer(text)
 
     def validate_required_fields(self) -> bool:
+        """Valida que todos los campos requeridos estén completos"""
         required_fields = {
             "Código:": self.code_var.get(),
             "Cédula:": self.id_number_var.get(),
@@ -165,6 +169,7 @@ class CrudSupplier(tk.Toplevel):
         return Validations.validate_numeric_fields(numeric_fields, self)
 
     def load_supplier_data(self) -> None:
+        """Carga los datos del proveedor para edición"""
         supplier = Supplier.get_by_id(self.supplier_id)
         if not supplier:
             messagebox.showerror("Error", "No se pudo cargar el proveedor", parent=self)
@@ -182,6 +187,7 @@ class CrudSupplier(tk.Toplevel):
         self.company_var.set(supplier['company'])
 
     def create_supplier(self) -> None:
+        """Crea un nuevo proveedor"""
         if not self.validate_required_fields():
             return
             
@@ -196,7 +202,7 @@ class CrudSupplier(tk.Toplevel):
                 email=self.email_var.get(),
                 tax_id=self.tax_id_var.get(),
                 company=self.company_var.get(),
-                status_id=1  # Siempre activo al guardar
+                status_id=1  # Siempre activo al crear
             )
             
             messagebox.showinfo("Éxito", "Proveedor creado correctamente", parent=self)
@@ -208,6 +214,7 @@ class CrudSupplier(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudo guardar el proveedor: {str(e)}", parent=self)
 
     def update_supplier(self) -> None:
+        """Actualiza un proveedor existente"""
         if not self.validate_required_fields():
             return
             

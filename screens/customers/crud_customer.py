@@ -14,7 +14,7 @@ class CrudCustomer(tk.Toplevel):
         mode: str = "create", 
         customer_id: Optional[int] = None, 
         refresh_callback: Optional[Callable[[], None]] = None,
-        initial_id_number: Optional[str] = None  # Nuevo parámetro para cédula inicial
+        initial_id_number: Optional[str] = None
     ) -> None:
         super().__init__(parent)
         self.mode = mode
@@ -22,8 +22,9 @@ class CrudCustomer(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Nuevo Cliente" if mode == "create" else "Editar Cliente")
-        self.geometry("400x400")  # Aumenté el tamaño para mejor visualización
+        self.geometry("380x400")  # Aumenté el tamaño para mejor visualización
         self.resizable(False, False)
+        self.configure(bg="#f5f5f5")  # Fondo general
         
         self.transient(parent)
         self.grab_set()
@@ -43,18 +44,23 @@ class CrudCustomer(tk.Toplevel):
             self.load_customer_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=20)
+        # Frame principal con fondo gris claro
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título
+        # Título con estilo azul
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+        
         title_text = "Nuevo Cliente" if self.mode == "create" else "Editar Cliente"
         title_label = CustomLabel(
-            main_frame,
+            title_frame,
             text=title_text,
-            font=("Arial", 14, "bold"),
-            fg="#333"
+            font=("Arial", 16, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.pack(pady=10, padx=10, anchor="w")
         
         # Campos del formulario con validaciones específicas
         fields = [
@@ -67,19 +73,26 @@ class CrudCustomer(tk.Toplevel):
         ]
         
         for i, (label, var, val_type, editable) in enumerate(fields, start=1):
+            # Frame para cada campo (mejor alineación)
+            field_frame = tk.Frame(main_frame, bg="#f5f5f5")
+            field_frame.grid(row=i, column=0, columnspan=2, sticky="ew", pady=5)
+            
             field_label = CustomLabel(
-                main_frame,
+                field_frame,
                 text=label,
                 font=("Arial", 10),
-                fg="#555"
+                fg="#333",
+                bg="#f5f5f5",
+                width=15,
+                anchor="w"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.pack(side=tk.LEFT, padx=(0, 10))
             
             entry = CustomEntry(
-                main_frame,
+                field_frame,
                 textvariable=var,
                 font=("Arial", 10),
-                width=40,
+                width=30,
                 state="normal" if editable else "readonly"
             )
             
@@ -95,12 +108,22 @@ class CrudCustomer(tk.Toplevel):
             else:  # text
                 entry.bind("<KeyRelease>", lambda e, func=Validations.validate_text: Validations.validate_entry(e, func))
             
-            entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+            entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
             self.entries[label] = entry
         
-        # Frame para los botones
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(20, 10))
+        # Frame para los botones con mejor espaciado
+        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(30, 10), sticky="e")
+        
+        # Botón Cancelar
+        btn_cancel = CustomButton(
+            btn_frame, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=8,
+            width=12
+        )
+        btn_cancel.pack(side=tk.RIGHT, padx=5)
         
         # Botón Guardar/Actualizar
         if self.mode == "create":
@@ -109,7 +132,7 @@ class CrudCustomer(tk.Toplevel):
                 text="Guardar", 
                 command=self.create_customer,
                 padding=8,
-                width=15
+                width=12
             )
         else:
             btn_action = CustomButton(
@@ -117,19 +140,9 @@ class CrudCustomer(tk.Toplevel):
                 text="Actualizar", 
                 command=self.update_customer,
                 padding=8,
-                width=15
+                width=12
             )
-        btn_action.pack(side=tk.LEFT, padx=10)
-        
-        # Botón Cancelar
-        btn_cancel = CustomButton(
-            btn_frame, 
-            text="Cancelar", 
-            command=self.destroy,
-            padding=8,
-            width=15
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=10)
+        btn_action.pack(side=tk.RIGHT, padx=5)
 
     def validate_id_number(self, text: str) -> bool:
         """Valida que el texto sea un número de cédula válido (solo números, máximo 10 dígitos)"""

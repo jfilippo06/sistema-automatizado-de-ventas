@@ -26,9 +26,11 @@ class CrudInventory(tk.Toplevel):
         self.image_path = None
         self.current_image = None
         
+        # Configuración de la ventana
         self.title("Guardar Producto" if mode == "create" else "Editar Producto")
-        self.geometry("800x500")
+        self.geometry("900x600")
         self.resizable(False, False)
+        self.configure(bg="#f5f5f5")
         
         self.transient(parent)
         self.grab_set()
@@ -51,29 +53,32 @@ class CrudInventory(tk.Toplevel):
             self.load_item_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=15)
+        """Configura la interfaz de usuario"""
+        # Frame principal
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Frame para los campos del formulario (izquierda)
-        form_frame = tk.Frame(main_frame)
-        form_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10)
+        # Frame para el formulario (izquierda)
+        form_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
         
-        # Título
+        # Título con estilo consistente
         title_text = "Nuevo Producto" if self.mode == "create" else "Editar Producto"
         title_label = CustomLabel(
             form_frame,
             text=title_text,
-            font=("Arial", 14, "bold"),
-            fg="#333"
+            font=("Arial", 16, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="w")
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
         # Campos del formulario
         fields = [
-            ("Código:", self.code_var, 'text', not (self.mode == "edit")),  # Código no editable en edición
+            ("Código:", self.code_var, 'text', not (self.mode == "edit")),
             ("Producto:", self.product_var, 'text', True),
-            ("Cantidad:", self.quantity_var, 'number', self.mode == "create"),  # Solo editable en creación
-            ("Existencias:", self.stock_var, 'number', self.mode == "create"),  # Solo editable en creación
+            ("Cantidad:", self.quantity_var, 'number', self.mode == "create"),
+            ("Existencias:", self.stock_var, 'number', self.mode == "create"),
             ("Stock mínimo:", self.min_stock_var, 'number', True),
             ("Stock máximo:", self.max_stock_var, 'number', True),
             ("Precio:", self.price_var, 'decimal', True),
@@ -82,16 +87,18 @@ class CrudInventory(tk.Toplevel):
         ]
         
         for i, (label, var, val_type, editable) in enumerate(fields, start=1):
+            # Etiqueta del campo
             field_label = CustomLabel(
                 form_frame,
                 text=label,
-                font=("Arial", 10),
-                fg="#555"
+                font=("Arial", 12),
+                fg="#555",
+                bg="#f5f5f5"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=3)
+            field_label.grid(row=i, column=0, sticky="w", pady=5)
             
             if label == "Proveedor:":
-                # Obtener proveedores activos
+                # Combobox para proveedores
                 suppliers = Supplier.search_active()
                 values = [f"{supplier['company']} ({supplier['code']})" for supplier in suppliers]
                 
@@ -100,36 +107,34 @@ class CrudInventory(tk.Toplevel):
                     textvariable=var,
                     values=values,
                     state="readonly",
-                    width=30
+                    width=30,
+                    font=("Arial", 12)
                 )
-                combobox.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
+                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
                 self.entries[label] = combobox
             elif label == "Vencimiento:":
+                # Campo de fecha con validación
                 entry = CustomEntry(
                     form_frame,
                     textvariable=var,
-                    font=("Arial", 10),
+                    font=("Arial", 12),
                     width=32,
                     state="normal" if editable else "readonly"
                 )
-                
-                # Configurar validación para fecha (formato YYYY/MM/DD)
                 entry.configure(validate="key")
                 entry.configure(validatecommand=(
                     entry.register(self.validate_date_input), 
                     '%P', '%d', '%i', '%S'
                 ))
-                
-                # Insertar guiones automáticamente
                 entry.bind("<KeyRelease>", self.format_date_input)
-                
-                entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
+                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
                 self.entries[label] = entry
             else:
+                # Campos de texto/números
                 entry = CustomEntry(
                     form_frame,
                     textvariable=var,
-                    font=("Arial", 10),
+                    font=("Arial", 12),
                     width=32,
                     state="normal" if editable else "readonly"
                 )
@@ -140,33 +145,24 @@ class CrudInventory(tk.Toplevel):
                 elif val_type == 'decimal':
                     entry.configure(validate="key")
                     entry.configure(validatecommand=(entry.register(self.validate_decimal), '%P'))
-                else:  # text
+                else:
                     entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
                 
-                entry.grid(row=i, column=1, sticky="ew", pady=3, padx=5)
+                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
                 self.entries[label] = entry
         
-        # Frame para los botones (orden: Guardar, Cargar Imagen, Cancelar)
-        btn_frame = tk.Frame(form_frame)
-        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(15, 5))
+        # Frame para botones
+        btn_frame = tk.Frame(form_frame, bg="#f5f5f5")
+        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 10))
         
-        # Botón Guardar/Actualizar
-        if self.mode == "create":
-            btn_action = CustomButton(
-                btn_frame, 
-                text="Guardar", 
-                command=self.create_item,
-                padding=8,
-                width=15
-            )
-        else:
-            btn_action = CustomButton(
-                btn_frame, 
-                text="Actualizar", 
-                command=self.update_item,
-                padding=8,
-                width=15
-            )
+        # Botón principal (Guardar/Actualizar)
+        btn_action = CustomButton(
+            btn_frame, 
+            text="Guardar" if self.mode == "create" else "Actualizar", 
+            command=self.create_item if self.mode == "create" else self.update_item,
+            padding=10,
+            width=15
+        )
         btn_action.pack(side=tk.LEFT, padx=5)
         
         # Botón Cargar Imagen
@@ -174,7 +170,7 @@ class CrudInventory(tk.Toplevel):
             btn_frame,
             text="Cargar Imagen",
             command=self.load_image,
-            padding=8,
+            padding=10,
             width=15
         )
         btn_load_image.pack(side=tk.LEFT, padx=5)
@@ -184,89 +180,87 @@ class CrudInventory(tk.Toplevel):
             btn_frame, 
             text="Cancelar", 
             command=self.destroy,
-            padding=8,
+            padding=10,
             width=15
         )
         btn_cancel.pack(side=tk.LEFT, padx=5)
 
         # Frame para la imagen (derecha)
-        image_frame = tk.Frame(main_frame, padx=20, pady=20)
+        image_frame = tk.Frame(main_frame, bg="#f5f5f5", padx=20, pady=20)
         image_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
-        # Marco para la imagen
-        img_container = tk.LabelFrame(image_frame, text="Imagen del Producto", padx=10, pady=10)
+        # Contenedor de imagen con borde
+        img_container = tk.LabelFrame(
+            image_frame, 
+            text="Imagen del Producto", 
+            font=("Arial", 12),
+            bg="#f5f5f5",
+            padx=10, 
+            pady=10
+        )
         img_container.pack(fill=tk.BOTH, expand=True)
         
         # Etiqueta para mostrar la imagen
-        self.image_label = tk.Label(img_container, bg='white', width=300, height=300)
+        self.image_label = tk.Label(
+            img_container, 
+            bg='white', 
+            width=300, 
+            height=300,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
         self.image_label.pack(fill=tk.BOTH, expand=True)
         
-        # Mensaje informativo si estamos en modo edición
+        # Nota informativa en modo edición
         if self.mode == "edit":
-            info_frame = tk.Frame(form_frame)
+            info_frame = tk.Frame(form_frame, bg="#f5f5f5")
             info_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(10, 0))
             
             info_label = CustomLabel(
                 info_frame,
                 text="Nota: Para modificar cantidad/existencias, use los botones de ajuste",
-                font=("Arial", 9),
-                fg="#666"
+                font=("Arial", 10),
+                fg="#666",
+                bg="#f5f5f5"
             )
             info_label.pack()
 
+    # [Métodos de validación y funcionalidad se mantienen igual...]
     def validate_date_input(self, new_text: str, action_code: str, index: str, char: str) -> bool:
-        """
-        Valida la entrada de fecha en formato YYYY/MM/DD
-        """
-        # Permitir borrado
-        if action_code == '0':  # Borrado
+        """Valida el formato de fecha YYYY/MM/DD"""
+        if action_code == '0':
             return True
-            
-        # Solo permitir números
         if not char.isdigit():
             return False
-            
-        # Limitar longitud total
         if len(new_text) > 10:
             return False
-            
-        # Validar posiciones de las barras
         if len(new_text) >= 4 and new_text[4] != '/':
             return False
         if len(new_text) >= 7 and new_text[7] != '/':
             return False
-            
         return True
 
     def format_date_input(self, event: tk.Event) -> None:
-        """
-        Formatea automáticamente la fecha insertando las barras
-        """
+        """Formatea automáticamente la fecha con barras"""
         entry = event.widget
         text = entry.get()
-        
-        # Eliminar todas las barras para reprocesar
         clean_text = text.replace('/', '')
-        
-        # Reconstruir con barras en posiciones correctas
         formatted = ''
         for i, char in enumerate(clean_text):
             if i == 4 or i == 6:
                 formatted += '/'
-            if i < 8:  # Limitar a YYYY/MM/DD (10 caracteres)
+            if i < 8:
                 formatted += char
-        
-        # Actualizar el texto si hubo cambios
         if formatted != text:
             entry.delete(0, tk.END)
             entry.insert(0, formatted)
 
     def load_image(self):
+        """Carga una imagen para el producto"""
         file_path = filedialog.askopenfilename(
             title="Seleccionar imagen",
             filetypes=[("Image files", "*.jpg *.jpeg *.png")]
         )
-        
         if file_path:
             try:
                 img = Image.open(file_path)
@@ -277,6 +271,7 @@ class CrudInventory(tk.Toplevel):
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo cargar la imagen: {str(e)}", parent=self)
 
+    # [Resto de métodos se mantienen igual...]
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
         Validations.validate_entry(event, validation_func)
 

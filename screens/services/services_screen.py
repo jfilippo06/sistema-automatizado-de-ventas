@@ -15,6 +15,7 @@ class ServicesScreen(tk.Frame):
         self.open_previous_screen_callback = open_previous_screen_callback
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Todos los campos")
+        self.configure(bg="#f5f5f5")  # Fondo general
         self.configure_ui()
         self.refresh_data()
 
@@ -24,49 +25,51 @@ class ServicesScreen(tk.Frame):
         self.refresh_data()
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self)
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Header con título - Estilo actualizado
+        header_frame = tk.Frame(self, bg="#4a6fa5")
+        header_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0)
         
         title_label = CustomLabel(
             header_frame,
             text="Gestión de Servicios",
-            font=("Arial", 16, "bold"),
-            fg="#333"
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame principal para botones y búsqueda
-        top_frame = tk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
-
-        # Frame de botones (solo para el botón Regresar)
-        button_frame = tk.Frame(top_frame)
-        button_frame.pack(side=tk.LEFT)
-
+        # Frame para botón de regreso - Estilo actualizado
+        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
+        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
+        
         btn_back = CustomButton(
-            button_frame,
+            back_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
-            width=10
+            width=10,
         )
-        btn_back.pack(side=tk.LEFT, padx=5)
+        btn_back.pack(side=tk.RIGHT)
 
-        # Frame de búsqueda (a la derecha del botón Regresar)
-        search_frame = tk.Frame(top_frame)
-        search_frame.pack(side=tk.LEFT, padx=10, expand=True, fill=tk.X)
+        # Frame principal para controles - Estilo actualizado
+        controls_frame = tk.Frame(self, bg="#f5f5f5")
+        controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
-        # Campo de búsqueda
+        # Frame de búsqueda
+        search_frame = tk.Frame(controls_frame, bg="#f5f5f5")
+        search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
+        # Campo de búsqueda - Estilo actualizado
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
-            width=40
+            width=40,
+            font=("Arial", 12)
         )
-        search_entry.pack(side=tk.LEFT, padx=5)
+        search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         search_entry.bind("<KeyRelease>", self.on_search)
 
-        # Combobox para seleccionar campo de búsqueda
+        # Combobox para seleccionar campo de búsqueda - Estilo actualizado
         search_fields = [
             "Todos los campos",
             "ID",
@@ -85,40 +88,40 @@ class ServicesScreen(tk.Frame):
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
-        # Frame para los botones de acciones (derecha)
-        action_frame = tk.Frame(top_frame)
+        # Frame para los botones de acciones (derecha) - Estilo actualizado
+        action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         action_frame.pack(side=tk.RIGHT)
-
-        btn_add = CustomButton(
-            action_frame,
-            text="Agregar",
-            command=self.add_item,
-            padding=8,
-            width=10
-        )
-        btn_add.pack(side=tk.RIGHT, padx=5)
-
-        btn_edit = CustomButton(
-            action_frame,
-            text="Editar",
-            command=self.edit_item,
-            padding=8,
-            width=10
-        )
-        btn_edit.pack(side=tk.RIGHT, padx=5)
 
         btn_disable = CustomButton(
             action_frame,
             text="Deshabilitar",
             command=self.disable_item,
             padding=8,
-            width=12
+            width=12,
         )
         btn_disable.pack(side=tk.RIGHT, padx=5)
 
-        # Treeview frame
-        tree_frame = tk.Frame(self)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        btn_edit = CustomButton(
+            action_frame,
+            text="Editar",
+            command=self.edit_item,
+            padding=8,
+            width=10,
+        )
+        btn_edit.pack(side=tk.RIGHT, padx=5)
+
+        btn_add = CustomButton(
+            action_frame,
+            text="Agregar",
+            command=self.add_item,
+            padding=8,
+            width=10,
+        )
+        btn_add.pack(side=tk.RIGHT, padx=5)
+
+        # Treeview frame - Estilo actualizado
+        tree_frame = tk.Frame(self, bg="#f5f5f5")
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
         # Treeview para servicios
         self.tree = ttk.Treeview(tree_frame, columns=(
@@ -142,14 +145,15 @@ class ServicesScreen(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Barra de estado
+        # Barra de estado - Estilo actualizado
         self.status_bar = CustomLabel(
             self,
-            text="",
+            text="Listo",
             font=("Arial", 10),
-            fg="#666"
+            fg="#666",
+            bg="#f5f5f5"
         )
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
         self.refresh_data()
 

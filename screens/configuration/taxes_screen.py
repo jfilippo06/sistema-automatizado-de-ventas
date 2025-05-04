@@ -6,7 +6,7 @@ from widgets.custom_entry import CustomEntry
 from sqlite_cli.models.tax_model import Tax
 from sqlite_cli.models.status_model import Status
 from typing import Any, Callable, Dict
-from utils.valdations import Validations  # Importamos las validaciones
+from utils.valdations import Validations
 
 class TaxesManagementScreen(tk.Frame):
     def __init__(
@@ -17,7 +17,7 @@ class TaxesManagementScreen(tk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
-        self.configure(bg="#f0f0f0")
+        self.configure(bg="#f5f5f5")  # Fondo consistente
         self.tax_widgets = {}
         self.configure_ui()
 
@@ -27,35 +27,35 @@ class TaxesManagementScreen(tk.Frame):
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self, bg="#f0f0f0")
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Header con título - Estilo consistente
+        header_frame = tk.Frame(self, bg="#4a6fa5")  # Mismo color azul
+        header_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0)
         
         title_label = CustomLabel(
             header_frame,
             text="Gestión de Impuestos",
-            font=("Arial", 16, "bold"),
-            fg="#333",
-            bg="#f0f0f0"
+            font=("Arial", 20, "bold"),  # Mismo tamaño de fuente
+            fg="white",
+            bg="#4a6fa5"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame para botones
-        button_frame = tk.Frame(self, bg="#f0f0f0")
-        button_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
-
+        # Frame para botón de regreso - Estilo consistente
+        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
+        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
+        
         btn_back = CustomButton(
-            button_frame,
+            back_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
-            width=10
+            width=10,
         )
-        btn_back.pack(side=tk.LEFT, padx=5)
+        btn_back.pack(side=tk.RIGHT)
 
-        # Contenido principal
-        content_frame = tk.Frame(self, bg="#f0f0f0")
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        # Contenido principal - Estilo actualizado
+        content_frame = tk.Frame(self, bg="#f5f5f5")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Cargar impuestos desde la base de datos
         taxes = Tax.all()
@@ -63,40 +63,59 @@ class TaxesManagementScreen(tk.Frame):
         for tax in taxes:
             self.create_tax_widget(content_frame, tax)
 
-    def create_tax_widget(self, parent: tk.Widget, tax: Dict) -> None:
-        """Crea los widgets para un impuesto específico"""
-        tax_frame = tk.Frame(parent, bg="#f0f0f0", bd=1, relief=tk.GROOVE)
-        tax_frame.pack(fill=tk.X, pady=10, padx=5, ipady=5)
+        # Barra de estado - Igual que en otras pantallas
+        self.status_bar = CustomLabel(
+            self,
+            text="Listo",
+            font=("Arial", 10),
+            fg="#666",
+            bg="#f5f5f5"
+        )
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
-        # Subtítulo con nombre del impuesto
+    def create_tax_widget(self, parent: tk.Widget, tax: Dict) -> None:
+        """Crea los widgets para un impuesto específico con nuevo estilo"""
+        # Frame principal para cada impuesto - Estilo actualizado
+        tax_frame = tk.Frame(
+            parent, 
+            bg="white",  # Fondo blanco para mejor contraste
+            bd=1, 
+            relief=tk.GROOVE,
+            padx=10,
+            pady=10
+        )
+        tax_frame.pack(fill=tk.X, pady=10, padx=20, ipady=10)
+
+        # Subtítulo con nombre del impuesto - Estilo actualizado
         subtitle = CustomLabel(
             tax_frame,
-            text=f"{tax['name']}",
-            font=("Arial", 12, "bold"),
+            text=tax['name'],
+            font=("Arial", 14, "bold"),  # Tamaño aumentado
             fg="#333",
-            bg="#f0f0f0"
+            bg="white"
         )
-        subtitle.pack(anchor=tk.W, pady=(5, 10))
+        subtitle.pack(anchor=tk.W, pady=(0, 10))
 
-        # Frame para controles
-        controls_frame = tk.Frame(tax_frame, bg="#f0f0f0")
-        controls_frame.pack(fill=tk.X, padx=10)
+        # Frame para controles - Estilo actualizado
+        controls_frame = tk.Frame(tax_frame, bg="white")
+        controls_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        # Valor del impuesto
+        # Valor del impuesto - Estilo actualizado
         value_label = CustomLabel(
             controls_frame,
-            text="Valor:",
-            font=("Arial", 10),
+            text="Valor (%):",  # Añadido % para claridad
+            font=("Arial", 12),  # Tamaño aumentado
             fg="#333",
-            bg="#f0f0f0"
+            bg="white"
         )
-        value_label.pack(side=tk.LEFT, padx=(0, 5))
+        value_label.pack(side=tk.LEFT, padx=(0, 10))
 
         value_var = tk.StringVar(value=str(tax['value']))
         value_entry = CustomEntry(
             controls_frame,
             textvariable=value_var,
             width=15,
+            font=("Arial", 12),  # Tamaño aumentado
             state="normal" if tax['status_name'] == 'active' else "disabled"
         )
         # Configuramos la validación para números decimales
@@ -105,32 +124,39 @@ class TaxesManagementScreen(tk.Frame):
             value_entry.register(Validations.validate_decimal),
             '%P'
         ))
-        value_entry.pack(side=tk.LEFT, padx=(0, 10))
+        value_entry.pack(side=tk.LEFT, padx=(0, 20))
 
-        # Frame para botones
-        buttons_frame = tk.Frame(controls_frame, bg="#f0f0f0")
+        # Frame para botones - Estilo actualizado
+        buttons_frame = tk.Frame(controls_frame, bg="white")
         buttons_frame.pack(side=tk.RIGHT)
 
-        # Botón de actualizar
+        # Botón de actualizar - Estilo consistente
         btn_update = CustomButton(
             buttons_frame,
             text="Actualizar",
-            command=lambda: self.update_tax_value(tax['name'], value_var.get(), tax['status_name'] == 'active'),
-            padding=5,
-            width=10
+            command=lambda: self.update_tax_value(
+                tax['name'], 
+                value_var.get(), 
+                tax['status_name'] == 'active'
+            ),
+            padding=8,  # Mismo padding
+            width=12    # Mismo ancho
         )
         # Configurar estado inicial del botón
         if tax['status_name'] != 'active':
             btn_update.disable()
         btn_update.pack(side=tk.LEFT, padx=5)
 
-        # Botón de activar/desactivar
+        # Botón de activar/desactivar - Estilo consistente
         btn_toggle = CustomButton(
             buttons_frame,
             text="Desactivar" if tax['status_name'] == 'active' else "Activar",
-            command=lambda: self.toggle_tax_status(tax['name'], tax['status_name'] != 'active'),
-            padding=5,
-            width=10
+            command=lambda: self.toggle_tax_status(
+                tax['name'], 
+                tax['status_name'] != 'active'
+            ),
+            padding=8,  # Mismo padding
+            width=12    # Mismo ancho
         )
         btn_toggle.pack(side=tk.LEFT, padx=5)
 
@@ -145,19 +171,26 @@ class TaxesManagementScreen(tk.Frame):
 
     def update_tax_value(self, tax_name: str, new_value: str, is_active: bool) -> None:
         """Actualiza el valor de un impuesto"""
-        # Protección adicional - aunque el botón debería estar deshabilitado
         if not is_active:
-            return  # Simplemente salir sin hacer nada
+            return
             
         try:
             value = float(new_value)
             if value < 0:
                 raise ValueError("El valor no puede ser negativo")
+            if value > 100:
+                raise ValueError("El porcentaje no puede ser mayor a 100")
             
             Tax.update_value(tax_name, value)
-            messagebox.showinfo("Éxito", f"Valor de {tax_name} actualizado correctamente", parent=self)
+            messagebox.showinfo(
+                "Éxito", 
+                f"Valor de {tax_name} actualizado correctamente", 
+                parent=self
+            )
+            self.status_bar.configure(text=f"Valor de {tax_name} actualizado a {value}%")
         except ValueError as e:
             messagebox.showerror("Error", f"Valor inválido: {str(e)}", parent=self)
+            self.status_bar.configure(text=f"Error: {str(e)}")
 
     def toggle_tax_status(self, tax_name: str, activate: bool) -> None:
         """Activa o desactiva un impuesto"""
@@ -173,7 +206,6 @@ class TaxesManagementScreen(tk.Frame):
                 widgets['is_active'] = activate
                 widgets['value_entry'].config(state="normal" if activate else "disabled")
                 
-                # Actualizar botón de actualizar
                 if activate:
                     widgets['btn_update'].enable()
                     widgets['btn_update'].command = lambda: self.update_tax_value(
@@ -183,10 +215,8 @@ class TaxesManagementScreen(tk.Frame):
                     )
                 else:
                     widgets['btn_update'].disable()
-                    # Eliminar cualquier comando pendiente
                     widgets['btn_update'].command = None
                 
-                # Actualizar botón de toggle
                 widgets['btn_toggle'].label.configure(
                     text="Desactivar" if activate else "Activar"
                 )
@@ -199,8 +229,13 @@ class TaxesManagementScreen(tk.Frame):
                 f"Impuesto {tax_name} {'activado' if activate else 'desactivado'} correctamente",
                 parent=self
             )
+            self.status_bar.configure(
+                text=f"Impuesto {tax_name} {'activado' if activate else 'desactivado'}"
+            )
         else:
             messagebox.showerror("Error", "No se pudo cambiar el estado del impuesto", parent=self)
+            self.status_bar.configure(text="Error al cambiar estado del impuesto")
 
     def go_back(self) -> None:
+        self.parent.state('normal')  # Restaurar tamaño de ventana
         self.open_previous_screen_callback()

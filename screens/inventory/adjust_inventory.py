@@ -23,9 +23,11 @@ class AdjustInventory(tk.Toplevel):
         self.item_id = item_id
         self.refresh_callback = refresh_callback
         
+        # Configuración de la ventana
         self.title("Ajuste de Inventario")
-        self.geometry("500x500")  # Tamaño inicial adecuado
-        self.minsize(400, 450)   # Tamaño mínimo permitido
+        self.geometry("500x500")
+        self.minsize(400, 450)
+        self.configure(bg="#f5f5f5")
         
         self.transient(parent)
         self.grab_set()
@@ -48,52 +50,63 @@ class AdjustInventory(tk.Toplevel):
         self.geometry(f'+{x}+{y}')
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, padx=20, pady=20)
+        """Configura la interfaz de usuario"""
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título
+        # Título con estilo consistente
         title_text = f"Ajuste {'Positivo (+)' if self.adjustment_type == 'positive' else 'Negativo (-)'}"
         title_label = CustomLabel(
             main_frame,
             text=title_text,
-            font=("Arial", 14, "bold"),
-            fg="#333"
+            font=("Arial", 16, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
-        title_label.pack(pady=(0, 15))
+        title_label.pack(pady=(0, 20))
         
-        # Info del producto
-        self.product_info_frame = tk.Frame(main_frame, bd=1, relief=tk.SOLID, padx=10, pady=10)
-        self.product_info_frame.pack(fill=tk.X, pady=5)
+        # Marco para información del producto
+        self.product_info_frame = tk.Frame(
+            main_frame, 
+            bg="white", 
+            bd=1, 
+            relief=tk.SOLID, 
+            padx=10, 
+            pady=10
+        )
+        self.product_info_frame.pack(fill=tk.X, pady=10)
         
         self.product_label = CustomLabel(
             self.product_info_frame,
             text="",
-            font=("Arial", 10),
+            font=("Arial", 12),
             fg="#555",
-            justify=tk.LEFT
+            justify=tk.LEFT,
+            bg="white"
         )
         self.product_label.pack(anchor=tk.W)
         
-        # Frame para los campos de ajuste
-        adjust_frame = tk.Frame(main_frame)
+        # Frame para campos de ajuste
+        adjust_frame = tk.Frame(main_frame, bg="#f5f5f5")
         adjust_frame.pack(fill=tk.X, pady=10)
         
-        # Cantidad
-        quantity_frame = tk.Frame(adjust_frame)
+        # Campo de cantidad
+        quantity_frame = tk.Frame(adjust_frame, bg="#f5f5f5")
         quantity_frame.pack(fill=tk.X, pady=5)
         
         quantity_label = CustomLabel(
             quantity_frame,
             text="Cambio en Cantidad:",
-            font=("Arial", 10),
-            fg="#555"
+            font=("Arial", 12),
+            fg="#555",
+            bg="#f5f5f5"
         )
         quantity_label.pack(side=tk.LEFT, padx=5)
         
         self.quantity_entry = CustomEntry(
             quantity_frame,
             textvariable=self.quantity_var,
-            font=("Arial", 10),
+            font=("Arial", 12),
             width=15
         )
         self.quantity_entry.configure(validate="key")
@@ -103,22 +116,23 @@ class AdjustInventory(tk.Toplevel):
         ))
         self.quantity_entry.pack(side=tk.RIGHT, padx=5)
         
-        # Existencias
-        stock_frame = tk.Frame(adjust_frame)
+        # Campo de existencias
+        stock_frame = tk.Frame(adjust_frame, bg="#f5f5f5")
         stock_frame.pack(fill=tk.X, pady=5)
         
         stock_label = CustomLabel(
             stock_frame,
             text="Cambio en Existencias:",
-            font=("Arial", 10),
-            fg="#555"
+            font=("Arial", 12),
+            fg="#555",
+            bg="#f5f5f5"
         )
         stock_label.pack(side=tk.LEFT, padx=5)
         
         self.stock_entry = CustomEntry(
             stock_frame,
             textvariable=self.stock_var,
-            font=("Arial", 10),
+            font=("Arial", 12),
             width=15
         )
         self.stock_entry.configure(validate="key")
@@ -128,15 +142,16 @@ class AdjustInventory(tk.Toplevel):
         ))
         self.stock_entry.pack(side=tk.RIGHT, padx=5)
         
-        # Notas
-        notes_frame = tk.Frame(main_frame)
+        # Área de notas
+        notes_frame = tk.Frame(main_frame, bg="#f5f5f5")
         notes_frame.pack(fill=tk.BOTH, expand=True, pady=10)
         
         notes_label = CustomLabel(
             notes_frame,
             text="Notas/Observaciones:",
-            font=("Arial", 10),
-            fg="#555"
+            font=("Arial", 12),
+            fg="#555",
+            bg="#f5f5f5"
         )
         notes_label.pack(anchor=tk.W, pady=5)
         
@@ -145,37 +160,44 @@ class AdjustInventory(tk.Toplevel):
             height=2,
             width=40,
             wrap=tk.WORD,
-            font=("Arial", 10),
+            font=("Arial", 12),
             padx=5,
-            pady=5
+            pady=5,
+            bd=1,
+            relief=tk.SOLID
         )
         self.notes_text.pack(fill=tk.BOTH, expand=True)
         
-        # Botones directamente debajo de las notas
-        # Botón Aplicar
-        btn_apply = CustomButton(
-            main_frame,
-            text="Aplicar Ajuste", 
-            command=self.apply_adjustment,
-            padding=8,
-            width=15
-        )
-        btn_apply.pack(side=tk.RIGHT, padx=5, pady=(0, 10))
+        # Frame para botones
+        button_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        button_frame.pack(fill=tk.X, pady=(10, 0))
         
         # Botón Cancelar
         btn_cancel = CustomButton(
-            main_frame,
+            button_frame,
             text="Cancelar", 
             command=self.destroy,
-            padding=8,
+            padding=10,
             width=15
         )
-        btn_cancel.pack(side=tk.RIGHT, padx=5, pady=(0, 10))
+        btn_cancel.pack(side=tk.RIGHT, padx=5)
+        
+        # Botón Aplicar
+        btn_apply = CustomButton(
+            button_frame,
+            text="Aplicar Ajuste", 
+            command=self.apply_adjustment,
+            padding=10,
+            width=15
+        )
+        btn_apply.pack(side=tk.RIGHT, padx=5)
 
     def validate_integer(self, text: str) -> bool:
+        """Valida que la entrada sea un número entero"""
         return Validations.validate_integer(text)
 
     def load_item_data(self):
+        """Carga los datos del producto a ajustar"""
         item = InventoryItem.get_by_id(self.item_id)
         if not item:
             messagebox.showerror("Error", "No se pudo cargar el producto", parent=self)
@@ -190,6 +212,7 @@ class AdjustInventory(tk.Toplevel):
         )
 
     def apply_adjustment(self):
+        """Aplica el ajuste al inventario"""
         try:
             quantity_change = int(self.quantity_var.get())
             stock_change = int(self.stock_var.get())
@@ -199,12 +222,10 @@ class AdjustInventory(tk.Toplevel):
                 messagebox.showwarning("Advertencia", "Debe especificar al menos un cambio", parent=self)
                 return
             
-            # Obtener el producto actual
             item = InventoryItem.get_by_id(self.item_id)
             if not item:
                 raise ValueError("Producto no encontrado")
             
-            # Determinar el tipo de movimiento y referencia
             if self.adjustment_type == "positive":
                 movement_type = MovementType.get_by_name("Ajuste positivo")
                 reference_type = "positive_adjustment"
@@ -219,21 +240,18 @@ class AdjustInventory(tk.Toplevel):
             if not movement_type:
                 raise ValueError("Tipo de movimiento no encontrado")
             
-            # Calcular nuevos valores
             new_quantity = item['quantity'] + quantity_change
             new_stock = item['stock'] + stock_change
             
-            # Validar que no queden valores negativos
             if new_quantity < 0 or new_stock < 0:
                 messagebox.showwarning("Advertencia", "Los valores resultantes no pueden ser negativos", parent=self)
                 return
             
-            # Obtener ID de usuario de la sesión
             user_id = SessionManager.get_user_id()
             if not user_id:
                 raise ValueError("No se pudo obtener el ID del usuario")
             
-            # Actualizar el inventario
+            # Actualizar inventario
             InventoryItem.update(
                 item_id=self.item_id,
                 code=item['code'],
@@ -248,7 +266,7 @@ class AdjustInventory(tk.Toplevel):
                 image_path=item.get('image_path')
             )
             
-            # Registrar el movimiento en el historial
+            # Registrar movimiento
             InventoryMovement.create(
                 inventory_id=self.item_id,
                 movement_type_id=movement_type['id'],

@@ -23,6 +23,8 @@ class SalesScreen(tk.Frame):
         self.cart_items = []
         self.current_supplier = None
         
+        # Configuración de estilos
+        self.configure(bg="#f5f5f5")  # Fondo general
         self.configure_ui()
         self.refresh_data()
 
@@ -32,73 +34,42 @@ class SalesScreen(tk.Frame):
         self.refresh_data()
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self)
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        """Configura la interfaz de usuario con estilos mejorados"""
+        # Encabezado azul
+        header_frame = tk.Frame(self, bg="#4a6fa5", height=80)
+        header_frame.pack(side=tk.TOP, fill=tk.X)
         
+        # Título del sistema
         title_label = CustomLabel(
             header_frame,
             text="Gestión de Compras",
-            font=("Arial", 16, "bold"),
-            fg="#333"
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=20)
 
-        # Frame principal para botones y búsqueda
-        top_frame = tk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Frame principal para controles
+        controls_frame = tk.Frame(self, bg="#f5f5f5")
+        controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
-        # Frame de botones (izquierda)
-        button_frame = tk.Frame(top_frame)
-        button_frame.pack(side=tk.LEFT)
-
-        # Frame de botones (izquierda)
-        button_frame = tk.Frame(top_frame)
-        button_frame.pack(side=tk.LEFT)
-
-        btn_cancel = CustomButton(
-            button_frame,
-            text="Cancelar Compra",
-            command=self.cancel_purchase,
-            padding=8,
-            width=18
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=5)
-
-        btn_checkout = CustomButton(
-            button_frame,
-            text="Realizar Compra",
-            command=self.checkout,
-            padding=8,
-            width=18
-        )
-        btn_checkout.pack(side=tk.LEFT, padx=5)
-
-        # Agregar este botón junto a los otros botones existentes
-        btn_create_product = CustomButton(
-            button_frame,
-            text="Crear Producto",
-            command=self.create_product,
-            padding=8,
-            width=15
-        )
-        btn_create_product.pack(side=tk.LEFT, padx=5)
-
-        # Frame de búsqueda de proveedor (centro)
-        supplier_frame = tk.Frame(top_frame)
+        # Frame de búsqueda de proveedor
+        supplier_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         supplier_frame.pack(side=tk.LEFT, padx=10, expand=True, fill=tk.X)
 
         lbl_supplier = CustomLabel(
             supplier_frame,
             text="Cédula Proveedor:",
-            font=("Arial", 10),
-            fg="#555"
+            font=("Arial", 12),
+            fg="#555",
+            bg="#f5f5f5"
         )
         lbl_supplier.pack(side=tk.LEFT, padx=5)
 
         self.entry_supplier = CustomEntry(
             supplier_frame,
             textvariable=self.supplier_id_var,
+            font=("Arial", 12),
             width=20
         )
         self.entry_supplier.pack(side=tk.LEFT, padx=5)
@@ -107,26 +78,59 @@ class SalesScreen(tk.Frame):
             supplier_frame,
             text="Buscar",
             command=self.search_supplier,
-            padding=4,
-            width=8
+            padding=6,
+            width=10
         )
         btn_search_supplier.pack(side=tk.LEFT, padx=5)
 
         self.lbl_supplier_info = CustomLabel(
             supplier_frame,
-            text="",
-            font=("Arial", 10, "bold"),
-            fg="#333"
+            text="Seleccione un proveedor",
+            font=("Arial", 12, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
         self.lbl_supplier_info.pack(side=tk.LEFT, padx=10)
 
-        # Frame de búsqueda de productos (abajo del frame de proveedor)
-        search_frame = tk.Frame(self)
-        search_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        # Frame de acciones
+        action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
+        action_frame.pack(side=tk.RIGHT)
+
+        btn_cancel = CustomButton(
+            action_frame,
+            text="Cancelar Compra",
+            command=self.cancel_purchase,
+            padding=8,
+            width=18
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=5)
+
+        btn_checkout = CustomButton(
+            action_frame,
+            text="Realizar Compra",
+            command=self.checkout,
+            padding=8,
+            width=18
+        )
+        btn_checkout.pack(side=tk.LEFT, padx=5)
+
+        btn_create_product = CustomButton(
+            action_frame,
+            text="Crear Producto",
+            command=self.create_product,
+            padding=8,
+            width=15
+        )
+        btn_create_product.pack(side=tk.LEFT, padx=5)
+
+        # Frame de búsqueda de productos
+        search_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=5)
+        search_frame.pack(side=tk.TOP, fill=tk.X)
 
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
+            font=("Arial", 12),
             width=40
         )
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -146,35 +150,41 @@ class SalesScreen(tk.Frame):
             textvariable=self.search_field_var,
             values=search_fields,
             state="readonly",
-            width=20
+            width=20,
+            font=("Arial", 12)
         )
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
         # Frame para las tablas
-        tables_frame = tk.Frame(self)
-        tables_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tables_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
+        tables_frame.pack(fill=tk.BOTH, expand=True)
 
         # Treeview para productos del proveedor
         lbl_supplier_products = CustomLabel(
             tables_frame,
             text="Productos del Proveedor",
-            font=("Arial", 12),
-            fg="#333"
+            font=("Arial", 14),
+            fg="#333",
+            bg="#f5f5f5"
         )
         lbl_supplier_products.pack(anchor=tk.W)
 
         supplier_products_frame = tk.Frame(tables_frame)
-        supplier_products_frame.pack(fill=tk.X, pady=(0, 5))
+        supplier_products_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.supplier_products_tree = ttk.Treeview(supplier_products_frame, columns=(
-        "ID", "Código", "Producto", "Cantidad", "Precio"
-        ), show="headings", height=5)
+        self.supplier_products_tree = ttk.Treeview(
+            supplier_products_frame, 
+            columns=("ID", "Código", "Producto", "Cantidad", "Precio"),
+            show="headings",
+            height=5,
+            style="Custom.Treeview"
+        )
 
         columns = [
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
-            ("Producto", 150, tk.W),
+            ("Producto", 200, tk.W),
             ("Cantidad", 80, tk.CENTER),
             ("Precio", 100, tk.CENTER)
         ]
@@ -183,7 +193,11 @@ class SalesScreen(tk.Frame):
             self.supplier_products_tree.heading(col, text=col)
             self.supplier_products_tree.column(col, width=width, anchor=anchor)
 
-        scrollbar = ttk.Scrollbar(supplier_products_frame, orient=tk.VERTICAL, command=self.supplier_products_tree.yview)
+        scrollbar = ttk.Scrollbar(
+            supplier_products_frame, 
+            orient=tk.VERTICAL, 
+            command=self.supplier_products_tree.yview
+        )
         self.supplier_products_tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.supplier_products_tree.pack(fill=tk.BOTH, expand=True)
@@ -193,23 +207,32 @@ class SalesScreen(tk.Frame):
         lbl_products = CustomLabel(
             tables_frame,
             text="Productos Disponibles",
-            font=("Arial", 12),
-            fg="#333"
+            font=("Arial", 14),
+            fg="#333",
+            bg="#f5f5f5"
         )
         lbl_products.pack(anchor=tk.W)
 
         products_frame = tk.Frame(tables_frame)
         products_frame.pack(fill=tk.X, pady=(0, 20))
 
-        self.products_tree = ttk.Treeview(products_frame, columns=(
-        "ID", "Código", "Producto", "Cantidad", "Precio"
-        ), show="headings", height=5)
+        self.products_tree = ttk.Treeview(
+            products_frame, 
+            columns=("ID", "Código", "Producto", "Cantidad", "Precio"),
+            show="headings",
+            height=5,
+            style="Custom.Treeview"
+        )
 
         for col, width, anchor in columns:
             self.products_tree.heading(col, text=col)
             self.products_tree.column(col, width=width, anchor=anchor)
 
-        scrollbar = ttk.Scrollbar(products_frame, orient=tk.VERTICAL, command=self.products_tree.yview)
+        scrollbar = ttk.Scrollbar(
+            products_frame, 
+            orient=tk.VERTICAL, 
+            command=self.products_tree.yview
+        )
         self.products_tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.products_tree.pack(fill=tk.BOTH, expand=True)
@@ -219,24 +242,29 @@ class SalesScreen(tk.Frame):
         lbl_cart = CustomLabel(
             tables_frame,
             text="Carrito de Compras",
-            font=("Arial", 12),
-            fg="#333"
+            font=("Arial", 14),
+            fg="#333",
+            bg="#f5f5f5"
         )
         lbl_cart.pack(anchor=tk.W)
 
         cart_frame = tk.Frame(tables_frame)
         cart_frame.pack(fill=tk.X)
 
-        self.cart_tree = ttk.Treeview(cart_frame, columns=(
-            "ID", "Producto", "Cantidad", "Precio Unitario", "Total", "Acción"
-        ), show="headings", height=5)
+        self.cart_tree = ttk.Treeview(
+            cart_frame, 
+            columns=("ID", "Producto", "Cantidad", "Precio Unitario", "Total", "Acción"),
+            show="headings",
+            height=5,
+            style="Custom.Treeview"
+        )
 
         cart_columns = [
             ("ID", 50, tk.CENTER),
             ("Producto", 200, tk.W),
             ("Cantidad", 80, tk.CENTER),
-            ("Precio Unitario", 100, tk.CENTER),
-            ("Total", 100, tk.CENTER),
+            ("Precio Unitario", 120, tk.CENTER),
+            ("Total", 120, tk.CENTER),
             ("Acción", 80, tk.CENTER)
         ]
 
@@ -244,15 +272,19 @@ class SalesScreen(tk.Frame):
             self.cart_tree.heading(col, text=col)
             self.cart_tree.column(col, width=width, anchor=anchor)
 
-        cart_scrollbar = ttk.Scrollbar(cart_frame, orient=tk.VERTICAL, command=self.cart_tree.yview)
+        cart_scrollbar = ttk.Scrollbar(
+            cart_frame, 
+            orient=tk.VERTICAL, 
+            command=self.cart_tree.yview
+        )
         self.cart_tree.configure(yscroll=cart_scrollbar.set)
         cart_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.cart_tree.pack(fill=tk.BOTH, expand=True)
         self.cart_tree.bind("<Button-1>", self.on_cart_item_click)
 
         # Frame para totales
-        totals_frame = tk.Frame(self)
-        totals_frame.pack(fill=tk.X, padx=10, pady=10)
+        totals_frame = tk.Frame(self, bg="#4a6fa5", padx=20, pady=10)
+        totals_frame.pack(fill=tk.X)
 
         # Obtener información de impuestos y monedas
         iva_tax = Tax.get_by_name("IVA")
@@ -264,24 +296,27 @@ class SalesScreen(tk.Frame):
             self.lbl_subtotal = CustomLabel(
                 totals_frame,
                 text="Subtotal: 0.00",
-                font=("Arial", 10, "bold"),
-                fg="#333"
+                font=("Arial", 12, "bold"),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
 
             self.lbl_iva = CustomLabel(
                 totals_frame,
                 text=f"IVA ({iva_tax['value']}%): 0.00",
-                font=("Arial", 10, "bold"),
-                fg="#333"
+                font=("Arial", 12, "bold"),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_iva.pack(side=tk.LEFT, padx=10)
 
         self.lbl_total = CustomLabel(
             totals_frame,
             text="Total: 0.00",
-            font=("Arial", 10, "bold"),
-            fg="#333"
+            font=("Arial", 12, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
         self.lbl_total.pack(side=tk.LEFT, padx=10)
 
@@ -289,8 +324,9 @@ class SalesScreen(tk.Frame):
             self.lbl_dollar = CustomLabel(
                 totals_frame,
                 text="Dólares: $0.00",
-                font=("Arial", 10),
-                fg="#666"
+                font=("Arial", 12),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_dollar.pack(side=tk.LEFT, padx=10)
 
@@ -298,21 +334,23 @@ class SalesScreen(tk.Frame):
             self.lbl_euro = CustomLabel(
                 totals_frame,
                 text="Euros: €0.00",
-                font=("Arial", 10),
-                fg="#666"
+                font=("Arial", 12),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_euro.pack(side=tk.LEFT, padx=10)
 
         # Barra de estado
         self.status_bar = CustomLabel(
             self,
-            text="",
+            text="Listo",
             font=("Arial", 10),
-            fg="#666"
+            fg="#666",
+            bg="#f5f5f5"
         )
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
-    # Luego agregar este método a la clase SalesScreen:
+    # [Resto de los métodos permanecen iguales...]
     def create_product(self):
         """Abre el formulario para crear un nuevo producto con campos bloqueados"""
         def on_product_created():
@@ -667,8 +705,8 @@ class SalesScreen(tk.Frame):
             font=("Arial", 10),
             width=10,
             validate="key",
-            validatecommand=(quantity_window.register(self.validate_quantity), '%P')
-        )
+            validatecommand=(quantity_window.register(self.validate_quantity), '%P'
+        ))
         quantity_entry.pack(side=tk.LEFT, padx=5)
         
         def add_to_cart():

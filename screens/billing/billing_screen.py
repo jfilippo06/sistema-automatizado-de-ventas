@@ -24,6 +24,8 @@ class BillingScreen(tk.Frame):
         self.cart_items = []
         self.current_customer = None
         
+        # Configuración de estilos
+        self.configure(bg="#f5f5f5")  # Fondo general
         self.configure_ui()
         self.refresh_data()
 
@@ -33,59 +35,42 @@ class BillingScreen(tk.Frame):
         self.refresh_data()
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self)
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        """Configura la interfaz de usuario con estilos mejorados"""
+        # Encabezado azul
+        header_frame = tk.Frame(self, bg="#4a6fa5", height=80)
+        header_frame.pack(side=tk.TOP, fill=tk.X)
         
+        # Título del sistema
         title_label = CustomLabel(
             header_frame,
             text="Facturación",
-            font=("Arial", 16, "bold"),
-            fg="#333"
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=20)
 
-        # Frame principal para botones y búsqueda
-        top_frame = tk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Frame principal para controles
+        controls_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
+        controls_frame.pack(side=tk.TOP, fill=tk.X)
 
-        # Frame de botones (izquierda)
-        button_frame = tk.Frame(top_frame)
-        button_frame.pack(side=tk.LEFT)
-
-        btn_cancel = CustomButton(
-            button_frame,
-            text="Cancelar Compra",
-            command=self.cancel_purchase,
-            padding=8,
-            width=18
-        )
-        btn_cancel.pack(side=tk.LEFT, padx=5)
-
-        btn_checkout = CustomButton(
-            button_frame,
-            text="Realizar Compra",
-            command=self.checkout,
-            padding=8,
-            width=18
-        )
-        btn_checkout.pack(side=tk.LEFT, padx=5)
-
-        # Frame de búsqueda de cliente (centro)
-        customer_frame = tk.Frame(top_frame)
+        # Frame de búsqueda de cliente
+        customer_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         customer_frame.pack(side=tk.LEFT, padx=10, expand=True, fill=tk.X)
 
         lbl_customer = CustomLabel(
             customer_frame,
             text="Cédula Cliente:",
-            font=("Arial", 10),
-            fg="#555"
+            font=("Arial", 12),
+            fg="#555",
+            bg="#f5f5f5"
         )
         lbl_customer.pack(side=tk.LEFT, padx=5)
 
         self.entry_customer = CustomEntry(
             customer_frame,
             textvariable=self.customer_id_var,
+            font=("Arial", 12),
             width=20
         )
         self.entry_customer.pack(side=tk.LEFT, padx=5)
@@ -94,26 +79,50 @@ class BillingScreen(tk.Frame):
             customer_frame,
             text="Buscar",
             command=self.search_customer,
-            padding=4,
-            width=8
+            padding=6,
+            width=10
         )
         btn_search_customer.pack(side=tk.LEFT, padx=5)
 
         self.lbl_customer_info = CustomLabel(
             customer_frame,
-            text="",
-            font=("Arial", 10, "bold"),
-            fg="#333"
+            text="Seleccione un cliente",
+            font=("Arial", 12, "bold"),
+            fg="#333",
+            bg="#f5f5f5"
         )
         self.lbl_customer_info.pack(side=tk.LEFT, padx=10)
 
-        # Frame de búsqueda de productos (abajo del frame de cliente)
-        search_frame = tk.Frame(self)
-        search_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        # Frame de acciones
+        action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
+        action_frame.pack(side=tk.RIGHT)
+
+        btn_cancel = CustomButton(
+            action_frame,
+            text="Cancelar Venta",
+            command=self.cancel_purchase,
+            padding=8,
+            width=18
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=5)
+
+        btn_checkout = CustomButton(
+            action_frame,
+            text="Realizar Venta",
+            command=self.checkout,
+            padding=8,
+            width=18
+        )
+        btn_checkout.pack(side=tk.LEFT, padx=5)
+
+        # Frame de búsqueda de productos
+        search_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=5)
+        search_frame.pack(side=tk.TOP, fill=tk.X)
 
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
+            font=("Arial", 12),
             width=40
         )
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -133,36 +142,41 @@ class BillingScreen(tk.Frame):
             textvariable=self.search_field_var,
             values=search_fields,
             state="readonly",
-            width=20
+            width=20,
+            font=("Arial", 12)
         )
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
         # Frame para las tablas
-        tables_frame = tk.Frame(self)
-        tables_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tables_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
+        tables_frame.pack(fill=tk.BOTH, expand=True)
 
         # Treeview para productos disponibles
         lbl_products = CustomLabel(
             tables_frame,
             text="Productos Disponibles",
-            font=("Arial", 12),
-            fg="#333"
+            font=("Arial", 14),
+            fg="#333",
+            bg="#f5f5f5"
         )
         lbl_products.pack(anchor=tk.W)
 
         products_frame = tk.Frame(tables_frame)
         products_frame.pack(fill=tk.X, pady=(0, 20))
 
-        self.products_tree = ttk.Treeview(products_frame, columns=(
-            "ID", "Código", "Producto", "Existencias", "Stock mínimo", 
-            "Stock máximo", "Precio"
-        ), show="headings")
+        self.products_tree = ttk.Treeview(
+            products_frame, 
+            columns=("ID", "Código", "Producto", "Existencias", "Stock mínimo", "Stock máximo", "Precio"),
+            show="headings",
+            height=5,
+            style="Custom.Treeview"
+        )
 
         columns = [
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
-            ("Producto", 150, tk.W),
+            ("Producto", 200, tk.W),
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
             ("Stock máximo", 80, tk.CENTER),
@@ -173,7 +187,11 @@ class BillingScreen(tk.Frame):
             self.products_tree.heading(col, text=col)
             self.products_tree.column(col, width=width, anchor=anchor)
 
-        scrollbar = ttk.Scrollbar(products_frame, orient=tk.VERTICAL, command=self.products_tree.yview)
+        scrollbar = ttk.Scrollbar(
+            products_frame, 
+            orient=tk.VERTICAL, 
+            command=self.products_tree.yview
+        )
         self.products_tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.products_tree.pack(fill=tk.BOTH, expand=True)
@@ -183,24 +201,29 @@ class BillingScreen(tk.Frame):
         lbl_cart = CustomLabel(
             tables_frame,
             text="Carrito de Compras",
-            font=("Arial", 12),
-            fg="#333"
+            font=("Arial", 14),
+            fg="#333",
+            bg="#f5f5f5"
         )
         lbl_cart.pack(anchor=tk.W)
 
         cart_frame = tk.Frame(tables_frame)
         cart_frame.pack(fill=tk.X)
 
-        self.cart_tree = ttk.Treeview(cart_frame, columns=(
-            "ID", "Producto", "Cantidad", "Precio Unitario", "Total", "Acción"
-        ), show="headings")
+        self.cart_tree = ttk.Treeview(
+            cart_frame, 
+            columns=("ID", "Producto", "Cantidad", "Precio Unitario", "Total", "Acción"),
+            show="headings",
+            height=5,
+            style="Custom.Treeview"
+        )
 
         cart_columns = [
             ("ID", 50, tk.CENTER),
             ("Producto", 200, tk.W),
             ("Cantidad", 80, tk.CENTER),
-            ("Precio Unitario", 100, tk.CENTER),
-            ("Total", 100, tk.CENTER),
+            ("Precio Unitario", 120, tk.CENTER),
+            ("Total", 120, tk.CENTER),
             ("Acción", 80, tk.CENTER)
         ]
 
@@ -208,15 +231,19 @@ class BillingScreen(tk.Frame):
             self.cart_tree.heading(col, text=col)
             self.cart_tree.column(col, width=width, anchor=anchor)
 
-        cart_scrollbar = ttk.Scrollbar(cart_frame, orient=tk.VERTICAL, command=self.cart_tree.yview)
+        cart_scrollbar = ttk.Scrollbar(
+            cart_frame, 
+            orient=tk.VERTICAL, 
+            command=self.cart_tree.yview
+        )
         self.cart_tree.configure(yscroll=cart_scrollbar.set)
         cart_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.cart_tree.pack(fill=tk.BOTH, expand=True)
         self.cart_tree.bind("<Button-1>", self.on_cart_item_click)
 
         # Frame para totales
-        totals_frame = tk.Frame(self)
-        totals_frame.pack(fill=tk.X, padx=10, pady=10)
+        totals_frame = tk.Frame(self, bg="#4a6fa5", padx=20, pady=10)
+        totals_frame.pack(fill=tk.X)
 
         # Obtener información de impuestos y monedas
         iva_tax = Tax.get_by_name("IVA")
@@ -228,24 +255,27 @@ class BillingScreen(tk.Frame):
             self.lbl_subtotal = CustomLabel(
                 totals_frame,
                 text="Subtotal: 0.00",
-                font=("Arial", 10, "bold"),
-                fg="#333"
+                font=("Arial", 12, "bold"),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
 
             self.lbl_iva = CustomLabel(
                 totals_frame,
                 text=f"IVA ({iva_tax['value']}%): 0.00",
-                font=("Arial", 10, "bold"),
-                fg="#333"
+                font=("Arial", 12, "bold"),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_iva.pack(side=tk.LEFT, padx=10)
 
         self.lbl_total = CustomLabel(
             totals_frame,
             text="Total: 0.00",
-            font=("Arial", 10, "bold"),
-            fg="#333"
+            font=("Arial", 12, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
         self.lbl_total.pack(side=tk.LEFT, padx=10)
 
@@ -253,8 +283,9 @@ class BillingScreen(tk.Frame):
             self.lbl_dollar = CustomLabel(
                 totals_frame,
                 text="Dólares: $0.00",
-                font=("Arial", 10),
-                fg="#666"
+                font=("Arial", 12),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_dollar.pack(side=tk.LEFT, padx=10)
 
@@ -262,20 +293,23 @@ class BillingScreen(tk.Frame):
             self.lbl_euro = CustomLabel(
                 totals_frame,
                 text="Euros: €0.00",
-                font=("Arial", 10),
-                fg="#666"
+                font=("Arial", 12),
+                fg="white",
+                bg="#4a6fa5"
             )
             self.lbl_euro.pack(side=tk.LEFT, padx=10)
 
         # Barra de estado
         self.status_bar = CustomLabel(
             self,
-            text="",
+            text="Listo",
             font=("Arial", 10),
-            fg="#666"
+            fg="#666",
+            bg="#f5f5f5"
         )
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
+    # [Resto de los métodos permanecen iguales...]
     def on_search(self, event=None) -> None:
         search_term = self.search_var.get().lower()
         field = self.search_field_var.get()
@@ -302,7 +336,7 @@ class BillingScreen(tk.Frame):
         self.search_var.set("")
         self.search_field_var.set("Todos los campos")
         self.customer_id_var.set("")
-        self.lbl_customer_info.configure(text="")
+        self.lbl_customer_info.configure(text="Seleccione un cliente")
         self.current_customer = None
         self.cart_items = []
         self.update_cart_tree()
@@ -315,8 +349,8 @@ class BillingScreen(tk.Frame):
             return
             
         response = messagebox.askyesno(
-            "Cancelar Compra", 
-            "¿Está seguro que desea cancelar la compra? Se perderán todos los productos seleccionados.",
+            "Cancelar Venta", 
+            "¿Está seguro que desea cancelar la venta? Se perderán todos los productos seleccionados.",
             parent=self
         )
         
@@ -329,10 +363,9 @@ class BillingScreen(tk.Frame):
         self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
 
-    # Modifica el método checkout en BillingScreen para mostrar la factura
     def checkout(self) -> None:
         if not self.current_customer:
-            messagebox.showwarning("Advertencia", "Debe seleccionar un cliente para realizar la compra", parent=self)
+            messagebox.showwarning("Advertencia", "Debe seleccionar un cliente para realizar la venta", parent=self)
             return
             
         if not self.cart_items:
@@ -340,8 +373,8 @@ class BillingScreen(tk.Frame):
             return
             
         response = messagebox.askyesno(
-            "Confirmar Compra", 
-            "¿Está seguro que desea realizar la compra?\nLa factura se marcará como Pagada Completamente.",
+            "Confirmar Venta", 
+            "¿Está seguro que desea realizar la venta?\nLa factura se marcará como Pagada Completamente.",
             parent=self
         )
         

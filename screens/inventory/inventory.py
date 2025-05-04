@@ -20,6 +20,7 @@ class Inventory(tk.Frame):
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Todos los campos")
         self.current_image = None
+        self.configure(bg="#f5f5f5")  # Fondo general
         self.configure_ui()
         self.refresh_data()
 
@@ -29,49 +30,51 @@ class Inventory(tk.Frame):
         self.refresh_data()
 
     def configure_ui(self) -> None:
-        # Header con título
-        header_frame = tk.Frame(self)
-        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Header con título - Estilo actualizado
+        header_frame = tk.Frame(self, bg="#4a6fa5")
+        header_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0)
         
         title_label = CustomLabel(
             header_frame,
             text="Gestión de Inventario",
-            font=("Arial", 16, "bold"),
-            fg="#333"
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#4a6fa5"
         )
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame principal para botones y búsqueda
-        top_frame = tk.Frame(self)
-        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
-
-        # Frame de botones (solo para el botón Regresar)
-        button_frame = tk.Frame(top_frame)
-        button_frame.pack(side=tk.LEFT)
-
+        # Frame para botón de regreso - Estilo actualizado
+        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
+        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
+        
         btn_back = CustomButton(
-            button_frame,
+            back_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
-            width=10
+            width=10,
         )
-        btn_back.pack(side=tk.LEFT, padx=5)
+        btn_back.pack(side=tk.RIGHT)
 
-        # Frame de búsqueda (a la derecha del botón Regresar)
-        search_frame = tk.Frame(top_frame)
-        search_frame.pack(side=tk.LEFT, padx=10, expand=True, fill=tk.X)
+        # Frame principal para controles - Estilo actualizado
+        controls_frame = tk.Frame(self, bg="#f5f5f5")
+        controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
-        # Campo de búsqueda
+        # Frame de búsqueda
+        search_frame = tk.Frame(controls_frame, bg="#f5f5f5")
+        search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
+        # Campo de búsqueda - Estilo actualizado
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
-            width=40
+            width=40,
+            font=("Arial", 12)
         )
-        search_entry.pack(side=tk.LEFT, padx=5)
+        search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         search_entry.bind("<KeyRelease>", self.on_search)
 
-        # Combobox para seleccionar campo de búsqueda
+        # Combobox para seleccionar campo de búsqueda - Estilo actualizado
         search_fields = [
             "Todos los campos",
             "ID",
@@ -94,9 +97,17 @@ class Inventory(tk.Frame):
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
-        # Frame para los botones de acciones (derecha)
-        action_frame = tk.Frame(top_frame)
+        # Frame para los botones de acciones (derecha) - Estilo actualizado
+        action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         action_frame.pack(side=tk.RIGHT)
+
+        # Frame para la miniatura de la imagen - Estilo actualizado
+        self.image_frame = tk.Frame(action_frame, bg="#f5f5f5")
+        self.image_frame.pack(side=tk.LEFT, padx=5)
+        
+        self.image_label = tk.Label(self.image_frame, bg="#f5f5f5")
+        self.image_label.pack()
+        self.image_label.bind("<Button-1>", self.show_full_image)
 
         # Botón para entrada inicial
         btn_initial = CustomButton(
@@ -104,7 +115,7 @@ class Inventory(tk.Frame):
             text="Entrada Inicial",
             command=self.add_item,
             padding=8,
-            width=14
+            width=14,
         )
         btn_initial.pack(side=tk.RIGHT, padx=5)
 
@@ -114,7 +125,7 @@ class Inventory(tk.Frame):
             text="Ajuste (+)",
             command=lambda: self.adjust_item("positive"),
             padding=8,
-            width=10
+            width=10,
         )
         btn_positive.pack(side=tk.RIGHT, padx=5)
 
@@ -124,7 +135,7 @@ class Inventory(tk.Frame):
             text="Ajuste (-)",
             command=lambda: self.adjust_item("negative"),
             padding=8,
-            width=10
+            width=10,
         )
         btn_negative.pack(side=tk.RIGHT, padx=5)
 
@@ -134,7 +145,7 @@ class Inventory(tk.Frame):
             text="Editar",
             command=self.edit_item,
             padding=8,
-            width=10
+            width=10,
         )
         btn_edit.pack(side=tk.RIGHT, padx=5)
 
@@ -144,23 +155,14 @@ class Inventory(tk.Frame):
             text="Deshabilitar",
             command=self.disable_item,
             padding=8,
-            width=12
+            width=12,
         )
         btn_disable.pack(side=tk.RIGHT, padx=5)
 
-        # Frame para la miniatura de la imagen
-        self.image_frame = tk.Frame(action_frame)
-        self.image_frame.pack(side=tk.LEFT, padx=5)
-        
-        self.image_label = tk.Label(self.image_frame)
-        self.image_label.pack()
-        self.image_label.bind("<Button-1>", self.show_full_image)
+        # Treeview frame - Estilo actualizado
+        tree_frame = tk.Frame(self, bg="#f5f5f5")
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
-        # Treeview frame
-        tree_frame = tk.Frame(self)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Treeview
         self.tree = ttk.Treeview(tree_frame, columns=(
             "ID", "Código", "Producto", "Cantidad", "Existencias", "Stock mínimo", 
             "Stock máximo", "Precio", "Proveedor", "Vencimiento"
@@ -188,14 +190,15 @@ class Inventory(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Barra de estado
+        # Barra de estado - Estilo actualizado
         self.status_bar = CustomLabel(
             self,
-            text="",
+            text="Listo",
             font=("Arial", 10),
-            fg="#666"
+            fg="#666",
+            bg="#f5f5f5"
         )
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
         # Bind selection event
         self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
@@ -246,11 +249,12 @@ class Inventory(tk.Frame):
 
         top = tk.Toplevel(self)
         top.title("Imagen del Producto")
+        top.configure(bg="#f5f5f5")
         
         img = Image.open(image_path)
         photo = ImageTk.PhotoImage(img)
         
-        label = tk.Label(top, image=photo)
+        label = tk.Label(top, image=photo, bg="#f5f5f5")
         label.image = photo  # keep a reference!
         label.pack()
 
@@ -281,7 +285,6 @@ class Inventory(tk.Frame):
         self.clear_image()
 
     def refresh_data(self) -> None:
-        """Actualiza los datos del inventario desde la base de datos"""
         self.search_var.set("")
         self.search_field_var.set("Todos los campos")
         self.on_search()
@@ -291,11 +294,9 @@ class Inventory(tk.Frame):
         self.open_previous_screen_callback()
 
     def add_item(self) -> None:
-        """Abre la pantalla para entrada inicial de productos"""
         CrudInventory(self, mode="create", refresh_callback=self.refresh_data)
 
     def edit_item(self) -> None:
-        """Abre la pantalla para editar un producto (con campos bloqueados)"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
@@ -305,7 +306,6 @@ class Inventory(tk.Frame):
         CrudInventory(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
 
     def adjust_item(self, adjustment_type: str) -> None:
-        """Abre la pantalla para ajuste positivo/negativo"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
@@ -333,7 +333,6 @@ class Inventory(tk.Frame):
         adjust_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     def disable_item(self) -> None:
-        """Deshabilita un producto seleccionado"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
