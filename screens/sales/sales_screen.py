@@ -419,7 +419,7 @@ class SalesScreen(tk.Frame):
             
         response = messagebox.askyesno(
             "Confirmar Compra", 
-            "¿Está seguro que desea realizar la compra?",
+            "¿Está seguro que desea realizar la compra?\nLa factura se registrará como tipo Compra.",
             parent=self
         )
         
@@ -436,7 +436,7 @@ class SalesScreen(tk.Frame):
                     
                 total = subtotal + taxes
                 
-                # Preparar items para el modelo (sin user_id)
+                # Preparar items para la compra
                 purchase_items = [{
                     'id': item['id'],
                     'quantity': item['quantity'],
@@ -444,7 +444,7 @@ class SalesScreen(tk.Frame):
                     'total': item['total']
                 } for item in self.cart_items]
                 
-                # Registrar la compra (sin pasar user_id)
+                # Crear la compra (tipo Compra)
                 purchase_id = Sales.create_complete_purchase(
                     supplier_id=self.current_supplier['id'],
                     subtotal=subtotal,
@@ -456,7 +456,7 @@ class SalesScreen(tk.Frame):
                 # Mostrar mensaje de éxito
                 messagebox.showinfo(
                     "Éxito", 
-                    f"Compra realizada correctamente\nNúmero de compra: {purchase_id}\nTotal: {total:.2f}",
+                    f"Compra registrada correctamente\nNúmero de factura: {purchase_id}\nTipo: Compra",
                     parent=self
                 )
                 

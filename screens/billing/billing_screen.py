@@ -367,7 +367,7 @@ class BillingScreen(tk.Frame):
                     'total': item['total']
                 } for item in self.cart_items]
                 
-                # Crear la factura como pagada completamente
+                # Crear la factura como pagada completamente (tipo Venta)
                 invoice_id = Invoice.create_paid_invoice(
                     customer_id=self.current_customer['id'],
                     subtotal=subtotal,
@@ -379,7 +379,7 @@ class BillingScreen(tk.Frame):
                 # Mostrar mensaje de éxito con el número de factura
                 messagebox.showinfo(
                     "Éxito", 
-                    f"Compra realizada y facturada correctamente\nNúmero de factura: {invoice_id}\nEstado: Pagada completamente",
+                    f"Venta realizada y facturada correctamente\nNúmero de factura: {invoice_id}\nEstado: Pagada completamente",
                     parent=self
                 )
                 
@@ -403,7 +403,7 @@ class BillingScreen(tk.Frame):
             except Exception as e:
                 messagebox.showerror(
                     "Error", 
-                    f"No se pudo completar la compra: {str(e)}", 
+                    f"No se pudo completar la venta: {str(e)}", 
                     parent=self
                 )
 

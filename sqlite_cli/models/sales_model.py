@@ -91,39 +91,46 @@ class Sales:
         items: List[Dict]
     ) -> int:
         """
-        Crea una compra completa, trabajando secuencialmente:
-        1. Registra la compra principal en invoices (como tipo compra)
-        2. Procesa cada item (detalle en invoice_details + inventario + movimiento)
+        Crea una compra completa (tipo Compra)
         """
-        # 1. Registrar compra principal (como factura con tipo 'purchase')
-        invoice_id = Sales._create_purchase_invoice(supplier_id, subtotal, taxes, total)
+        # Obtener ID del tipo de factura "Compra"
+        invoice_type_id = Sales._get_invoice_type_id("Compra")
+        
+        # 1. Registrar compra principal
+        purchase_id = Sales._create_purchase_invoice(
+            supplier_id=supplier_id,
+            invoice_type_id=invoice_type_id,
+            subtotal=subtotal,
+            taxes=taxes,
+            total=total
+        )
         
         # 2. Procesar cada item secuencialmente
         for item in items:
-            Sales._process_purchase_item(invoice_id, item)
+            Sales._process_purchase_item(purchase_id, item)
         
-        return invoice_id
+        return purchase_id
 
     @staticmethod
     def _create_purchase_invoice(
         supplier_id: int,
+        invoice_type_id: int,
         subtotal: float,
         taxes: float,
         total: float
     ) -> int:
         """Registra la compra principal en la tabla 'invoices'."""
-        # Usamos el customer_id para almacenar el supplier_id ya que la tabla invoices
-        # está diseñada para clientes, pero la reutilizaremos para compras
         status_id = Sales._get_invoice_status_id("Paid")
         issue_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         return Sales._execute_sql(
             '''
             INSERT INTO invoices (
-                customer_id, issue_date, subtotal, taxes, total, status_id
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                customer_id, invoice_type_id, issue_date, 
+                subtotal, taxes, total, status_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''',
-            (supplier_id, issue_date, subtotal, taxes, total, status_id)
+            (supplier_id, invoice_type_id, issue_date, subtotal, taxes, total, status_id)
         )
 
     @staticmethod
@@ -208,23 +215,37 @@ class Sales:
 
     @staticmethod
     def get_by_id(purchase_id: int) -> Optional[Dict]:
-        """Obtiene una compra por su ID con información del proveedor."""
+        """Obtiene una compra por su ID con información del proveedor y tipo."""
         result = Sales._execute_sql(
             '''
             SELECT 
                 i.*,
                 s.company as supplier_name,
                 s.id_number as supplier_id_number,
-                st.name as status_name
+                st.name as status_name,
+                it.name as invoice_type_name
             FROM invoices i
             JOIN suppliers s ON i.customer_id = s.id
             JOIN invoice_status st ON i.status_id = st.id
+            JOIN invoice_types it ON i.invoice_type_id = it.id
             WHERE i.id = ?
             ''',
             (purchase_id,),
             fetch=True
         )
         return result[0] if result else None
+    
+    @staticmethod
+    def _get_invoice_type_id(type_name: str) -> int:
+        """Obtiene el ID de un tipo de factura."""
+        result = Sales._execute_sql(
+            "SELECT id FROM invoice_types WHERE name = ? LIMIT 1",
+            (type_name,),
+            fetch=True
+        )
+        if not result:
+            raise ValueError(f"Tipo de factura '{type_name}' no encontrado")
+        return result[0]['id']
 
     @staticmethod
     def get_details(purchase_id: int) -> List[Dict]:

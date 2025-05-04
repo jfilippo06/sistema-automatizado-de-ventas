@@ -91,12 +91,13 @@ class Invoice:
         items: List[Dict]
     ) -> int:
         """
-        Crea una factura pagada completamente, trabajando secuencialmente:
-        1. Registra la factura principal
-        2. Procesa cada item (detalle + inventario + movimiento)
+        Crea una factura pagada completamente (tipo Venta)
         """
+        # Obtener ID del tipo de factura "Venta"
+        invoice_type_id = Invoice._get_invoice_type_id("Venta")
+        
         # 1. Registrar factura principal
-        invoice_id = Invoice._create_invoice(customer_id, subtotal, taxes, total)
+        invoice_id = Invoice._create_invoice(customer_id, invoice_type_id, subtotal, taxes, total)
         
         # 2. Procesar cada item secuencialmente
         for item in items:
@@ -107,6 +108,7 @@ class Invoice:
     @staticmethod
     def _create_invoice(
         customer_id: int,
+        invoice_type_id: int,
         subtotal: float,
         taxes: float,
         total: float
@@ -118,10 +120,11 @@ class Invoice:
         return Invoice._execute_sql(
             '''
             INSERT INTO invoices (
-                customer_id, issue_date, subtotal, taxes, total, status_id
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                customer_id, invoice_type_id, issue_date, 
+                subtotal, taxes, total, status_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''',
-            (customer_id, issue_date, subtotal, taxes, total, status_id)
+            (customer_id, invoice_type_id, issue_date, subtotal, taxes, total, status_id)
         )
 
     @staticmethod
@@ -207,23 +210,37 @@ class Invoice:
 
     @staticmethod
     def get_by_id(invoice_id: int) -> Optional[Dict]:
-        """Obtiene una factura por su ID con información del cliente."""
+        """Obtiene una factura por su ID con información del cliente y tipo."""
         result = Invoice._execute_sql(
             '''
             SELECT 
                 i.*,
                 c.first_name || ' ' || c.last_name as customer_name,
                 c.id_number as customer_id_number,
-                s.name as status_name
+                s.name as status_name,
+                it.name as invoice_type_name
             FROM invoices i
             JOIN customers c ON i.customer_id = c.id
             JOIN invoice_status s ON i.status_id = s.id
+            JOIN invoice_types it ON i.invoice_type_id = it.id
             WHERE i.id = ?
             ''',
             (invoice_id,),
             fetch=True
         )
         return result[0] if result else None
+    
+    @staticmethod
+    def _get_invoice_type_id(type_name: str) -> int:
+        """Obtiene el ID de un tipo de factura."""
+        result = Invoice._execute_sql(
+            "SELECT id FROM invoice_types WHERE name = ? LIMIT 1",
+            (type_name,),
+            fetch=True
+        )
+        if not result:
+            raise ValueError(f"Tipo de factura '{type_name}' no encontrado")
+        return result[0]['id']
 
     @staticmethod
     def get_details(invoice_id: int) -> List[Dict]:
