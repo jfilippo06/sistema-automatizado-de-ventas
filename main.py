@@ -19,6 +19,7 @@ from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
 from screens.sales.sales_screen import SalesScreen
+from screens.catalog.catalog_screen import CatalogScreen  # Nueva importación
 from utils.session_manager import SessionManager
 
 def main() -> None:
@@ -50,6 +51,7 @@ def main() -> None:
         billing_screen.pack_forget()
         reports_screen.pack_forget()
         sales_screen.pack_forget()
+        catalog_screen.pack_forget()  # Nueva línea
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
@@ -72,6 +74,7 @@ def main() -> None:
         billing_screen.pack_forget()
         reports_screen.pack_forget()
         sales_screen.pack_forget()
+        catalog_screen.pack_forget()  # Nueva línea
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -132,6 +135,10 @@ def main() -> None:
     def open_purchases() -> None:
         home_screen.pack_forget()
         sales_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_catalog() -> None:  # Nueva función
+        home_screen.pack_forget()
+        catalog_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para recuperación
     def open_recovery_suppliers() -> None:
@@ -207,6 +214,10 @@ def main() -> None:
         sales_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_home_from_catalog() -> None:  # Nueva función
+        catalog_screen.pack_forget()
+        home_screen.pack(fill=tk.BOTH, expand=True)
+
     # Callbacks para regresar desde pantallas de recuperación
     def open_recovery_from_suppliers() -> None:
         recovery_suppliers_screen.pack_forget()
@@ -240,7 +251,8 @@ def main() -> None:
         open_recovery,
         open_billing,
         open_reports,
-        open_purchases
+        open_purchases,
+        open_catalog  # Nuevo callback
     )
     
     inventory_screen = Inventory(app, open_home_from_inventory)
@@ -268,6 +280,7 @@ def main() -> None:
     billing_screen = BillingScreen(app, open_home_from_billing)
     reports_screen = ReportsScreen(app, open_home_from_reports)
     sales_screen = SalesScreen(app, open_home_from_purchases)
+    catalog_screen = CatalogScreen(app, open_home_from_catalog)  # Nueva pantalla
 
     # Mostrar pantalla inicial basada en autenticación
     check_auth_and_show_home()
