@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
+from screens.inventory.crud_inventory import CrudInventory
 from sqlite_cli.models.sales_model import Sales
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -51,6 +52,10 @@ class SalesScreen(tk.Frame):
         button_frame = tk.Frame(top_frame)
         button_frame.pack(side=tk.LEFT)
 
+        # Frame de botones (izquierda)
+        button_frame = tk.Frame(top_frame)
+        button_frame.pack(side=tk.LEFT)
+
         btn_cancel = CustomButton(
             button_frame,
             text="Cancelar Compra",
@@ -68,6 +73,16 @@ class SalesScreen(tk.Frame):
             width=18
         )
         btn_checkout.pack(side=tk.LEFT, padx=5)
+
+        # Agregar este botón junto a los otros botones existentes
+        btn_create_product = CustomButton(
+            button_frame,
+            text="Crear Producto",
+            command=self.create_product,
+            padding=8,
+            width=15
+        )
+        btn_create_product.pack(side=tk.LEFT, padx=5)
 
         # Frame de búsqueda de proveedor (centro)
         supplier_frame = tk.Frame(top_frame)
@@ -297,6 +312,45 @@ class SalesScreen(tk.Frame):
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
 
+    # Luego agregar este método a la clase SalesScreen:
+    def create_product(self):
+        """Abre el formulario para crear un nuevo producto con campos bloqueados"""
+        def on_product_created():
+            self.refresh_data()  # Refrescar los datos después de crear el producto
+        
+        # Crear el CRUD en modo creación
+        crud = CrudInventory(
+            self,
+            mode="create",
+            refresh_callback=on_product_created
+        )
+        
+        # Configurar campos bloqueados como se solicita
+        fields_to_lock = [
+            "Cantidad:", 
+            "Existencias:", 
+            "Stock mínimo:", 
+            "Stock máximo:", 
+            "Proveedor:",
+            "Vencimiento:"
+        ]
+        
+        for field in fields_to_lock:
+            if field in crud.entries:
+                if isinstance(crud.entries[field], ttk.Combobox):
+                    crud.entries[field].config(state='disabled')  # Para el Combobox de proveedor
+                else:
+                    crud.entries[field].config(state='readonly')  # Para los demás campos
+        
+        # Centrar la ventana
+        window_width = 800
+        window_height = 500
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        crud.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
     def on_search(self, event=None) -> None:
         search_term = self.search_var.get().lower()
         field = self.search_field_var.get()
@@ -477,7 +531,7 @@ class SalesScreen(tk.Frame):
         if not id_number:
             messagebox.showwarning(
                 "Campo requerido",
-                "Por favor ingrese la cédula/RIF del proveedor para buscar",
+                "Por favor ingrese la cédula del proveedor para buscar",
                 parent=self
             )
             self.entry_supplier.focus_set()
@@ -495,7 +549,7 @@ class SalesScreen(tk.Frame):
             else:
                 response = messagebox.askyesno(
                     "Proveedor no encontrado", 
-                    "No existe un proveedor con esta cédula/RIF.\n\n"
+                    "No existe un proveedor con esta cédula.\n\n"
                     "¿Desea registrar un nuevo proveedor ahora?",
                     parent=self
                 )
@@ -538,7 +592,7 @@ class SalesScreen(tk.Frame):
             "Proveedor requerido", 
             "Debe seleccionar un proveedor antes de agregar productos al carrito.\n\n"
             "Por favor:\n"
-            "1. Ingrese la cédula/RIF del proveedor\n"
+            "1. Ingrese la cédula del proveedor\n"
             "2. Haga click en 'Buscar'\n"
             "3. Si no existe, regístrelo con el botón 'Buscar'",
             parent=self
