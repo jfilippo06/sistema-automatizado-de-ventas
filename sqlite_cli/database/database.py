@@ -246,7 +246,7 @@ def init_db() -> None:
         )
     ''')
     
-        # Invoice status table (English)
+    # Invoice status table (English)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS invoice_status (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -255,12 +255,21 @@ def init_db() -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    # Ivoice types
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invoice_types (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT,
+        )
+    ''')
 
-    # Invoices table (English)
+    # Invoices table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS invoices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             customer_id INTEGER NOT NULL,
+            invoice_type_id INTEGER NOT NULL,
             issue_date TEXT NOT NULL,
             subtotal REAL NOT NULL,
             taxes REAL NOT NULL,
@@ -269,7 +278,8 @@ def init_db() -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (customer_id) REFERENCES customers(id),
-            FOREIGN KEY (status_id) REFERENCES invoice_status(id)
+            FOREIGN KEY (status_id) REFERENCES invoice_status(id),
+            FOREIGN KEY (invoice_type_id) REFERENCES invoice_types(id)
         )
     ''')
 
