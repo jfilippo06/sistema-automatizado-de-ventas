@@ -19,6 +19,8 @@ class CatalogScreen(tk.Frame):
         self.current_image = None
         self.configure_ui()
         self.refresh_data()
+        self.display_products(CatalogModel.get_all_products())
+        self.display_services(CatalogModel.get_all_services())
 
     def pack(self, **kwargs: Any) -> None:
         self.parent.state('zoomed')
@@ -59,9 +61,19 @@ class CatalogScreen(tk.Frame):
         controls_frame = tk.Frame(self, bg="#f5f5f5")
         controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
-        # Frame de búsqueda
+         # Frame de búsqueda
         search_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
+         # Campo de búsqueda
+        search_entry = CustomEntry(
+            search_frame,
+            textvariable=self.search_var,
+            width=40,
+            font=("Arial", 12)
+        )
+        search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X)
+        search_entry.bind("<KeyRelease>", self.on_search)
 
         # Combobox para seleccionar tipo de búsqueda
         search_types = ["Productos", "Servicios"]
@@ -74,16 +86,6 @@ class CatalogScreen(tk.Frame):
         )
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
-
-        # Campo de búsqueda
-        search_entry = CustomEntry(
-            search_frame,
-            textvariable=self.search_var,
-            width=40,
-            font=("Arial", 12)
-        )
-        search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-        search_entry.bind("<KeyRelease>", self.on_search)
 
         # Frame para el notebook (pestañas)
         notebook_frame = tk.Frame(self, bg="#f5f5f5")
