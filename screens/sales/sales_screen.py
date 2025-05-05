@@ -286,31 +286,23 @@ class SalesScreen(tk.Frame):
         totals_frame = tk.Frame(self, bg="#4a6fa5", padx=20, pady=10)
         totals_frame.pack(fill=tk.X)
 
-        # Obtener información de impuestos y monedas
-        iva_tax = Tax.get_by_name("IVA")
-        dollar = Currency.get_by_name("Dólar")
-        euro = Currency.get_by_name("Euro")
-
-        # Mostrar u ocultar según estén activos
-        if iva_tax and iva_tax.get('status_name') == 'active':
-            self.lbl_subtotal = CustomLabel(
-                totals_frame,
-                text="Subtotal: 0.00",
-                font=("Arial", 12, "bold"),
-                fg="white",
-                bg="#4a6fa5"
-            )
-            self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
-
-            self.lbl_iva = CustomLabel(
-                totals_frame,
-                text=f"IVA ({iva_tax['value']}%): 0.00",
-                font=("Arial", 12, "bold"),
-                fg="white",
-                bg="#4a6fa5"
-            )
-            self.lbl_iva.pack(side=tk.LEFT, padx=10)
-
+        # Inicializar todos los labels de totales (siempre se crean)
+        self.lbl_subtotal = CustomLabel(
+            totals_frame,
+            text="Subtotal: 0.00",
+            font=("Arial", 12, "bold"),
+            fg="white",
+            bg="#4a6fa5"
+        )
+        
+        self.lbl_iva = CustomLabel(
+            totals_frame,
+            text="IVA (0%): 0.00",
+            font=("Arial", 12, "bold"),
+            fg="white",
+            bg="#4a6fa5"
+        )
+        
         self.lbl_total = CustomLabel(
             totals_frame,
             text="Total: 0.00",
@@ -318,26 +310,39 @@ class SalesScreen(tk.Frame):
             fg="white",
             bg="#4a6fa5"
         )
+        
+        self.lbl_dollar = CustomLabel(
+            totals_frame,
+            text="Dólares: $0.00",
+            font=("Arial", 12),
+            fg="white",
+            bg="#4a6fa5"
+        )
+        
+        self.lbl_euro = CustomLabel(
+            totals_frame,
+            text="Euros: €0.00",
+            font=("Arial", 12),
+            fg="white",
+            bg="#4a6fa5"
+        )
+        
+        # Verificar qué impuestos/divisas están activos y mostrar los labels correspondientes
+        iva_tax = Tax.get_by_name("IVA")
+        dollar = Currency.get_by_name("Dólar")
+        euro = Currency.get_by_name("Euro")
+        
+        if iva_tax and iva_tax.get('status_name') == 'active':
+            self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
+            self.lbl_iva.pack(side=tk.LEFT, padx=10)
+            self.lbl_iva.configure(text=f"IVA ({iva_tax['value']}%): 0.00")
+        
         self.lbl_total.pack(side=tk.LEFT, padx=10)
-
+        
         if dollar and dollar.get('status_name') == 'active':
-            self.lbl_dollar = CustomLabel(
-                totals_frame,
-                text="Dólares: $0.00",
-                font=("Arial", 12),
-                fg="white",
-                bg="#4a6fa5"
-            )
             self.lbl_dollar.pack(side=tk.LEFT, padx=10)
-
+        
         if euro and euro.get('status_name') == 'active':
-            self.lbl_euro = CustomLabel(
-                totals_frame,
-                text="Euros: €0.00",
-                font=("Arial", 12),
-                fg="white",
-                bg="#4a6fa5"
-            )
             self.lbl_euro.pack(side=tk.LEFT, padx=10)
 
         # Barra de estado
@@ -816,22 +821,32 @@ class SalesScreen(tk.Frame):
         dollar = Currency.get_by_name("Dólar")
         euro = Currency.get_by_name("Euro")
         
-        # Calcular totales
+        # Actualizar labels según estén activos
         if iva_tax and iva_tax.get('status_name') == 'active':
             iva_amount = subtotal * (iva_tax['value'] / 100)
             total = subtotal + iva_amount
             
             self.lbl_subtotal.configure(text=f"Subtotal: {subtotal:.2f}")
             self.lbl_iva.configure(text=f"IVA ({iva_tax['value']}%): {iva_amount:.2f}")
+            self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
+            self.lbl_iva.pack(side=tk.LEFT, padx=10)
         else:
             total = subtotal
+            self.lbl_subtotal.pack_forget()
+            self.lbl_iva.pack_forget()
         
         self.lbl_total.configure(text=f"Total: {total:.2f}")
         
         if dollar and dollar.get('status_name') == 'active':
             dollar_amount = total / dollar['value'] if dollar['value'] != 0 else 0
             self.lbl_dollar.configure(text=f"Dólares: ${dollar_amount:.2f}")
+            self.lbl_dollar.pack(side=tk.LEFT, padx=10)
+        else:
+            self.lbl_dollar.pack_forget()
         
         if euro and euro.get('status_name') == 'active':
             euro_amount = total / euro['value'] if euro['value'] != 0 else 0
             self.lbl_euro.configure(text=f"Euros: €{euro_amount:.2f}")
+            self.lbl_euro.pack(side=tk.LEFT, padx=10)
+        else:
+            self.lbl_euro.pack_forget()
