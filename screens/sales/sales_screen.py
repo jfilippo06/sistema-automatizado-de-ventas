@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
 from screens.inventory.crud_inventory import CrudInventory
+from screens.supplier.crud_supplier import CrudSupplier
 from sqlite_cli.models.sales_model import Sales
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -545,6 +546,32 @@ class SalesScreen(tk.Frame):
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo buscar el proveedor: {str(e)}", parent=self)
 
+    def register_new_supplier(self, id_number: str) -> None:
+        """Abre el formulario para registrar un nuevo proveedor"""
+        def on_supplier_created():
+            # Después de crear el proveedor, intentar buscarlo nuevamente
+            self.supplier_id_var.set(id_number)
+            self.search_supplier()
+        
+        # Crear la ventana de CRUD para proveedor con cédula bloqueada
+        crud = CrudSupplier(
+            self,
+            mode="create",
+            initial_id_number=id_number,
+            refresh_callback=on_supplier_created,
+            lock_id_number=True  # Bloquear cédula cuando se crea desde ventas
+        )
+        # ... (resto del método igual)
+        
+        # Centrar la ventana
+        window_width = 360
+        window_height = 500
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        crud.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
     def update_supplier_products_tree(self) -> None:
         for item in self.supplier_products_tree.get_children():
             self.supplier_products_tree.delete(item)
@@ -568,43 +595,6 @@ class SalesScreen(tk.Frame):
             ))
         
         self.status_bar.configure(text=f"Mostrando {len(supplier_products)} productos del proveedor")
-
-    def search_supplier(self) -> None:
-        id_number = self.supplier_id_var.get().strip()
-        if not id_number:
-            messagebox.showwarning(
-                "Campo requerido",
-                "Por favor ingrese la cédula del proveedor para buscar",
-                parent=self
-            )
-            self.entry_supplier.focus_set()
-            return
-        
-        try:
-            supplier = Supplier.get_by_id_number(id_number)
-            if supplier:
-                self.current_supplier = supplier
-                supplier_name = supplier.get('company') or f"{supplier.get('first_name', '')} {supplier.get('last_name', '')}"
-                self.lbl_supplier_info.configure(
-                    text=f"{supplier_name} - {supplier.get('id_number', '')}"
-                )
-                self.update_supplier_products_tree()
-            else:
-                response = messagebox.askyesno(
-                    "Proveedor no encontrado", 
-                    "No existe un proveedor con esta cédula.\n\n"
-                    "¿Desea registrar un nuevo proveedor ahora?",
-                    parent=self
-                )
-                if response:
-                    self.register_new_supplier(id_number)
-                    
-        except Exception as e:
-            messagebox.showerror(
-                "Error en búsqueda",
-                f"No se pudo completar la búsqueda:\n{str(e)}",
-                parent=self
-            )
 
     def on_supplier_product_click(self, event) -> None:
         if not self.current_supplier:

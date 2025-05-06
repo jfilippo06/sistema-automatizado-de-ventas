@@ -16,12 +16,14 @@ class CrudSupplier(tk.Toplevel):
         mode: str = "create", 
         supplier_id: Optional[int] = None, 
         initial_id_number: Optional[str] = None,
-        refresh_callback: Optional[Callable[[], None]] = None
+        refresh_callback: Optional[Callable[[], None]] = None,
+        lock_id_number: bool = False  # Nuevo parámetro para controlar bloqueo de cédula
     ) -> None:
         super().__init__(parent)
         self.mode = mode
         self.supplier_id = supplier_id
         self.refresh_callback = refresh_callback
+        self.lock_id_number = lock_id_number  # Guardamos el parámetro
         
         # Configuración de la ventana
         self.title("Guardar Proveedor" if mode == "create" else "Editar Proveedor")
@@ -65,10 +67,21 @@ class CrudSupplier(tk.Toplevel):
         )
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
+        # Definir qué campos deben estar bloqueados según el modo y el origen
+        if self.mode == "create":
+            # En creación: código editable siempre
+            code_editable = True
+            # Cédula editable solo si no está bloqueada explícitamente
+            id_number_editable = not self.lock_id_number
+        else:
+            # En edición: código y cédula siempre bloqueados
+            code_editable = False
+            id_number_editable = False
+        
         # Campos del formulario
         fields = [
-            ("Código:", self.code_var, 'text', not (self.mode == "edit")),
-            ("Cédula:", self.id_number_var, 'number', True),
+            ("Código:", self.code_var, 'text', code_editable),
+            ("Cédula:", self.id_number_var, 'number', id_number_editable),
             ("Nombres:", self.first_name_var, 'text', True),
             ("Apellidos:", self.last_name_var, 'text', True),
             ("Dirección:", self.address_var, 'text', True),
@@ -95,7 +108,7 @@ class CrudSupplier(tk.Toplevel):
                 textvariable=var,
                 font=("Arial", 12),
                 width=35,
-                state="normal" if editable else "readonly"
+                state="normal" if editable else "readonly"  # Esto controla si el campo es editable
             )
             
             # Configurar validaciones
@@ -108,6 +121,7 @@ class CrudSupplier(tk.Toplevel):
             entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
             self.entries[label] = entry
         
+        # Resto del código permanece igual...
         # Frame para botones
         btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
         btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 0))

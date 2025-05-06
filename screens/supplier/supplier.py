@@ -203,17 +203,39 @@ class Suppliers(tk.Frame):
         self.parent.state('normal')
         self.open_previous_screen_callback()
 
+    def _center_window(self, window, width, height):
+        """Centra una ventana en la pantalla"""
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        window.geometry(f"{width}x{height}+{x}+{y}")
+
     def add_supplier(self) -> None:
-        CrudSupplier(self, mode="create", refresh_callback=self.refresh_data)
+        """Abre el formulario para crear nuevo proveedor centrado en pantalla"""
+        crud = CrudSupplier(
+            self,
+            mode="create",
+            refresh_callback=self.refresh_data,
+            lock_id_number=False
+        )
+        self._center_window(crud, 360, 500)
 
     def edit_supplier(self) -> None:
+        """Abre el formulario para editar proveedor centrado en pantalla"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=self)
             return
             
         supplier_id = self.tree.item(selected[0])['values'][0]
-        CrudSupplier(self, mode="edit", supplier_id=supplier_id, refresh_callback=self.refresh_data)
+        crud = CrudSupplier(
+            self,
+            mode="edit",
+            supplier_id=supplier_id,
+            refresh_callback=self.refresh_data
+        )
+        self._center_window(crud, 360, 500)
 
     def disable_supplier(self) -> None:
         selected = self.tree.selection()
