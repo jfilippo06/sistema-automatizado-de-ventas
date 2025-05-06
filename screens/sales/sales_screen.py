@@ -124,44 +124,11 @@ class SalesScreen(tk.Frame):
         )
         btn_create_product.pack(side=tk.LEFT, padx=5)
 
-        # Frame de búsqueda de productos
-        search_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=5)
-        search_frame.pack(side=tk.TOP, fill=tk.X)
-
-        search_entry = CustomEntry(
-            search_frame,
-            textvariable=self.search_var,
-            font=("Arial", 12),
-            width=40
-        )
-        search_entry.pack(side=tk.LEFT, padx=5)
-        search_entry.bind("<KeyRelease>", self.on_search)
-
-        search_fields = [
-            "Todos los campos",
-            "ID",
-            "Código",
-            "Producto",
-            "Existencias",
-            "Precio"
-        ]
-        
-        search_combobox = CustomCombobox(
-            search_frame,
-            textvariable=self.search_field_var,
-            values=search_fields,
-            state="readonly",
-            width=20,
-            font=("Arial", 12)
-        )
-        search_combobox.pack(side=tk.LEFT, padx=5)
-        search_combobox.bind("<<ComboboxSelected>>", self.on_search)
-
-        # Frame para las tablas
+        # Frame para las tablas (ahora solo dos tablas)
         tables_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
         tables_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Treeview para productos del proveedor
+        # Treeview para productos del proveedor (ahora ocupa la mitad superior)
         lbl_supplier_products = CustomLabel(
             tables_frame,
             text="Productos del Proveedor",
@@ -172,13 +139,12 @@ class SalesScreen(tk.Frame):
         lbl_supplier_products.pack(anchor=tk.W)
 
         supplier_products_frame = tk.Frame(tables_frame)
-        supplier_products_frame.pack(fill=tk.X, pady=(0, 10))
+        supplier_products_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.supplier_products_tree = ttk.Treeview(
             supplier_products_frame, 
             columns=("ID", "Código", "Producto", "Cantidad", "Precio"),
             show="headings",
-            height=5,
             style="Custom.Treeview"
         )
 
@@ -204,42 +170,7 @@ class SalesScreen(tk.Frame):
         self.supplier_products_tree.pack(fill=tk.BOTH, expand=True)
         self.supplier_products_tree.bind("<Button-1>", self.on_supplier_product_click)
 
-        # Treeview para todos los productos disponibles
-        lbl_products = CustomLabel(
-            tables_frame,
-            text="Productos Disponibles",
-            font=("Arial", 14),
-            fg="#333",
-            bg="#f5f5f5"
-        )
-        lbl_products.pack(anchor=tk.W)
-
-        products_frame = tk.Frame(tables_frame)
-        products_frame.pack(fill=tk.X, pady=(0, 20))
-
-        self.products_tree = ttk.Treeview(
-            products_frame, 
-            columns=("ID", "Código", "Producto", "Cantidad", "Precio"),
-            show="headings",
-            height=5,
-            style="Custom.Treeview"
-        )
-
-        for col, width, anchor in columns:
-            self.products_tree.heading(col, text=col)
-            self.products_tree.column(col, width=width, anchor=anchor)
-
-        scrollbar = ttk.Scrollbar(
-            products_frame, 
-            orient=tk.VERTICAL, 
-            command=self.products_tree.yview
-        )
-        self.products_tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.products_tree.pack(fill=tk.BOTH, expand=True)
-        self.products_tree.bind("<Button-1>", self.on_product_click)
-
-        # Treeview para carrito de compras
+        # Treeview para carrito de compras (ahora ocupa la mitad inferior)
         lbl_cart = CustomLabel(
             tables_frame,
             text="Carrito de Compras",
@@ -250,13 +181,12 @@ class SalesScreen(tk.Frame):
         lbl_cart.pack(anchor=tk.W)
 
         cart_frame = tk.Frame(tables_frame)
-        cart_frame.pack(fill=tk.X)
+        cart_frame.pack(fill=tk.BOTH, expand=True)
 
         self.cart_tree = ttk.Treeview(
             cart_frame, 
             columns=("ID", "Producto", "Cantidad", "Precio Unitario", "Total", "Acción"),
             show="headings",
-            height=5,
             style="Custom.Treeview"
         )
 
@@ -395,26 +325,6 @@ class SalesScreen(tk.Frame):
         y = (screen_height // 2) - (window_height // 2)
         crud.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-    def on_search(self, event=None) -> None:
-        search_term = self.search_var.get().lower()
-        field = self.search_field_var.get()
-        
-        for item in self.products_tree.get_children():
-            self.products_tree.delete(item)
-            
-        items = InventoryItem.search_active(search_term, field if field != "Todos los campos" else None)
-        
-        for item in items:
-            self.products_tree.insert("", tk.END, values=(
-                item['id'],
-                item['code'],
-                item['product'],
-                item['quantity'],  # Mostrar quantity en lugar de stock
-                f"{float(item['price']):.2f}" if item['price'] else "0.00"
-            ))
-        
-        self.status_bar.configure(text=f"Mostrando {len(items)} productos disponibles")
-
     def refresh_data(self) -> None:
         self.search_var.set("")
         self.search_field_var.set("Todos los campos")
@@ -426,7 +336,6 @@ class SalesScreen(tk.Frame):
         # Limpiar tablas
         self.supplier_products_tree.delete(*self.supplier_products_tree.get_children())
         self.update_cart_tree()
-        self.on_search()
         self.update_totals()
         
         # Enfocar en campo de búsqueda
@@ -533,7 +442,6 @@ class SalesScreen(tk.Frame):
                 )
                 self.update_supplier_products_tree()
                 # Habilitar interacción con productos
-                self.products_tree.bind("<Button-1>", self.on_product_click)
                 self.supplier_products_tree.bind("<Button-1>", self.on_supplier_product_click)
             else:
                 response = messagebox.askyesno(
@@ -612,14 +520,7 @@ class SalesScreen(tk.Frame):
         if not self.current_supplier:
             self.show_no_supplier_warning()
             return
-            
-        selected = self.products_tree.identify_row(event.y)
-        if not selected:
-            return
-            
-        item_data = self.products_tree.item(selected)['values']
-        self.show_product_quantity_dialog(item_data)
-
+    
     def show_no_supplier_warning(self) -> None:
         messagebox.showwarning(
             "Proveedor requerido", 
