@@ -13,10 +13,23 @@ class InvoiceViewer(tk.Toplevel):
         self.parent = parent
         self.title(f"Factura Digital - #{invoice_id}")
         
-        # Configurar ventana modal más compacta
+        # Configurar ventana modal centrada
         self.transient(parent)
         self.grab_set()
-        self.geometry("600x600")  # Alto fijo de 600px
+        
+        # Tamaño fijo de la ventana
+        window_width = 600
+        window_height = 600
+        
+        # Obtener dimensiones de la pantalla
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        # Calcular posición para centrar
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.resizable(False, False)
         
         # Frame principal con scroll
@@ -39,7 +52,7 @@ class InvoiceViewer(tk.Toplevel):
         try:
             logo_path = os.path.join("assets", "logo.png")
             logo_img = Image.open(logo_path)
-            logo_img = logo_img.resize((100, 100), Image.LANCZOS)  # Logo más pequeño
+            logo_img = logo_img.resize((100, 100), Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(logo_img)
             tk.Label(scrollable_frame, image=self.logo).pack(pady=10)
         except Exception as e:
@@ -78,14 +91,14 @@ class InvoiceViewer(tk.Toplevel):
         tk.Label(right_frame, text=customer_info, 
                 font=("Arial", 10)).pack(anchor="e")
         
-        # Tabla de productos (sin columna de código)
+        # Tabla de productos
         table_frame = tk.Frame(scrollable_frame)
         table_frame.pack(fill="x", padx=20, pady=10)
         
         columns = ("Descripción", "Cantidad", "P. Unitario", "Total")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=min(8, len(items)))
         
-        # Configurar columnas más compactas
+        # Configurar columnas
         tree.heading("Descripción", text="Descripción")
         tree.heading("Cantidad", text="Cantidad")
         tree.heading("P. Unitario", text="P. Unitario")
@@ -96,7 +109,7 @@ class InvoiceViewer(tk.Toplevel):
         tree.column("P. Unitario", width=100, anchor="e")
         tree.column("Total", width=100, anchor="e")
         
-        # Insertar datos sin el código
+        # Insertar datos
         for item in items:
             tree.insert("", "end", values=(
                 item['name'],

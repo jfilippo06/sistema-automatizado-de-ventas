@@ -13,13 +13,26 @@ class PurchaseInvoiceViewer(tk.Toplevel):
         self.parent = parent
         self.title(f"Factura de Compra - #{invoice_id}")
         
-        # Configurar ventana modal
+        # Configurar ventana modal centrada
         self.transient(parent)
         self.grab_set()
-        self.geometry("600x600")  # Tamaño fijo
+        
+        # Tamaño de la ventana
+        window_width = 600
+        window_height = 600
+        
+        # Obtener dimensiones de la pantalla
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        # Calcular posición para centrar
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.resizable(False, False)
         
-        # Frame principal con scroll
+        # Resto del código de inicialización...
         main_frame = tk.Frame(self)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
@@ -27,7 +40,10 @@ class PurchaseInvoiceViewer(tk.Toplevel):
         scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas)
         
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
         
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
