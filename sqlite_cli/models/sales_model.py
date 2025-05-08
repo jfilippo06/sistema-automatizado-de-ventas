@@ -91,7 +91,24 @@ class Sales:
         items: List[Dict]
     ) -> int:
         """
-        Crea una compra completa (tipo Compra)
+        Crea una compra completa (tipo Compra) manejando tanto productos existentes como nuevos.
+        
+        Args:
+            supplier_id: ID del proveedor
+            subtotal: Subtotal de la compra
+            taxes: Impuestos de la compra
+            total: Total de la compra
+            items: Lista de items, cada uno debe tener:
+                   - id: ID del producto (None para productos nuevos)
+                   - code: Código del producto (solo para nuevos)
+                   - name: Nombre del producto (solo para nuevos)
+                   - quantity: Cantidad comprada
+                   - unit_price: Precio unitario
+                   - total: Total del item
+                   - supplier_id: ID del proveedor (solo para nuevos)
+        
+        Returns:
+            ID de la factura creada
         """
         # Obtener ID del tipo de factura "Compra"
         invoice_type_id = Sales._get_invoice_type_id("Compra")
@@ -107,9 +124,81 @@ class Sales:
         
         # 2. Procesar cada item secuencialmente
         for item in items:
-            Sales._process_purchase_item(purchase_id, item)
+            if item.get('id') is None:
+                # Es un producto nuevo, debemos crearlo primero
+                product_id = Sales._create_new_product(item)
+                item['id'] = product_id
+            else:
+                # Es un producto existente, actualizamos cantidad
+                Sales._update_existing_product(item, purchase_id)
+            
+            # Registrar detalle de factura en cualquier caso
+            Sales._create_purchase_detail(purchase_id, item)
         
         return purchase_id
+
+    @staticmethod
+    def _create_new_product(item: Dict) -> int:
+        """Crea un nuevo producto en la base de datos y retorna su ID."""
+        required_fields = ['code', 'name', 'quantity', 'unit_price', 'supplier_id']
+        if not all(field in item for field in required_fields):
+            raise ValueError("Faltan campos requeridos para crear un nuevo producto")
+        
+        # Crear el producto en la base de datos
+        created_product = InventoryItem.create(
+            code=item['code'],
+            product=item['name'],
+            quantity=item['quantity'],
+            stock=item['quantity'],
+            min_stock=0,
+            max_stock=0,
+            price=item['unit_price'],
+            supplier_id=item['supplier_id'],
+            expiration_date=None,
+            image_path=None
+        )
+        
+        return created_product['id']  # Retornamos solo el ID
+
+    @staticmethod
+    def _update_existing_product(item: Dict, purchase_id: int) -> None:
+        """Actualiza un producto existente en el inventario."""
+        product = InventoryItem.get_by_id(item['id'])
+        if not product:
+            raise ValueError(f"Producto ID {item['id']} no encontrado")
+        
+        new_quantity = product['quantity'] + item['quantity']
+        
+        # Actualizar solo quantity (no stock)
+        Sales._update_inventory(
+            product_id=item['id'],
+            new_quantity=new_quantity,
+            new_stock=product['stock']  # Mantener el stock igual
+        )
+        
+        # Registrar movimiento de compra
+        user_id = SessionManager.get_user_id()
+        if not user_id:
+            raise ValueError("Usuario no autenticado")
+        
+        movement_type = MovementType.get_by_name("Compra")
+        if not movement_type:
+            raise ValueError("Tipo de movimiento 'Compra' no encontrado")
+        
+        InventoryMovement.create(
+            inventory_id=item['id'],
+            movement_type_id=movement_type['id'],
+            quantity_change=item['quantity'],
+            stock_change=0,  # No cambia el stock
+            previous_quantity=product['quantity'],
+            new_quantity=new_quantity,
+            previous_stock=product['stock'],
+            new_stock=product['stock'],  # Stock permanece igual
+            reference_id=purchase_id,
+            reference_type="purchase",
+            user_id=user_id,
+            notes=f"Compra #{purchase_id}"
+        )
 
     @staticmethod
     def _create_purchase_invoice(
@@ -134,49 +223,6 @@ class Sales:
         )
 
     @staticmethod
-    def _process_purchase_item(purchase_id: int, item: Dict) -> None:
-        """Procesa un item completo (detalle + inventario + movimiento)."""
-        # 1. Registrar detalle
-        Sales._create_purchase_detail(purchase_id, item)
-        
-        # 2. Actualizar solo quantity (no stock)
-        product = InventoryItem.get_by_id(item['id'])
-        if not product:
-            raise ValueError(f"Producto ID {item['id']} no encontrado")
-        
-        new_quantity = product['quantity'] + item['quantity']
-        
-        Sales._update_inventory(
-            product_id=item['id'],
-            new_quantity=new_quantity,
-            new_stock=product['stock']  # Mantener el stock igual
-        )
-        
-        # 3. Registrar movimiento (solo cambio en quantity)
-        user_id = SessionManager.get_user_id()
-        if not user_id:
-            raise ValueError("Usuario no autenticado")
-        
-        movement_type = MovementType.get_by_name("Compra")
-        if not movement_type:
-            raise ValueError("Tipo de movimiento 'Entrada por compra' no encontrado")
-        
-        InventoryMovement.create(
-            inventory_id=item['id'],
-            movement_type_id=movement_type['id'],
-            quantity_change=item['quantity'],
-            stock_change=0,  # No cambia el stock
-            previous_quantity=product['quantity'],
-            new_quantity=new_quantity,
-            previous_stock=product['stock'],
-            new_stock=product['stock'],  # Stock permanece igual
-            reference_id=purchase_id,
-            reference_type="purchase",
-            user_id=user_id,
-            notes=f"Compra #{purchase_id}"
-        )
-
-    @staticmethod
     def _create_purchase_detail(invoice_id: int, item: Dict) -> None:
         """Registra un detalle de compra en 'invoice_details'."""
         Sales._execute_sql(
@@ -190,15 +236,16 @@ class Sales:
 
     @staticmethod
     def _update_inventory(product_id: int, new_quantity: int, new_stock: int) -> None:
-        """Actualiza solo la cantidad en el inventario."""
+        """Actualiza el inventario."""
         Sales._execute_sql(
             '''
             UPDATE inventory SET
                 quantity = ?,
+                stock = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             ''',
-            (new_quantity, product_id)
+            (new_quantity, new_stock, product_id)
         )
 
     @staticmethod

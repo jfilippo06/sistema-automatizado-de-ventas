@@ -1,10 +1,11 @@
 from sqlite_cli.database.database import get_db_connection
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 import os
 import shutil
 from datetime import datetime
 from sqlite_cli.models.movement_type_model import MovementType
 from sqlite_cli.models.inventory_movement_model import InventoryMovement
+from utils.session_manager import SessionManager
 
 class InventoryItem:
     IMAGE_FOLDER = "inventory_images"
@@ -52,54 +53,62 @@ class InventoryItem:
         supplier_id: Optional[int] = None,
         expiration_date: Optional[str] = None,
         image_path: Optional[str] = None
-    ) -> None:
-        """Crea un nuevo producto en el inventario (activo por defecto)"""
+    ) -> Dict[str, Any]:
+        """Crea un nuevo producto en el inventario (activo por defecto) y retorna el registro completo"""
         saved_image_path = InventoryItem._save_image(image_path)
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Primero insertamos el producto
-        cursor.execute('''
-            INSERT INTO inventory (
-                code, product, quantity, stock, min_stock, max_stock, price, 
-                supplier_id, expiration_date, image_path, status_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
-        ''', (
-            code, product, quantity, stock, min_stock, max_stock, price, 
-            supplier_id, expiration_date, saved_image_path
-        ))
-        
-        # Obtenemos el ID del producto recién creado
-        item_id = cursor.lastrowid
-        
-        # Buscamos el tipo de movimiento "Entrada inicial"
-        cursor.execute("SELECT id FROM movement_types WHERE name = 'Entrada inicial'")
-        movement_type = cursor.fetchone()
-        
-        if movement_type:
-            # Insertamos directamente el movimiento de inventario
+        try:
+            # Insertamos el producto
             cursor.execute('''
-                INSERT INTO inventory_movements (
-                    inventory_id, movement_type_id, quantity_change, stock_change,
-                    previous_quantity, new_quantity, previous_stock, new_stock,
-                    user_id, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO inventory (
+                    code, product, quantity, stock, min_stock, max_stock, price, 
+                    supplier_id, expiration_date, image_path, status_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
+                RETURNING *  -- Esto retorna el registro insertado
             ''', (
-                item_id, 
-                movement_type['id'], 
-                quantity, 
-                stock,
-                0,  # previous_quantity
-                quantity,  # new_quantity
-                0,  # previous_stock
-                stock,  # new_stock
-                1,  # TODO: Reemplazar con ID de usuario real
-                "Entrada inicial del producto"
+                code, product, quantity, stock, min_stock, max_stock, price, 
+                supplier_id, expiration_date, saved_image_path
             ))
-        
-        conn.commit()
-        conn.close()
+            
+            # Obtenemos el producto recién creado
+            created_item = dict(cursor.fetchone())
+            
+            # Buscamos el tipo de movimiento "Entrada inicial"
+            cursor.execute("SELECT id FROM movement_types WHERE name = 'Entrada inicial'")
+            movement_type = cursor.fetchone()
+            
+            if movement_type:
+                # Insertamos el movimiento de inventario
+                cursor.execute('''
+                    INSERT INTO inventory_movements (
+                        inventory_id, movement_type_id, quantity_change, stock_change,
+                        previous_quantity, new_quantity, previous_stock, new_stock,
+                        user_id, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    created_item['id'], 
+                    movement_type['id'], 
+                    quantity, 
+                    stock,
+                    0,  # previous_quantity
+                    quantity,  # new_quantity
+                    0,  # previous_stock
+                    stock,  # new_stock
+                    SessionManager.get_user_id(),
+                    "Entrada inicial del producto"
+                ))
+            
+            conn.commit()
+            return created_item  # Retornamos el producto completo
+            
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
 
     @staticmethod
     def all() -> List[Dict]:

@@ -1,3 +1,4 @@
+# screens/inventory/crud_inventory.py
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
@@ -17,17 +18,22 @@ class CrudInventory(tk.Toplevel):
         parent: tk.Widget, 
         mode: str = "create", 
         item_id: Optional[int] = None, 
-        refresh_callback: Optional[Callable[[], None]] = None
+        refresh_callback: Optional[Callable[[], None]] = None,
+        from_sales: bool = False,
+        sales_callback: Optional[Callable[[Dict], None]] = None
     ) -> None:
         super().__init__(parent)
         self.mode = mode
         self.item_id = item_id
         self.refresh_callback = refresh_callback
+        self.from_sales = from_sales
+        self.sales_callback = sales_callback
         self.image_path = None
         self.current_image = None
         
         # Configuración de la ventana
-        self.title("Guardar Producto" if mode == "create" else "Editar Producto")
+        title = "Agregar al Carrito" if from_sales else ("Guardar Producto" if mode == "create" else "Editar Producto")
+        self.title(title)
         self.geometry("900x600")
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
@@ -63,7 +69,9 @@ class CrudInventory(tk.Toplevel):
         form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
         
         # Título con estilo consistente
-        title_text = "Nuevo Producto" if self.mode == "create" else "Editar Producto"
+        title_text = "Agregar Nuevo Producto al Carrito" if self.from_sales else (
+            "Nuevo Producto" if self.mode == "create" else "Editar Producto"
+        )
         title_label = CustomLabel(
             form_frame,
             text=title_text,
@@ -77,13 +85,13 @@ class CrudInventory(tk.Toplevel):
         fields = [
             ("Código:", self.code_var, 'text', not (self.mode == "edit")),
             ("Producto:", self.product_var, 'text', True),
-            ("Cantidad:", self.quantity_var, 'number', self.mode == "create"),
-            ("Existencias:", self.stock_var, 'number', self.mode == "create"),
-            ("Stock mínimo:", self.min_stock_var, 'number', True),
-            ("Stock máximo:", self.max_stock_var, 'number', True),
+            ("Cantidad:", self.quantity_var, 'number', self.mode == "create" or self.from_sales),
+            ("Existencias:", self.stock_var, 'number', self.mode == "create" and not self.from_sales),
+            ("Stock mínimo:", self.min_stock_var, 'number', not self.from_sales),
+            ("Stock máximo:", self.max_stock_var, 'number', not self.from_sales),
             ("Precio:", self.price_var, 'decimal', True),
             ("Proveedor:", self.supplier_var, None, True),
-            ("Vencimiento:", self.expiration_var, 'date', True)
+            ("Vencimiento:", self.expiration_var, 'date', not self.from_sales)
         ]
         
         for i, (label, var, val_type, editable) in enumerate(fields, start=1):
@@ -155,25 +163,33 @@ class CrudInventory(tk.Toplevel):
         btn_frame = tk.Frame(form_frame, bg="#f5f5f5")
         btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 10))
         
-        # Botón principal (Guardar/Actualizar)
+        # Botón principal (Guardar/Actualizar/Agregar)
+        if self.from_sales:
+            btn_text = "Agregar al Carrito"
+            btn_command = self.add_to_cart
+        else:
+            btn_text = "Guardar" if self.mode == "create" else "Actualizar"
+            btn_command = self.create_item if self.mode == "create" else self.update_item
+        
         btn_action = CustomButton(
             btn_frame, 
-            text="Guardar" if self.mode == "create" else "Actualizar", 
-            command=self.create_item if self.mode == "create" else self.update_item,
+            text=btn_text, 
+            command=btn_command,
             padding=10,
             width=15
         )
         btn_action.pack(side=tk.LEFT, padx=5)
         
-        # Botón Cargar Imagen
-        btn_load_image = CustomButton(
-            btn_frame,
-            text="Cargar Imagen",
-            command=self.load_image,
-            padding=10,
-            width=15
-        )
-        btn_load_image.pack(side=tk.LEFT, padx=5)
+        # Botón Cargar Imagen (solo si no es desde ventas)
+        if not self.from_sales:
+            btn_load_image = CustomButton(
+                btn_frame,
+                text="Cargar Imagen",
+                command=self.load_image,
+                padding=10,
+                width=15
+            )
+            btn_load_image.pack(side=tk.LEFT, padx=5)
         
         # Botón Cancelar
         btn_cancel = CustomButton(
@@ -212,7 +228,7 @@ class CrudInventory(tk.Toplevel):
         self.image_label.pack(fill=tk.BOTH, expand=True)
         
         # Nota informativa en modo edición
-        if self.mode == "edit":
+        if self.mode == "edit" and not self.from_sales:
             info_frame = tk.Frame(form_frame, bg="#f5f5f5")
             info_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(10, 0))
             
@@ -225,7 +241,6 @@ class CrudInventory(tk.Toplevel):
             )
             info_label.pack()
 
-    # [Métodos de validación y funcionalidad se mantienen igual...]
     def validate_date_input(self, new_text: str, action_code: str, index: str, char: str) -> bool:
         """Valida el formato de fecha YYYY/MM/DD"""
         if action_code == '0':
@@ -271,7 +286,6 @@ class CrudInventory(tk.Toplevel):
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo cargar la imagen: {str(e)}", parent=self)
 
-    # [Resto de métodos se mantienen igual...]
     def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
         Validations.validate_entry(event, validation_func)
 
@@ -285,24 +299,37 @@ class CrudInventory(tk.Toplevel):
         return Validations.validate_decimal(text)
 
     def validate_required_fields(self) -> bool:
-        required_fields = {
-            "Código:": self.code_var.get(),
-            "Producto:": self.product_var.get(),
-            "Cantidad:": self.quantity_var.get(),
-            "Existencias:": self.stock_var.get(),
-            "Precio:": self.price_var.get()
-        }
+        # Campos requeridos dependen del modo
+        if self.from_sales:
+            required_fields = {
+                "Código:": self.code_var.get(),
+                "Producto:": self.product_var.get(),
+                "Cantidad:": self.quantity_var.get(),
+                "Precio:": self.price_var.get()
+            }
+        else:
+            required_fields = {
+                "Código:": self.code_var.get(),
+                "Producto:": self.product_var.get(),
+                "Cantidad:": self.quantity_var.get(),
+                "Existencias:": self.stock_var.get(),
+                "Precio:": self.price_var.get()
+            }
         
         if not Validations.validate_required_fields(self.entries, required_fields, self):
             return False
             
         numeric_fields = {
             "Cantidad:": (self.quantity_var.get(), False),
-            "Existencias:": (self.stock_var.get(), False),
-            "Stock mínimo:": (self.min_stock_var.get(), False),
-            "Stock máximo:": (self.max_stock_var.get(), False),
             "Precio:": (self.price_var.get(), True)
         }
+        
+        if not self.from_sales:
+            numeric_fields.update({
+                "Existencias:": (self.stock_var.get(), False),
+                "Stock mínimo:": (self.min_stock_var.get(), False),
+                "Stock máximo:": (self.max_stock_var.get(), False)
+            })
             
         return Validations.validate_numeric_fields(numeric_fields, self)
 
@@ -407,3 +434,38 @@ class CrudInventory(tk.Toplevel):
             
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo actualizar el producto: {str(e)}", parent=self)
+
+    def add_to_cart(self) -> None:
+        """Agrega el producto al carrito de compras en lugar de crearlo en la base de datos"""
+        if not self.validate_required_fields():
+            return
+            
+        try:
+            if not self.sales_callback:
+                raise ValueError("No se pudo agregar al carrito - función de callback no definida")
+            
+            # Crear un diccionario con los datos del producto temporal
+            product_data = {
+                'id': -1,  # ID negativo indica que es un producto nuevo
+                'code': self.code_var.get(),
+                'name': self.product_var.get(),
+                'quantity': int(self.quantity_var.get()),
+                'unit_price': float(self.price_var.get()),
+                'total': int(self.quantity_var.get()) * float(self.price_var.get()),
+                'is_new': True  # Indica que es un producto nuevo
+            }
+            
+            # Obtener información del proveedor si está seleccionado
+            if self.supplier_var.get():
+                supplier_code = self.supplier_var.get().split("(")[-1].rstrip(")")
+                supplier = next((s for s in Supplier.search_active() if s['code'] == supplier_code), None)
+                if supplier:
+                    product_data['supplier_id'] = supplier['id']
+                    product_data['supplier_name'] = supplier['company']
+            
+            # Llamar al callback para agregar al carrito
+            self.sales_callback(product_data)
+            self.destroy()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo agregar al carrito: {str(e)}", parent=self)

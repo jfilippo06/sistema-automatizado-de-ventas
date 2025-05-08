@@ -1,3 +1,4 @@
+# screens/sales/sales_screen.py
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
@@ -286,35 +287,37 @@ class SalesScreen(tk.Frame):
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
-    # [Resto de los métodos permanecen iguales...]
     def create_product(self):
-        """Abre el formulario para crear un nuevo producto con campos bloqueados"""
-        def on_product_created():
-            self.refresh_data()  # Refrescar los datos después de crear el producto
-        
-        # Crear el CRUD en modo creación
+        """Abre el formulario para crear un nuevo producto que se agregará al carrito"""
+        if not self.current_supplier:
+            messagebox.showwarning(
+                "Proveedor requerido", 
+                "Debe seleccionar un proveedor antes de agregar productos al carrito",
+                parent=self
+            )
+            self.entry_supplier.focus_set()
+            return
+            
+        # Crear el CRUD en modo creación desde ventas
         crud = CrudInventory(
             self,
             mode="create",
-            refresh_callback=on_product_created
+            refresh_callback=None,
+            from_sales=True,
+            sales_callback=self.add_new_product_to_cart
         )
         
-        # Configurar campos bloqueados como se solicita
+        # Configurar campos bloqueados
         fields_to_lock = [
-            "Cantidad:", 
             "Existencias:", 
             "Stock mínimo:", 
             "Stock máximo:", 
-            "Proveedor:",
             "Vencimiento:"
         ]
         
         for field in fields_to_lock:
             if field in crud.entries:
-                if isinstance(crud.entries[field], ttk.Combobox):
-                    crud.entries[field].config(state='disabled')  # Para el Combobox de proveedor
-                else:
-                    crud.entries[field].config(state='readonly')  # Para los demás campos
+                crud.entries[field].config(state='readonly')
         
         # Centrar la ventana
         window_width = 800
@@ -324,6 +327,32 @@ class SalesScreen(tk.Frame):
         x = (screen_width // 2) - (window_width // 2)
         y = (screen_height // 2) - (window_height // 2)
         crud.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+    def add_new_product_to_cart(self, product_data: Dict) -> None:
+        """Agrega un nuevo producto (que no existe en la base de datos) al carrito"""
+        # Verificar si ya existe en el carrito (por código)
+        existing_item = next((item for item in self.cart_items if item.get('code') == product_data['code']), None)
+        
+        if existing_item:
+            # Actualizar cantidad si ya existe
+            existing_item['quantity'] += product_data['quantity']
+            existing_item['total'] = existing_item['quantity'] * existing_item['unit_price']
+        else:
+            # Agregar nuevo item al carrito (sin ID)
+            self.cart_items.append({
+                'id': None,  # No tiene ID porque no existe en la BD
+                'code': product_data['code'],
+                'name': product_data['name'],
+                'quantity': product_data['quantity'],
+                'unit_price': product_data['unit_price'],
+                'total': product_data['total'],
+                'is_new': True,
+                'supplier_id': self.current_supplier['id'],  # Proveedor actual
+                'supplier_name': self.current_supplier.get('company', '')
+            })
+        
+        self.update_cart_tree()
+        self.update_totals()
 
     def refresh_data(self) -> None:
         self.search_var.set("")
@@ -378,6 +407,26 @@ class SalesScreen(tk.Frame):
         
         if response:
             try:
+                # Preparar items para la compra
+                purchase_items = []
+                for item in self.cart_items:
+                    item_data = {
+                        'id': item.get('id'),  # None para productos nuevos
+                        'quantity': item['quantity'],
+                        'unit_price': item['unit_price'],
+                        'total': item['total'],
+                        'is_new': item.get('is_new', False)  # Indicar si es nuevo
+                    }
+                    
+                    if item.get('is_new'):
+                        item_data.update({
+                            'code': item.get('code', ''),
+                            'name': item['name'],
+                            'supplier_id': item.get('supplier_id', self.current_supplier['id'])
+                        })
+                    
+                    purchase_items.append(item_data)
+                
                 # Calcular totales
                 iva_tax = Tax.get_by_name("IVA")
                 subtotal = sum(item['total'] for item in self.cart_items)
@@ -388,14 +437,6 @@ class SalesScreen(tk.Frame):
                     taxes = 0.0
                     
                 total = subtotal + taxes
-                
-                # Preparar items para la compra
-                purchase_items = [{
-                    'id': item['id'],
-                    'quantity': item['quantity'],
-                    'unit_price': item['unit_price'],
-                    'total': item['total']
-                } for item in self.cart_items]
                 
                 # Crear la compra (tipo Compra)
                 purchase_id = Sales.create_complete_purchase(
@@ -469,7 +510,6 @@ class SalesScreen(tk.Frame):
             refresh_callback=on_supplier_created,
             lock_id_number=True  # Bloquear cédula cuando se crea desde ventas
         )
-        # ... (resto del método igual)
         
         # Centrar la ventana
         window_width = 360
@@ -628,7 +668,8 @@ class SalesScreen(tk.Frame):
                         'name': product_name,
                         'quantity': quantity,
                         'unit_price': price,
-                        'total': quantity * price
+                        'total': quantity * price,
+                        'is_new': False  # Indica que es un producto existente
                     })
                 
                 self.update_cart_tree()
@@ -696,11 +737,23 @@ class SalesScreen(tk.Frame):
         selected = self.cart_tree.identify_row(event.y)
         
         if column == "#6":  # Columna de acción
-            item_id = self.cart_tree.item(selected)['values'][0]
+            item_values = self.cart_tree.item(selected)['values']
+            item_id = item_values[0] if item_values[0] != "None" else None
             self.remove_from_cart(item_id)
 
-    def remove_from_cart(self, item_id: int) -> None:
-        self.cart_items = [item for item in self.cart_items if item['id'] != item_id]
+    def remove_from_cart(self, item_id: Optional[int]) -> None:
+        """Elimina un item del carrito, manejando tanto IDs como items sin ID"""
+        if item_id is None:
+            # Para items sin ID, eliminamos por índice de selección
+            selected = self.cart_tree.selection()
+            if selected:
+                selected_index = self.cart_tree.index(selected[0])
+                if 0 <= selected_index < len(self.cart_items):
+                    del self.cart_items[selected_index]
+        else:
+            # Para items con ID
+            self.cart_items = [item for item in self.cart_items if item.get('id') != item_id]
+        
         self.update_cart_tree()
         self.update_totals()
 
