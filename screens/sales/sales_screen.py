@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
+from reports.PurchaseInvoiceViewer import PurchaseInvoiceViewer
 from screens.inventory.crud_inventory import CrudInventory
 from screens.supplier.crud_supplier import CrudSupplier
 from sqlite_cli.models.sales_model import Sales
@@ -412,6 +413,7 @@ class SalesScreen(tk.Frame):
                 for item in self.cart_items:
                     item_data = {
                         'id': item.get('id'),  # None para productos nuevos
+                        'name': item['name'],
                         'quantity': item['quantity'],
                         'unit_price': item['unit_price'],
                         'total': item['total'],
@@ -452,6 +454,18 @@ class SalesScreen(tk.Frame):
                     "Éxito", 
                     f"Compra registrada correctamente\nNúmero de factura: {purchase_id}\nTipo: Compra",
                     parent=self
+                )
+                
+                # Mostrar factura de compra digital
+                supplier_info = f"{self.current_supplier.get('company', '') or self.current_supplier.get('first_name', '')} {self.current_supplier.get('last_name', '')} - {self.current_supplier.get('id_number', '')}"
+                PurchaseInvoiceViewer(
+                    self,
+                    purchase_id,
+                    supplier_info,
+                    purchase_items,
+                    subtotal,
+                    taxes,
+                    total
                 )
                 
                 # Limpiar y actualizar
