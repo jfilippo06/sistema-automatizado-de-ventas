@@ -18,7 +18,6 @@ from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
-from screens.sales.sales_screen import SalesScreen
 from screens.catalog.catalog_screen import CatalogScreen  # Nueva importación
 from utils.session_manager import SessionManager
 
@@ -50,7 +49,6 @@ def main() -> None:
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
         reports_screen.pack_forget()
-        sales_screen.pack_forget()
         catalog_screen.pack_forget()  # Nueva línea
         home_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -73,7 +71,6 @@ def main() -> None:
         recovery_services_screen.pack_forget()
         billing_screen.pack_forget()
         reports_screen.pack_forget()
-        sales_screen.pack_forget()
         catalog_screen.pack_forget()  # Nueva línea
         login_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -131,10 +128,6 @@ def main() -> None:
     def open_reports() -> None:
         home_screen.pack_forget()
         reports_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_purchases() -> None:
-        home_screen.pack_forget()
-        sales_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_catalog() -> None:  # Nueva función
         home_screen.pack_forget()
@@ -210,10 +203,6 @@ def main() -> None:
         reports_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_home_from_purchases() -> None:
-        sales_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
     def open_home_from_catalog() -> None:  # Nueva función
         catalog_screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
@@ -251,7 +240,6 @@ def main() -> None:
         open_recovery,
         open_billing,
         open_reports,
-        open_purchases,
         open_catalog  # Nuevo callback
     )
     
@@ -279,7 +267,6 @@ def main() -> None:
     recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
     billing_screen = BillingScreen(app, open_home_from_billing)
     reports_screen = ReportsScreen(app, open_home_from_reports)
-    sales_screen = SalesScreen(app, open_home_from_purchases)
     catalog_screen = CatalogScreen(app, open_home_from_catalog)  # Nueva pantalla
 
     # Mostrar pantalla inicial basada en autenticación
