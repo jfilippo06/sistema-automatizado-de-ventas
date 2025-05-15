@@ -17,6 +17,7 @@ class CatalogScreen(tk.Frame):
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Productos")
         self.current_image = None
+        self.selected_item = None  # Para almacenar el ítem seleccionado
         self.configure_ui()
         self.refresh_data()
         self.display_products(CatalogModel.get_all_products())
@@ -61,11 +62,11 @@ class CatalogScreen(tk.Frame):
         controls_frame = tk.Frame(self, bg="#f5f5f5")
         controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
-         # Frame de búsqueda
+        # Frame de búsqueda
         search_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
-         # Campo de búsqueda
+        # Campo de búsqueda
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
@@ -87,9 +88,21 @@ class CatalogScreen(tk.Frame):
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
-        # Frame para el notebook (pestañas)
-        notebook_frame = tk.Frame(self, bg="#f5f5f5")
-        notebook_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+        # Frame principal para contenido (lista + detalles)
+        content_frame = tk.Frame(self, bg="#f5f5f5")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+
+        # Frame para el notebook (pestañas) - Ocupa 70% del ancho
+        notebook_frame = tk.Frame(content_frame, bg="#f5f5f5")
+        notebook_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+
+        # Frame para detalles del producto - Ahora más ancho (350px)
+        self.details_frame = tk.Frame(content_frame, bg="white", bd=1, relief=tk.SUNKEN, width=500)
+        self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
+        self.details_frame.pack_propagate(False)  # Para mantener el ancho fijo
+
+        # Configurar el frame de detalles
+        self.setup_details_frame()
 
         # Crear Notebook (pestañas)
         self.notebook = ttk.Notebook(notebook_frame)
@@ -118,6 +131,103 @@ class CatalogScreen(tk.Frame):
             bg="#f5f5f5"
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
+
+    def setup_details_frame(self):
+        """Configura el frame de detalles del producto/servicio"""
+        # Limpiar frame de detalles
+        for widget in self.details_frame.winfo_children():
+            widget.destroy()
+
+        # Título del panel
+        details_title = CustomLabel(
+            self.details_frame,
+            text="Detalles del Ítem",
+            font=("Arial", 14, "bold"),
+            fg="#333",
+            bg="white"
+        )
+        details_title.pack(pady=(10, 15), padx=10, anchor="w")
+
+        # Separador
+        ttk.Separator(self.details_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=10, pady=5)
+
+        # Frame para la imagen
+        self.details_image_frame = tk.Frame(self.details_frame, bg="white", height=200)
+        self.details_image_frame.pack(fill=tk.X, padx=10, pady=10)
+        self.details_image_frame.pack_propagate(False)
+
+        # Etiqueta para la imagen (se actualizará cuando se seleccione un ítem)
+        self.details_image_label = CustomLabel(
+            self.details_image_frame,
+            text="Seleccione un ítem para ver detalles",
+            font=("Arial", 10),
+            fg="#999",
+            bg="white"
+        )
+        self.details_image_label.pack(expand=True, fill=tk.BOTH)
+
+        # Frame para la información del producto
+        info_frame = tk.Frame(self.details_frame, bg="white")
+        info_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        # Nombre del producto
+        self.details_name_label = CustomLabel(
+            info_frame,
+            text="Nombre: -",
+            font=("Arial", 12, "bold"),
+            fg="#333",
+            bg="white",
+            anchor="w"
+        )
+        self.details_name_label.pack(fill=tk.X, pady=(0, 5))
+
+        # Código del producto
+        self.details_code_label = CustomLabel(
+            info_frame,
+            text="Código: -",
+            font=("Arial", 11),
+            fg="#555",
+            bg="white",
+            anchor="w"
+        )
+        self.details_code_label.pack(fill=tk.X, pady=(0, 5))
+
+        # Precio (sin signo de $)
+        self.details_price_label = CustomLabel(
+            info_frame,
+            text="Precio: -",
+            font=("Arial", 11),
+            fg="#2ecc71",
+            bg="white",
+            anchor="w"
+        )
+        self.details_price_label.pack(fill=tk.X, pady=(0, 10))
+
+        # Separador
+        ttk.Separator(info_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
+
+        # Descripción
+        desc_title = CustomLabel(
+            info_frame,
+            text="Descripción:",
+            font=("Arial", 11, "bold"),
+            fg="#333",
+            bg="white",
+            anchor="w"
+        )
+        desc_title.pack(fill=tk.X, pady=(5, 0))
+
+        self.details_desc_label = CustomLabel(
+            info_frame,
+            text="Seleccione un ítem para ver su descripción detallada.",
+            font=("Arial", 10),
+            fg="#555",
+            bg="white",
+            wraplength=500,  # Ajustado al nuevo ancho
+            justify=tk.LEFT,
+            anchor="nw"
+        )
+        self.details_desc_label.pack(fill=tk.X, pady=(0, 10))
 
     def setup_products_frame(self):
         # Canvas y scrollbar para productos
@@ -188,6 +298,7 @@ class CatalogScreen(tk.Frame):
                 pady=10
             )
             product_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            product_frame.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
             # Mostrar imagen si existe
             if product.get('image_path') and os.path.exists(product['image_path']):
@@ -199,6 +310,7 @@ class CatalogScreen(tk.Frame):
                     img_label = tk.Label(product_frame, image=photo, bg="white")
                     img_label.image = photo  # keep a reference!
                     img_label.pack(pady=(0, 10))
+                    img_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
                 except Exception as e:
                     print(f"Error loading image: {e}")
                     no_img_label = CustomLabel(
@@ -209,6 +321,7 @@ class CatalogScreen(tk.Frame):
                         bg="white"
                     )
                     no_img_label.pack(pady=(0, 10))
+                    no_img_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
             else:
                 no_img_label = CustomLabel(
                     product_frame,
@@ -218,6 +331,7 @@ class CatalogScreen(tk.Frame):
                     bg="white"
                 )
                 no_img_label.pack(pady=(0, 10))
+                no_img_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
             # Mostrar información del producto
             name_label = CustomLabel(
@@ -228,15 +342,18 @@ class CatalogScreen(tk.Frame):
                 bg="white"
             )
             name_label.pack()
+            name_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
+            # Precio sin signo de $
             price_label = CustomLabel(
                 product_frame,
-                text=f"Precio: ${product['price']:.2f}",
+                text=f"Precio: {product['price']:.2f}",
                 font=("Arial", 11),
                 fg="#2ecc71",
                 bg="white"
             )
             price_label.pack()
+            price_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
             stock_label = CustomLabel(
                 product_frame,
@@ -246,6 +363,7 @@ class CatalogScreen(tk.Frame):
                 bg="white"
             )
             stock_label.pack()
+            stock_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
             if product.get('expiration_date'):
                 exp_label = CustomLabel(
@@ -256,6 +374,7 @@ class CatalogScreen(tk.Frame):
                     bg="white"
                 )
                 exp_label.pack()
+                exp_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
             # Actualizar grid
             col += 1
@@ -300,6 +419,7 @@ class CatalogScreen(tk.Frame):
                 pady=15
             )
             service_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            service_frame.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
             # Mostrar icono de servicio
             service_icon = CustomLabel(
@@ -309,6 +429,7 @@ class CatalogScreen(tk.Frame):
                 bg="white"
             )
             service_icon.pack(pady=(0, 10))
+            service_icon.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
             # Mostrar información del servicio
             name_label = CustomLabel(
@@ -319,15 +440,18 @@ class CatalogScreen(tk.Frame):
                 bg="white"
             )
             name_label.pack()
+            name_label.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
+            # Precio sin signo de $
             price_label = CustomLabel(
                 service_frame,
-                text=f"Precio: ${service['price']:.2f}",
+                text=f"Precio: {service['price']:.2f}",
                 font=("Arial", 11),
                 fg="#2ecc71",
                 bg="white"
             )
             price_label.pack()
+            price_label.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
             if service.get('description'):
                 desc_label = CustomLabel(
@@ -339,6 +463,7 @@ class CatalogScreen(tk.Frame):
                     wraplength=200
                 )
                 desc_label.pack()
+                desc_label.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
             # Actualizar grid
             col += 1
@@ -351,6 +476,96 @@ class CatalogScreen(tk.Frame):
             self.services_scrollable_frame.grid_rowconfigure(i, weight=1)
         for i in range(max_cols):
             self.services_scrollable_frame.grid_columnconfigure(i, weight=1)
+
+    def show_product_details(self, product: Dict) -> None:
+        """Muestra los detalles del producto seleccionado en el panel derecho"""
+        self.selected_item = product
+        
+        # Actualizar la imagen
+        for widget in self.details_image_frame.winfo_children():
+            widget.destroy()
+            
+        if product.get('image_path') and os.path.exists(product['image_path']):
+            try:
+                img = Image.open(product['image_path'])
+                img.thumbnail((330, 200))  # Tamaño más grande para el panel de detalles
+                photo = ImageTk.PhotoImage(img)
+                
+                img_label = tk.Label(self.details_image_frame, image=photo, bg="white")
+                img_label.image = photo  # keep a reference!
+                img_label.pack(expand=True, fill=tk.BOTH)
+            except Exception as e:
+                print(f"Error loading image: {e}")
+                no_img_label = CustomLabel(
+                    self.details_image_frame,
+                    text="Imagen no disponible",
+                    font=("Arial", 10),
+                    fg="#999",
+                    bg="white"
+                )
+                no_img_label.pack(expand=True, fill=tk.BOTH)
+        else:
+            no_img_label = CustomLabel(
+                self.details_image_frame,
+                text="Imagen no disponible",
+                font=("Arial", 10),
+                fg="#999",
+                bg="white"
+            )
+            no_img_label.pack(expand=True, fill=tk.BOTH)
+
+        # Actualizar la información
+        self.details_name_label.configure(text=f"Nombre: {product['product']}")
+        self.details_code_label.configure(text=f"Código: {product.get('code', 'N/A')}")
+        self.details_price_label.configure(text=f"Precio: {product['price']:.2f}")  # Sin signo de $
+        
+        # Descripción ficticia basada en el tipo de producto
+        descriptions = {
+            "medicamento": "Producto farmacéutico para el tratamiento de diversas condiciones de salud.",
+            "equipo": "Equipo médico de alta calidad para uso profesional en instalaciones de salud.",
+            "insumo": "Insumo médico esencial para procedimientos y cuidados de salud."
+        }
+        
+        product_type = product.get('type', 'medicamento')
+        desc_text = descriptions.get(product_type.lower(), 
+                                  "Producto de calidad para el cuidado de la salud. Cumple con todos los estándares de seguridad y eficacia.")
+        
+        self.details_desc_label.configure(text=desc_text)
+        
+        # Seleccionar la pestaña de productos
+        self.notebook.select(self.products_frame)
+        self.status_bar.configure(text=f"Mostrando detalles de {product['product']}")
+
+    def show_service_details(self, service: Dict) -> None:
+        """Muestra los detalles del servicio seleccionado en el panel derecho"""
+        self.selected_item = service
+        
+        # Actualizar la imagen (usamos un icono genérico para servicios)
+        for widget in self.details_image_frame.winfo_children():
+            widget.destroy()
+            
+        service_icon = CustomLabel(
+            self.details_image_frame,
+            text="⚙️",
+            font=("Arial", 48),
+            bg="white"
+        )
+        service_icon.pack(expand=True, fill=tk.BOTH)
+
+        # Actualizar la información
+        self.details_name_label.configure(text=f"Nombre: {service['name']}")
+        self.details_code_label.configure(text=f"Código: {service.get('code', 'N/A')}")
+        self.details_price_label.configure(text=f"Precio: {service['price']:.2f}")  # Sin signo de $
+        
+        # Usar la descripción del servicio si existe, o una por defecto
+        desc_text = service.get('description', 
+                              "Servicio profesional de alta calidad. Realizado por expertos con los más altos estándares.")
+        
+        self.details_desc_label.configure(text=desc_text)
+        
+        # Seleccionar la pestaña de servicios
+        self.notebook.select(self.services_frame)
+        self.status_bar.configure(text=f"Mostrando detalles de {service['name']}")
 
     def on_search(self, event=None) -> None:
         search_term = self.search_var.get().lower()
