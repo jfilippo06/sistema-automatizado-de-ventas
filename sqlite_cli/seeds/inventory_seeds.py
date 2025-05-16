@@ -14,6 +14,7 @@ def seed_inventory() -> None:
         {
             'code': 'PROD001',
             'product': 'Laptop HP 15',
+            'description': 'HP 15 laptop with 8GB RAM and 256GB SSD',
             'quantity': 50,
             'stock': 50,
             'min_stock': 10,
@@ -26,6 +27,7 @@ def seed_inventory() -> None:
         {
             'code': 'PROD002',
             'product': 'Teclado inalámbrico',
+            'description': 'Wireless keyboard with Spanish layout',
             'quantity': 100,
             'stock': 100,
             'min_stock': 20,
@@ -38,6 +40,7 @@ def seed_inventory() -> None:
         {
             'code': 'PROD003',
             'product': 'Mouse gaming',
+            'description': 'RGB gaming mouse with 6 buttons',
             'quantity': 75,
             'stock': 75,
             'min_stock': 15,
@@ -50,6 +53,7 @@ def seed_inventory() -> None:
         {
             'code': 'PROD004',
             'product': 'Monitor 24"',
+            'description': '24-inch Full HD monitor with HDMI port',
             'quantity': 30,
             'stock': 30,
             'min_stock': 5,
@@ -62,6 +66,7 @@ def seed_inventory() -> None:
         {
             'code': 'PROD005',
             'product': 'Disco SSD 500GB',
+            'description': '500GB SSD with SATA interface',
             'quantity': 60,
             'stock': 60,
             'min_stock': 10,

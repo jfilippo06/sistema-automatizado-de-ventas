@@ -517,19 +517,10 @@ class CatalogScreen(tk.Frame):
         # Actualizar la información
         self.details_name_label.configure(text=f"Nombre: {product['product']}")
         self.details_code_label.configure(text=f"Código: {product.get('code', 'N/A')}")
-        self.details_price_label.configure(text=f"Precio: {product['price']:.2f}")  # Sin signo de $
+        self.details_price_label.configure(text=f"Precio: {product['price']:.2f}")
         
-        # Descripción ficticia basada en el tipo de producto
-        descriptions = {
-            "medicamento": "Producto farmacéutico para el tratamiento de diversas condiciones de salud.",
-            "equipo": "Equipo médico de alta calidad para uso profesional en instalaciones de salud.",
-            "insumo": "Insumo médico esencial para procedimientos y cuidados de salud."
-        }
-        
-        product_type = product.get('type', 'medicamento')
-        desc_text = descriptions.get(product_type.lower(), 
-                                  "Producto de calidad para el cuidado de la salud. Cumple con todos los estándares de seguridad y eficacia.")
-        
+        # Usar la descripción del producto si existe, o una por defecto
+        desc_text = product.get('description', "No hay descripción disponible para este producto.")
         self.details_desc_label.configure(text=desc_text)
         
         # Seleccionar la pestaña de productos
@@ -555,12 +546,10 @@ class CatalogScreen(tk.Frame):
         # Actualizar la información
         self.details_name_label.configure(text=f"Nombre: {service['name']}")
         self.details_code_label.configure(text=f"Código: {service.get('code', 'N/A')}")
-        self.details_price_label.configure(text=f"Precio: {service['price']:.2f}")  # Sin signo de $
+        self.details_price_label.configure(text=f"Precio: {service['price']:.2f}")
         
         # Usar la descripción del servicio si existe, o una por defecto
-        desc_text = service.get('description', 
-                              "Servicio profesional de alta calidad. Realizado por expertos con los más altos estándares.")
-        
+        desc_text = service.get('description', "No hay descripción disponible para este servicio.")
         self.details_desc_label.configure(text=desc_text)
         
         # Seleccionar la pestaña de servicios

@@ -34,7 +34,7 @@ class CrudInventory(tk.Toplevel):
         # Configuración de la ventana
         title = "Agregar al Carrito" if from_sales else ("Guardar Producto" if mode == "create" else "Editar Producto")
         self.title(title)
-        self.geometry("900x600")
+        self.geometry("900x650")  # Increased height to accommodate new field
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
         
@@ -44,6 +44,7 @@ class CrudInventory(tk.Toplevel):
         # Variables para los campos
         self.code_var = tk.StringVar()
         self.product_var = tk.StringVar()
+        self.description_var = tk.StringVar()
         self.quantity_var = tk.StringVar(value="0")
         self.stock_var = tk.StringVar(value="0")
         self.min_stock_var = tk.StringVar(value="0")
@@ -85,6 +86,7 @@ class CrudInventory(tk.Toplevel):
         fields = [
             ("Código:", self.code_var, 'text', not (self.mode == "edit")),
             ("Producto:", self.product_var, 'text', True),
+            ("Descripción:", self.description_var, 'text', True),  # New field
             ("Cantidad:", self.quantity_var, 'number', self.mode == "create" or self.from_sales),
             ("Existencias:", self.stock_var, 'number', self.mode == "create" and not self.from_sales),
             ("Stock mínimo:", self.min_stock_var, 'number', not self.from_sales),
@@ -342,6 +344,7 @@ class CrudInventory(tk.Toplevel):
         
         self.code_var.set(item['code'])
         self.product_var.set(item['product'])
+        self.description_var.set(item['description'])  # Load English description
         self.quantity_var.set(str(item['quantity']))
         self.stock_var.set(str(item['stock']))
         self.min_stock_var.set(str(item['min_stock']))
@@ -380,6 +383,7 @@ class CrudInventory(tk.Toplevel):
             InventoryItem.create(
                 code=self.code_var.get(),
                 product=self.product_var.get(),
+                description=self.description_var.get(),  # Include English description
                 quantity=int(self.quantity_var.get()),
                 stock=int(self.stock_var.get()),
                 min_stock=int(self.min_stock_var.get()),
@@ -417,6 +421,7 @@ class CrudInventory(tk.Toplevel):
                 item_id=self.item_id,
                 code=self.code_var.get(),
                 product=self.product_var.get(),
+                description=self.description_var.get() or None,  # Include English description
                 quantity=int(self.quantity_var.get()),
                 stock=int(self.stock_var.get()),
                 min_stock=int(self.min_stock_var.get()),
@@ -449,6 +454,7 @@ class CrudInventory(tk.Toplevel):
                 'id': -1,  # ID negativo indica que es un producto nuevo
                 'code': self.code_var.get(),
                 'name': self.product_var.get(),
+                'description': self.description_var.get(),  # Include English description
                 'quantity': int(self.quantity_var.get()),
                 'unit_price': float(self.price_var.get()),
                 'total': int(self.quantity_var.get()) * float(self.price_var.get()),

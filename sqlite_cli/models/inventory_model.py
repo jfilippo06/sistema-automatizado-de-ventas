@@ -45,6 +45,7 @@ class InventoryItem:
     def create(
         code: str,
         product: str,
+        description: str,
         quantity: int,
         stock: int,
         min_stock: int,
@@ -64,12 +65,12 @@ class InventoryItem:
             # Insertamos el producto
             cursor.execute('''
                 INSERT INTO inventory (
-                    code, product, quantity, stock, min_stock, max_stock, price, 
+                    code, product, description, quantity, stock, min_stock, max_stock, price, 
                     supplier_id, expiration_date, image_path, status_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
                 RETURNING *  -- Esto retorna el registro insertado
             ''', (
-                code, product, quantity, stock, min_stock, max_stock, price, 
+                code, product, description, quantity, stock, min_stock, max_stock, price, 
                 supplier_id, expiration_date, saved_image_path
             ))
             
@@ -149,6 +150,7 @@ class InventoryItem:
                     "ID": "i.id",
                     "Código": "i.code",
                     "Producto": "i.product",
+                    "Descripción": "i.description",
                     "Proveedor": "sp.company",
                     "Cantidad": "i.quantity",
                     "Existencias": "i.stock",
@@ -181,6 +183,7 @@ class InventoryItem:
                 base_query += '''
                     AND (LOWER(i.code) LIKE ? OR 
                         LOWER(i.product) LIKE ? OR 
+                        LOWER(i.description) LIKE ? OR
                         LOWER(sp.company) LIKE ? OR
                         CAST(i.quantity AS TEXT) LIKE ? OR
                         CAST(i.stock AS TEXT) LIKE ? OR
@@ -189,7 +192,7 @@ class InventoryItem:
                         CAST(i.price AS TEXT) LIKE ? OR
                         i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term.lower()}%"] * 9)
+                params.extend([f"%{search_term.lower()}%"] * 10)
         
         base_query += " ORDER BY i.product ASC"
         cursor.execute(base_query, params)
@@ -219,6 +222,7 @@ class InventoryItem:
                     "ID": "i.id",
                     "Código": "i.code",
                     "Producto": "i.product",
+                    "Descripción": "i.description",
                     "Proveedor": "sp.company",
                     "Cantidad": "i.quantity",
                     "Existencias": "i.stock",
@@ -250,6 +254,7 @@ class InventoryItem:
                 base_query += '''
                     AND (LOWER(i.code) LIKE ? OR 
                         LOWER(i.product) LIKE ? OR 
+                        LOWER(i.description) LIKE ? OR
                         LOWER(sp.company) LIKE ? OR
                         CAST(i.quantity AS TEXT) LIKE ? OR
                         CAST(i.stock AS TEXT) LIKE ? OR
@@ -258,7 +263,7 @@ class InventoryItem:
                         CAST(i.price AS TEXT) LIKE ? OR
                         i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term.lower()}%"] * 9)
+                params.extend([f"%{search_term.lower()}%"] * 10)
         
         base_query += " ORDER BY i.product ASC"
         cursor.execute(base_query, params)
@@ -292,6 +297,7 @@ class InventoryItem:
         item_id: int,
         code: str,
         product: str,
+        description: str,
         quantity: int,
         stock: int,
         min_stock: int,
@@ -330,6 +336,7 @@ class InventoryItem:
             UPDATE inventory SET
                 code = ?,
                 product = ?,
+                description = ?,
                 quantity = ?,
                 stock = ?,
                 min_stock = ?,
@@ -341,7 +348,7 @@ class InventoryItem:
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ''', (
-            code, product, quantity, stock, min_stock, max_stock, price, 
+            code, product, description, quantity, stock, min_stock, max_stock, price, 
             supplier_id, expiration_date, saved_image_path, item_id
         ))
         conn.commit()
