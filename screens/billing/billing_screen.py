@@ -43,7 +43,7 @@ class BillingScreen(tk.Frame):
         # Título del sistema
         title_label = CustomLabel(
             header_frame,
-            text="Facturación",
+            text="Ventas",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"

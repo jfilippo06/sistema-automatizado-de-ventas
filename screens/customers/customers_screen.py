@@ -32,7 +32,7 @@ class CustomersScreen(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Gestión de Clientes",
+            text="Clientes",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"

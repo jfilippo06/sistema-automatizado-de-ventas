@@ -31,7 +31,7 @@ class ServicesScreen(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Gestión de Servicios",
+            text="Servicios",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"

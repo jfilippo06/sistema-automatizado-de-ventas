@@ -32,7 +32,7 @@ class Suppliers(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Gestión de Proveedores",
+            text="Proveedores",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"

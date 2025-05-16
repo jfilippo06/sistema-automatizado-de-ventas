@@ -46,13 +46,9 @@ class ReportsScreen(tk.Frame):
         right_column.pack(side=tk.LEFT, padx=10)
 
         buttons = [
-            ("Gestión de proveedores", self.suppliers_report),
             ("Inventario de productos", self.inventory_report),
             ("Gestión de compras", self.sales_report),
             ("Facturas", self.invoices_report),
-            ("Clientes", self.customers_report),
-            ("Solicitud de servicios", self.service_requests_report),
-            ("Gestión de servicios", self.services_report),
             ("Regresar", self.go_back)
         ]
 
@@ -67,9 +63,6 @@ class ReportsScreen(tk.Frame):
             )
             btn.pack(pady=5, ipady=10, ipadx=10)
 
-    def suppliers_report(self) -> None:
-        print("Generando reporte de proveedores")
-
     def inventory_report(self) -> None:
         print("Generando reporte de inventario")
 
@@ -78,15 +71,6 @@ class ReportsScreen(tk.Frame):
 
     def invoices_report(self) -> None:
         print("Generando reporte de facturas")
-
-    def customers_report(self) -> None:
-        print("Generando reporte de clientes")
-
-    def service_requests_report(self) -> None:
-        print("Generando reporte de solicitudes de servicio")
-
-    def services_report(self) -> None:
-        print("Generando reporte de servicios")
 
     def go_back(self) -> None:
         self.open_previous_screen_callback()

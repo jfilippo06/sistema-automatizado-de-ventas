@@ -64,14 +64,14 @@ class HomeScreen(tk.Frame):
         title.grid(row=0, column=0, columnspan=3, pady=(0, 30))
 
         buttons = [
-            ("Gestión de proveedores", self.suppliers_control),
-            ("Inventario de productos", self.inventory_control),
-            ("Gestión de compras", self.purchases_control),
+            ("Proveedores", self.suppliers_control),
+            ("Productos", self.inventory_control),
+            ("Orden de compra", self.purchases_control),
             ("Reportes", self.reports_control),
-            ("Facturación", self.billing_control),
-            ("Gestión de clientes", self.customers_control),
+            ("Ventas", self.billing_control),
+            ("Clientes", self.customers_control),
             ("Solicitudes de servicio", self.service_requests_control),
-            ("Gestión de servicios", self.services_control),
+            ("Servicios", self.services_control),
             ("Catálogo", self.catalog_control),  # Actualizado
             ("Mantenimiento", self.maintenance),
             ("Recuperación", self.recovery),
