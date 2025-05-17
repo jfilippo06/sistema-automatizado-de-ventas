@@ -290,14 +290,16 @@ def init_db() -> None:
         CREATE TABLE IF NOT EXISTS invoice_details (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             invoice_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL,
+            product_id INTEGER,  -- Opcional (puede ser NULL si no aplica)
+            service_request_id INTEGER,  -- Opcional (puede ser NULL si no aplica)
             quantity INTEGER NOT NULL,
             unit_price REAL NOT NULL,
             subtotal REAL NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
-            FOREIGN KEY (product_id) REFERENCES inventory(id)
+            FOREIGN KEY (product_id) REFERENCES inventory(id),
+            FOREIGN KEY (service_request_id) REFERENCES service_requests(id)
         )
     ''')
     
