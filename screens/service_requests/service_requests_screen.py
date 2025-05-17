@@ -16,7 +16,7 @@ class ServiceRequestsScreen(tk.Frame):
         self.open_previous_screen_callback = open_previous_screen_callback
         self.search_var = tk.StringVar()
         self.search_field_var = tk.StringVar(value="Todos los campos")
-        self.configure(bg="#f5f5f5")  # Fondo general
+        self.configure(bg="#f5f5f5")
         self.configure_ui()
         self.refresh_data()
 
@@ -26,7 +26,7 @@ class ServiceRequestsScreen(tk.Frame):
         self.refresh_data()
 
     def configure_ui(self) -> None:
-        # Header con título - Estilo actualizado
+        # Header con título
         header_frame = tk.Frame(self, bg="#4a6fa5")
         header_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0)
         
@@ -39,7 +39,7 @@ class ServiceRequestsScreen(tk.Frame):
         )
         title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame para botón de regreso - Estilo actualizado
+        # Frame para botón de regreso
         back_frame = tk.Frame(header_frame, bg="#4a6fa5")
         back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
         
@@ -52,7 +52,7 @@ class ServiceRequestsScreen(tk.Frame):
         )
         btn_back.pack(side=tk.RIGHT)
 
-        # Frame principal para controles - Estilo actualizado
+        # Frame principal para controles
         controls_frame = tk.Frame(self, bg="#f5f5f5")
         controls_frame.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
@@ -60,7 +60,7 @@ class ServiceRequestsScreen(tk.Frame):
         search_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
-        # Campo de búsqueda - Estilo actualizado
+        # Campo de búsqueda
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
@@ -70,7 +70,7 @@ class ServiceRequestsScreen(tk.Frame):
         search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         search_entry.bind("<KeyRelease>", self.on_search)
 
-        # Combobox para seleccionar campo de búsqueda - Estilo actualizado
+        # Combobox para seleccionar campo de búsqueda
         search_fields = [
             "Todos los campos",
             "ID",
@@ -91,7 +91,7 @@ class ServiceRequestsScreen(tk.Frame):
         search_combobox.pack(side=tk.LEFT, padx=5)
         search_combobox.bind("<<ComboboxSelected>>", self.on_search)
 
-        # Frame para los botones de acciones (derecha) - Estilo actualizado
+        # Frame para los botones de acciones
         action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
         action_frame.pack(side=tk.RIGHT)
 
@@ -131,14 +131,14 @@ class ServiceRequestsScreen(tk.Frame):
         )
         btn_add.pack(side=tk.RIGHT, padx=5)
 
-        # Treeview frame - Estilo actualizado
+        # Treeview frame
         tree_frame = tk.Frame(self, bg="#f5f5f5")
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
         # Treeview para solicitudes
         self.tree = ttk.Treeview(tree_frame, columns=(
-            "ID", "Número de solicitud", "Empleado", "Cliente", "Servicio", "Descripción", "Cantidad", 
-            "Total", "Estado Solicitud"
+            "ID", "Número de solicitud", "Empleado", "Cliente", "Servicio", 
+            "Descripción", "Cantidad", "Total", "Estado Solicitud"
         ), show="headings")
 
         columns = [
@@ -162,7 +162,7 @@ class ServiceRequestsScreen(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Barra de estado - Estilo actualizado
+        # Barra de estado
         self.status_bar = CustomLabel(
             self,
             text="Listo",
@@ -171,8 +171,6 @@ class ServiceRequestsScreen(tk.Frame):
             bg="#f5f5f5"
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
-
-        self.refresh_data()
 
     def on_search(self, event=None) -> None:
         search_term = self.search_var.get().lower()
@@ -183,7 +181,6 @@ class ServiceRequestsScreen(tk.Frame):
             
         items = ServiceRequest.search_active(search_term, field if field != "Todos los campos" else None)
         
-        # Mapeo de estados en inglés a español
         status_mapping = {
             "started": "Iniciado",
             "in_progress": "En progreso",
@@ -197,7 +194,7 @@ class ServiceRequestsScreen(tk.Frame):
             self.tree.insert("", tk.END, values=(
                 item['id'],
                 item['request_number'],
-                item['employee_name'],
+                item.get('employee_name', 'Sin asignar'),
                 item['customer_name'],
                 item['service_name'],
                 item['description'],
@@ -298,7 +295,6 @@ class ServiceRequestsScreen(tk.Frame):
         
         status_var = tk.StringVar()
         
-        # Estados en español pero guardamos los valores en inglés
         status_options = {
             "Iniciado": "started",
             "En progreso": "in_progress",

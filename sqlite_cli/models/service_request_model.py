@@ -1,4 +1,3 @@
-# models/service_request_model.py
 from sqlite_cli.database.database import get_db_connection
 from typing import List, Dict, Optional
 
@@ -57,15 +56,18 @@ class ServiceRequest:
                    s.name as service_name,
                    s.price as service_price,
                    rs.name as request_status_name,
-                   u.username as employee_username,
-                   p.first_name || ' ' || p.last_name as employee_name
+                   CASE 
+                       WHEN u.id IS NULL THEN 'Sin asignar'
+                       ELSE p.first_name || ' ' || p.last_name 
+                   END as employee_name,
+                   u.username as employee_username
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
-            JOIN users u ON sr.employee_id = u.id
-            JOIN person p ON u.person_id = p.id
+            LEFT JOIN users u ON sr.employee_id = u.id
+            LEFT JOIN person p ON u.person_id = p.id
             WHERE st.name = 'active'
         ''')
         items = [dict(row) for row in cursor.fetchall()]
@@ -84,15 +86,18 @@ class ServiceRequest:
                    s.name as service_name,
                    s.price as service_price,
                    rs.name as request_status_name,
-                   u.username as employee_username,
-                   p.first_name || ' ' || p.last_name as employee_name
+                   CASE 
+                       WHEN u.id IS NULL THEN 'Sin asignar'
+                       ELSE p.first_name || ' ' || p.last_name 
+                   END as employee_name,
+                   u.username as employee_username
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
-            JOIN users u ON sr.employee_id = u.id
-            JOIN person p ON u.person_id = p.id
+            LEFT JOIN users u ON sr.employee_id = u.id
+            LEFT JOIN person p ON u.person_id = p.id
             WHERE st.name = 'active'
         '''
         
@@ -102,15 +107,15 @@ class ServiceRequest:
             if field:
                 field_map = {
                     "ID": "sr.id",
-                    "Número": "sr.request_number",
+                    "Número de solicitud": "sr.request_number",
                     "Cliente": "c.first_name || ' ' || c.last_name",
                     "Servicio": "s.name",
                     "Estado Solicitud": "rs.name",
-                    "Empleado": "p.first_name || ' ' || p.last_name"
+                    "Empleado": "employee_name"
                 }
                 field_name = field_map.get(field)
                 if field_name:
-                    if field in ["ID", "Número"]:
+                    if field in ["ID", "Número de solicitud"]:
                         base_query += f" AND {field_name} LIKE ?"
                         params.append(f"%{search_term}%")
                     else:
@@ -123,7 +128,7 @@ class ServiceRequest:
                         LOWER(c.first_name || ' ' || c.last_name) LIKE ? OR 
                         LOWER(s.name) LIKE ? OR
                         LOWER(rs.name) LIKE ? OR
-                        LOWER(p.first_name || ' ' || p.last_name) LIKE ?)
+                        LOWER(employee_name) LIKE ?)
                 '''
                 params.extend([f"%{search_term.lower()}%"] * 6)
         
@@ -141,15 +146,19 @@ class ServiceRequest:
                    c.first_name, c.last_name, c.id_number,
                    s.name as service_name,
                    rs.name as request_status_name,
-                   u.id as employee_id,
-                   p.first_name || ' ' || p.last_name as employee_name
+                   sr.employee_id,
+                   CASE 
+                       WHEN u.id IS NULL THEN 'Sin asignar'
+                       ELSE p.first_name || ' ' || p.last_name 
+                   END as employee_name,
+                   u.username as employee_username
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
-            JOIN users u ON sr.employee_id = u.id
-            JOIN person p ON u.person_id = p.id
+            LEFT JOIN users u ON sr.employee_id = u.id
+            LEFT JOIN person p ON u.person_id = p.id
             WHERE sr.id = ? AND st.name = 'active'
         ''', (request_id,))
         item = cursor.fetchone()
@@ -161,7 +170,7 @@ class ServiceRequest:
         request_id: int,
         customer_id: int,
         service_id: int,
-        employee_id: int,
+        employee_id: Optional[int],
         description: str,
         quantity: int,
         request_status_id: int
@@ -207,7 +216,6 @@ class ServiceRequest:
 
     @staticmethod
     def deactivate(request_id: int) -> None:
-        """Desactiva una solicitud (estado inactivo)"""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -222,7 +230,6 @@ class ServiceRequest:
 
     @staticmethod
     def search_inactive(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
-        """Busca solicitudes inactivas con filtro opcional"""
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -232,12 +239,18 @@ class ServiceRequest:
                    c.id_number as customer_id_number,
                    s.name as service_name,
                    s.price as service_price,
-                   rs.name as request_status_name
+                   rs.name as request_status_name,
+                   CASE 
+                       WHEN u.id IS NULL THEN 'Sin asignar'
+                       ELSE p.first_name || ' ' || p.last_name 
+                   END as employee_name
             FROM service_requests sr
             JOIN customers c ON sr.customer_id = c.id
             JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
             JOIN status st ON sr.status_id = st.id
+            LEFT JOIN users u ON sr.employee_id = u.id
+            LEFT JOIN person p ON u.person_id = p.id
             WHERE st.name = 'inactive'
         '''
         
@@ -249,7 +262,8 @@ class ServiceRequest:
                     "ID": "sr.id",
                     "Cliente": "c.first_name || ' ' || c.last_name",
                     "Servicio": "s.name",
-                    "Estado Solicitud": "rs.name"
+                    "Estado Solicitud": "rs.name",
+                    "Empleado": "employee_name"
                 }
                 field_name = field_map.get(field)
                 if field_name:
@@ -262,15 +276,16 @@ class ServiceRequest:
                             base_query += " AND 1 = 0"
                     else:
                         base_query += f" AND LOWER({field_name}) LIKE ?"
-                        params.append(f"%{search_term}%")
+                        params.append(f"%{search_term.lower()}%")
             else:
                 base_query += '''
                     AND (LOWER(sr.id) LIKE ? OR 
                         LOWER(c.first_name || ' ' || c.last_name) LIKE ? OR 
                         LOWER(s.name) LIKE ? OR
-                        LOWER(rs.name) LIKE ?)
+                        LOWER(rs.name) LIKE ? OR
+                        LOWER(employee_name) LIKE ?)
                 '''
-                params.extend([f"%{search_term}%"] * 4)
+                params.extend([f"%{search_term.lower()}%"] * 5)
         
         cursor.execute(base_query, params)
         items = [dict(row) for row in cursor.fetchall()]
@@ -279,7 +294,6 @@ class ServiceRequest:
 
     @staticmethod
     def activate(request_id: int) -> None:
-        """Activa una solicitud (estado activo)"""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
