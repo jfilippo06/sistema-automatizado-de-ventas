@@ -9,34 +9,21 @@ class ServiceRequest:
         service_id: int,
         description: str,
         quantity: int = 1,
-        employee_id: Optional[int] = None,
+        employee_id: int = 0,  # Valor por defecto
         request_status_id: int = 1
     ) -> None:
-        """
-        Creates a new service request associated with an invoice
-        
-        Args:
-            customer_id: ID of the customer requesting the service
-            service_id: ID of the service being requested
-            description: Description of the service request
-            quantity: Quantity of service units (default 1)
-            employee_id: Optional ID of employee handling the request
-            request_status_id: Status ID of the request (default 1 = pending)
-        """
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
-            # Get service price
             cursor.execute('SELECT price FROM services WHERE id = ?', (service_id,))
             service = cursor.fetchone()
             if not service:
-                raise ValueError("Service not found")
+                raise ValueError("Servicio no encontrado")
                 
             price = service['price']
             total = price * quantity
             
-            # Generate request number (SR- followed by ID)
             cursor.execute(
                 '''INSERT INTO service_requests 
                 (request_number, customer_id, service_id, employee_id, 
@@ -46,7 +33,6 @@ class ServiceRequest:
                 quantity, total, request_status_id)
             )
             
-            # Update the request number with the actual ID
             request_id = cursor.lastrowid
             cursor.execute(
                 'UPDATE service_requests SET request_number = ? WHERE id = ?',
@@ -54,11 +40,9 @@ class ServiceRequest:
             )
             
             conn.commit()
-            
         except Exception as e:
             conn.rollback()
             raise e
-            
         finally:
             conn.close()
 

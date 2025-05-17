@@ -204,7 +204,7 @@ def init_db() -> None:
             request_number TEXT NOT NULL UNIQUE,
             customer_id INTEGER NOT NULL,
             service_id INTEGER NOT NULL,
-            employee_id INTEGER NOT NULL,
+            employee_id INTEGER NOT NULL DEFAULT 0,
             description TEXT NOT NULL,
             quantity INTEGER NOT NULL DEFAULT 1,
             total REAL NOT NULL,
