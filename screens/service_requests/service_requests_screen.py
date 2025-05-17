@@ -122,15 +122,6 @@ class ServiceRequestsScreen(tk.Frame):
         )
         btn_edit.pack(side=tk.RIGHT, padx=5)
 
-        btn_add = CustomButton(
-            action_frame,
-            text="Agregar",
-            command=self.add_item,
-            padding=8,
-            width=10,
-        )
-        btn_add.pack(side=tk.RIGHT, padx=5)
-
         # Treeview frame
         tree_frame = tk.Frame(self, bg="#f5f5f5")
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
@@ -213,9 +204,6 @@ class ServiceRequestsScreen(tk.Frame):
     def go_back(self) -> None:
         self.parent.state('normal')
         self.open_previous_screen_callback()
-
-    def add_item(self) -> None:
-        CrudServiceRequest(self, mode="create", refresh_callback=self.refresh_data)
 
     def edit_item(self) -> None:
         selected = self.tree.selection()

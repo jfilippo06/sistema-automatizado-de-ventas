@@ -166,39 +166,16 @@ class ServiceRequest:
         return dict(item) if item else None
 
     @staticmethod
-    def update(
-        request_id: int,
-        customer_id: int,
-        service_id: int,
-        employee_id: Optional[int],
-        description: str,
-        quantity: int,
-        request_status_id: int
-    ) -> None:
+    def update_employee(request_id: int, employee_id: int) -> None:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('SELECT price FROM services WHERE id = ?', (service_id,))
-        service = cursor.fetchone()
-        if not service:
-            conn.close()
-            raise ValueError("Service not found")
-            
-        price = service['price']
-        total = price * quantity
-        
         cursor.execute(
             '''UPDATE service_requests SET
-            customer_id = ?,
-            service_id = ?,
             employee_id = ?,
-            description = ?,
-            quantity = ?,
-            total = ?,
-            request_status_id = ?,
             updated_at = CURRENT_TIMESTAMP
             WHERE id = ?''',
-            (customer_id, service_id, employee_id, description, quantity, total, request_status_id, request_id)
+            (employee_id, request_id)
         )
         conn.commit()
         conn.close()
