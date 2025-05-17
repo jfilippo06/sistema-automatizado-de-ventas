@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any, Optional
 from reports.InvoiceViewer import InvoiceViewer
 from sqlite_cli.models.invoice_model import Invoice
+from sqlite_cli.models.service_request_model import ServiceRequest
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -477,15 +478,9 @@ class BillingScreen(tk.Frame):
                     
                 total = subtotal + taxes
                 
-                # Preparar items para la factura
-                invoice_items = [{
-                    'id': item['id'],
-                    'name': item['name'],
-                    'quantity': item['quantity'],
-                    'unit_price': item['unit_price'],
-                    'total': item['total'],
-                    'is_service': item.get('is_service', False)
-                } for item in self.cart_items]
+                # Separar productos y servicios
+                products = [item for item in self.cart_items if not item.get('is_service', False)]
+                services = [item for item in self.cart_items if item.get('is_service', False)]
                 
                 # Crear la factura como pagada completamente (tipo Venta)
                 invoice_id = Invoice.create_paid_invoice(
@@ -493,8 +488,17 @@ class BillingScreen(tk.Frame):
                     subtotal=subtotal,
                     taxes=taxes,
                     total=total,
-                    items=invoice_items
+                    items=products  # Solo pasamos productos para el manejo de inventario
                 )
+                
+                # Registrar servicios en service_requests
+                for service in services:
+                    ServiceRequest.create(
+                        customer_id=self.current_customer['id'],
+                        service_id=service['id'],
+                        description=f"Servicio vendido en factura #{invoice_id}",
+                        quantity=service['quantity']
+                    )
                 
                 # Mostrar mensaje de éxito con el número de factura
                 messagebox.showinfo(
@@ -503,13 +507,13 @@ class BillingScreen(tk.Frame):
                     parent=self
                 )
                 
-                # Mostrar factura digital
+                # Mostrar factura digital (incluyendo ambos tipos de items)
                 customer_info = f"{self.current_customer['first_name']} {self.current_customer['last_name']} - {self.current_customer['id_number']}"
                 InvoiceViewer(
                     self,
                     invoice_id,
                     customer_info,
-                    invoice_items,
+                    self.cart_items,  # Pasamos todos los items para mostrar
                     subtotal,
                     taxes,
                     total

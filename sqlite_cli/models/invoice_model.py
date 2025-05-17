@@ -92,6 +92,7 @@ class Invoice:
     ) -> int:
         """
         Crea una factura pagada completamente (tipo Venta)
+        Solo maneja productos (los servicios se manejan aparte)
         """
         # Obtener ID del tipo de factura "Venta"
         invoice_type_id = Invoice._get_invoice_type_id("Venta")
@@ -99,9 +100,10 @@ class Invoice:
         # 1. Registrar factura principal
         invoice_id = Invoice._create_invoice(customer_id, invoice_type_id, subtotal, taxes, total)
         
-        # 2. Procesar cada item secuencialmente
+        # 2. Procesar solo items de productos (no servicios)
         for item in items:
-            Invoice._process_item(invoice_id, item)
+            if not item.get('is_service', False):
+                Invoice._process_item(invoice_id, item)
         
         return invoice_id
 

@@ -7,41 +7,60 @@ class ServiceRequest:
     def create(
         customer_id: int,
         service_id: int,
-        employee_id: int,
         description: str,
         quantity: int = 1,
+        employee_id: Optional[int] = None,
         request_status_id: int = 1
     ) -> None:
+        """
+        Creates a new service request associated with an invoice
+        
+        Args:
+            customer_id: ID of the customer requesting the service
+            service_id: ID of the service being requested
+            description: Description of the service request
+            quantity: Quantity of service units (default 1)
+            employee_id: Optional ID of employee handling the request
+            request_status_id: Status ID of the request (default 1 = pending)
+        """
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Get service price
-        cursor.execute('SELECT price FROM services WHERE id = ?', (service_id,))
-        service = cursor.fetchone()
-        if not service:
-            conn.close()
-            raise ValueError("Service not found")
+        try:
+            # Get service price
+            cursor.execute('SELECT price FROM services WHERE id = ?', (service_id,))
+            service = cursor.fetchone()
+            if not service:
+                raise ValueError("Service not found")
+                
+            price = service['price']
+            total = price * quantity
             
-        price = service['price']
-        total = price * quantity
-        
-        # Generate request number (SR- followed by ID)
-        cursor.execute(
-            '''INSERT INTO service_requests 
-            (request_number, customer_id, service_id, employee_id, description, quantity, total, request_status_id, status_id)
-            VALUES ('SR-', ?, ?, ?, ?, ?, ?, ?, 1)''',
-            (customer_id, service_id, employee_id, description, quantity, total, request_status_id)
-        )
-        
-        # Update the request number with the actual ID
-        request_id = cursor.lastrowid
-        cursor.execute(
-            'UPDATE service_requests SET request_number = ? WHERE id = ?',
-            (f"SR-{request_id}", request_id)
-        )
-        
-        conn.commit()
-        conn.close()
+            # Generate request number (SR- followed by ID)
+            cursor.execute(
+                '''INSERT INTO service_requests 
+                (request_number, customer_id, service_id, employee_id, 
+                description, quantity, total, request_status_id, status_id)
+                VALUES ('SR-', ?, ?, ?, ?, ?, ?, ?, 1)''',
+                (customer_id, service_id, employee_id, description, 
+                quantity, total, request_status_id)
+            )
+            
+            # Update the request number with the actual ID
+            request_id = cursor.lastrowid
+            cursor.execute(
+                'UPDATE service_requests SET request_number = ? WHERE id = ?',
+                (f"SR-{request_id}", request_id)
+            )
+            
+            conn.commit()
+            
+        except Exception as e:
+            conn.rollback()
+            raise e
+            
+        finally:
+            conn.close()
 
     @staticmethod
     def all() -> List[Dict]:

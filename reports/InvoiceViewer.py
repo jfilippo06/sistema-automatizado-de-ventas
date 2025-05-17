@@ -18,8 +18,8 @@ class InvoiceViewer(tk.Toplevel):
         self.grab_set()
         
         # Tamaño fijo de la ventana
-        window_width = 600
-        window_height = 600
+        window_width = 650  # Aumentado para acomodar la columna adicional
+        window_height = 650
         
         # Obtener dimensiones de la pantalla
         screen_width = self.winfo_screenwidth()
@@ -91,27 +91,32 @@ class InvoiceViewer(tk.Toplevel):
         tk.Label(right_frame, text=customer_info, 
                 font=("Arial", 10)).pack(anchor="e")
         
-        # Tabla de productos
+        # Tabla de productos/servicios
         table_frame = tk.Frame(scrollable_frame)
         table_frame.pack(fill="x", padx=20, pady=10)
         
-        columns = ("Descripción", "Cantidad", "P. Unitario", "Total")
+        # Nueva columna para Tipo (Producto/Servicio)
+        columns = ("Tipo", "Descripción", "Cantidad", "P. Unitario", "Total")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=min(8, len(items)))
         
         # Configurar columnas
+        tree.heading("Tipo", text="Tipo")
         tree.heading("Descripción", text="Descripción")
         tree.heading("Cantidad", text="Cantidad")
         tree.heading("P. Unitario", text="P. Unitario")
         tree.heading("Total", text="Total")
         
-        tree.column("Descripción", width=250, anchor="w")
-        tree.column("Cantidad", width=80, anchor="center")
-        tree.column("P. Unitario", width=100, anchor="e")
-        tree.column("Total", width=100, anchor="e")
+        tree.column("Tipo", width=80, anchor="center")
+        tree.column("Descripción", width=220, anchor="w")
+        tree.column("Cantidad", width=70, anchor="center")
+        tree.column("P. Unitario", width=90, anchor="e")
+        tree.column("Total", width=90, anchor="e")
         
-        # Insertar datos
+        # Insertar datos con distinción entre productos y servicios
         for item in items:
+            item_type = "Servicio" if item.get('is_service', False) else "Producto"
             tree.insert("", "end", values=(
+                item_type,
                 item['name'],
                 item['quantity'],
                 f"{item['unit_price']:.2f}",
@@ -133,6 +138,13 @@ class InvoiceViewer(tk.Toplevel):
         
         tk.Label(totals_frame, text=f"TOTAL: {total:.2f}",
                 font=("Arial", 12, "bold")).pack(side="right", padx=5)
+        
+        # Nota sobre servicios
+        if any(item.get('is_service', False) for item in items):
+            note_frame = tk.Frame(scrollable_frame)
+            note_frame.pack(fill="x", padx=20, pady=5)
+            tk.Label(note_frame, text="Nota: Los servicios solicitados serán atendidos según lo acordado.",
+                   font=("Arial", 9), fg="#666").pack(side="left")
         
         # Botones
         button_frame = tk.Frame(scrollable_frame)
