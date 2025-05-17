@@ -11,6 +11,7 @@ from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.customer_model import Customer
 from sqlite_cli.models.tax_model import Tax
 from sqlite_cli.models.currency_model import Currency
+from sqlite_cli.models.service_model import Service
 from screens.customers.crud_customer import CrudCustomer
 
 class BillingScreen(tk.Frame):
@@ -115,7 +116,7 @@ class BillingScreen(tk.Frame):
         )
         btn_checkout.pack(side=tk.LEFT, padx=5)
 
-        # Frame de búsqueda de productos
+        # Frame de búsqueda de productos/servicios
         search_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=5)
         search_frame.pack(side=tk.TOP, fill=tk.X)
 
@@ -132,7 +133,7 @@ class BillingScreen(tk.Frame):
             "Todos los campos",
             "ID",
             "Código",
-            "Producto",
+            "Nombre",
             "Existencias",
             "Precio"
         ]
@@ -152,9 +153,21 @@ class BillingScreen(tk.Frame):
         tables_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
         tables_frame.pack(fill=tk.BOTH, expand=True)
 
+        # Create Notebook (tabs)
+        self.catalog_notebook = ttk.Notebook(tables_frame)
+        self.catalog_notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Products tab
+        products_tab = tk.Frame(self.catalog_notebook, bg="#f5f5f5")
+        self.catalog_notebook.add(products_tab, text="Productos")
+
+        # Services tab
+        services_tab = tk.Frame(self.catalog_notebook, bg="#f5f5f5")
+        self.catalog_notebook.add(services_tab, text="Servicios")
+
         # Treeview para productos disponibles
         lbl_products = CustomLabel(
-            tables_frame,
+            products_tab,
             text="Productos Disponibles",
             font=("Arial", 14),
             fg="#333",
@@ -162,8 +175,8 @@ class BillingScreen(tk.Frame):
         )
         lbl_products.pack(anchor=tk.W)
 
-        products_frame = tk.Frame(tables_frame)
-        products_frame.pack(fill=tk.X, pady=(0, 20))
+        products_frame = tk.Frame(products_tab)
+        products_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
 
         self.products_tree = ttk.Treeview(
             products_frame, 
@@ -197,6 +210,49 @@ class BillingScreen(tk.Frame):
         self.products_tree.pack(fill=tk.BOTH, expand=True)
         self.products_tree.bind("<Button-1>", self.on_product_click)
 
+        # Treeview para servicios disponibles
+        lbl_services = CustomLabel(
+            services_tab,
+            text="Servicios Disponibles",
+            font=("Arial", 14),
+            fg="#333",
+            bg="#f5f5f5"
+        )
+        lbl_services.pack(anchor=tk.W)
+
+        services_frame = tk.Frame(services_tab)
+        services_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        self.services_tree = ttk.Treeview(
+            services_frame, 
+            columns=("ID", "Código", "Servicio", "Precio", "Descripción"),
+            show="headings",
+            height=5,
+            style="Custom.Treeview"
+        )
+
+        service_columns = [
+            ("ID", 50, tk.CENTER),
+            ("Código", 80, tk.CENTER),
+            ("Servicio", 200, tk.W),
+            ("Precio", 100, tk.CENTER),
+            ("Descripción", 300, tk.W)
+        ]
+
+        for col, width, anchor in service_columns:
+            self.services_tree.heading(col, text=col)
+            self.services_tree.column(col, width=width, anchor=anchor)
+
+        service_scrollbar = ttk.Scrollbar(
+            services_frame, 
+            orient=tk.VERTICAL, 
+            command=self.services_tree.yview
+        )
+        self.services_tree.configure(yscroll=service_scrollbar.set)
+        service_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.services_tree.pack(fill=tk.BOTH, expand=True)
+        self.services_tree.bind("<Button-1>", self.on_service_click)
+
         # Treeview para carrito de compras
         lbl_cart = CustomLabel(
             tables_frame,
@@ -212,7 +268,7 @@ class BillingScreen(tk.Frame):
 
         self.cart_tree = ttk.Treeview(
             cart_frame, 
-            columns=("ID", "Producto", "Cantidad", "Precio Unitario", "Total", "Acción"),
+            columns=("ID", "Tipo", "Nombre", "Cantidad", "Precio Unitario", "Total", "Acción"),
             show="headings",
             height=5,
             style="Custom.Treeview"
@@ -220,7 +276,8 @@ class BillingScreen(tk.Frame):
 
         cart_columns = [
             ("ID", 50, tk.CENTER),
-            ("Producto", 200, tk.W),
+            ("Tipo", 80, tk.CENTER),
+            ("Nombre", 200, tk.W),
             ("Cantidad", 80, tk.CENTER),
             ("Precio Unitario", 120, tk.CENTER),
             ("Total", 120, tk.CENTER),
@@ -314,17 +371,23 @@ class BillingScreen(tk.Frame):
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
-    # [Resto de los métodos permanecen iguales...]
     def on_search(self, event=None) -> None:
         search_term = self.search_var.get().lower()
         field = self.search_field_var.get()
         
+        # Clear both trees
         for item in self.products_tree.get_children():
             self.products_tree.delete(item)
-            
-        items = InventoryItem.search_active(search_term, field if field != "Todos los campos" else None)
+        for item in self.services_tree.get_children():
+            self.services_tree.delete(item)
         
-        for item in items:
+        # Search products
+        products = InventoryItem.search_active(
+            search_term, 
+            field if field != "Todos los campos" else None
+        )
+        
+        for item in products:
             self.products_tree.insert("", tk.END, values=(
                 item['id'],
                 item['code'],
@@ -335,7 +398,24 @@ class BillingScreen(tk.Frame):
                 f"{float(item['price']):.2f}" if item['price'] else "0.00"
             ))
         
-        self.status_bar.configure(text=f"Mostrando {len(items)} productos disponibles")
+        # Search services
+        services = Service.search_active(
+            search_term,
+            field if field != "Todos los campos" else None
+        )
+        
+        for service in services:
+            self.services_tree.insert("", tk.END, values=(
+                service['id'],
+                service['code'],
+                service['name'],
+                f"{service['price']:.2f}",
+                service.get('description', '')[:50] + "..." if service.get('description') else ""
+            ))
+        
+        self.status_bar.configure(
+            text=f"Mostrando {len(products)} productos y {len(services)} servicios disponibles"
+        )
 
     def refresh_data(self) -> None:
         self.search_var.set("")
@@ -347,6 +427,7 @@ class BillingScreen(tk.Frame):
         self.update_cart_tree()
         self.on_search()
         self.update_totals()
+        self.catalog_notebook.select(0)  # Select products tab by default
 
     def cancel_purchase(self) -> None:
         if not self.cart_items:
@@ -374,7 +455,7 @@ class BillingScreen(tk.Frame):
             return
             
         if not self.cart_items:
-            messagebox.showwarning("Advertencia", "Debe agregar al menos un producto al carrito", parent=self)
+            messagebox.showwarning("Advertencia", "Debe agregar al menos un producto o servicio al carrito", parent=self)
             return
             
         response = messagebox.askyesno(
@@ -402,7 +483,8 @@ class BillingScreen(tk.Frame):
                     'name': item['name'],
                     'quantity': item['quantity'],
                     'unit_price': item['unit_price'],
-                    'total': item['total']
+                    'total': item['total'],
+                    'is_service': item.get('is_service', False)
                 } for item in self.cart_items]
                 
                 # Crear la factura como pagada completamente (tipo Venta)
@@ -503,7 +585,7 @@ class BillingScreen(tk.Frame):
         price = float(item_data[6])
         
         # Verificar si el producto ya está en el carrito
-        existing_item = next((item for item in self.cart_items if item['id'] == item_id), None)
+        existing_item = next((item for item in self.cart_items if item['id'] == item_id and not item.get('is_service', False)), None)
         
         # Crear ventana para seleccionar cantidad
         quantity_window = tk.Toplevel(self)
@@ -610,7 +692,8 @@ class BillingScreen(tk.Frame):
                         'name': product_name,
                         'quantity': quantity,
                         'unit_price': price,
-                        'total': quantity * price
+                        'total': quantity * price,
+                        'is_service': False
                     })
                 
                 self.update_cart_tree()
@@ -647,6 +730,101 @@ class BillingScreen(tk.Frame):
         # Poner foco en el campo de cantidad
         quantity_entry.focus_set()
 
+    def on_service_click(self, event) -> None:
+        if not self.current_customer:
+            messagebox.showwarning(
+                "Cliente requerido", 
+                "Debe seleccionar un cliente antes de agregar servicios al carrito.\n"
+                "Por favor busque o registre un cliente usando el campo de cédula.",
+                parent=self
+            )
+            return
+        
+        selected = self.services_tree.identify_row(event.y)
+        if not selected:
+            return
+            
+        item_data = self.services_tree.item(selected)['values']
+        item_id = item_data[0]
+        service_name = item_data[2]
+        price = float(item_data[3])
+        
+        # Verificar si el servicio ya está en el carrito
+        existing_item = next((item for item in self.cart_items if item['id'] == item_id and item.get('is_service', False)), None)
+        
+        # Crear ventana para confirmar agregar servicio
+        confirm_window = tk.Toplevel(self)
+        confirm_window.title(f"Agregar {service_name}")
+        
+        # Calcular posición para centrar la ventana
+        window_width = 300
+        window_height = 200
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width/2)
+        center_y = int(screen_height/2 - window_height/2)
+        
+        confirm_window.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        confirm_window.resizable(False, False)
+        confirm_window.transient(self)
+        confirm_window.grab_set()
+        
+        # Frame principal
+        main_frame = tk.Frame(confirm_window, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Información del servicio
+        tk.Label(
+            main_frame, 
+            text=f"Servicio: {service_name}",
+            font=("Arial", 10)
+        ).pack(pady=5)
+        
+        tk.Label(
+            main_frame, 
+            text=f"Precio: {price:.2f}",
+            font=("Arial", 10)
+        ).pack(pady=5)
+        
+        def add_to_cart():
+            # Actualizar o agregar al carrito
+            if existing_item:
+                existing_item['quantity'] += 1
+                existing_item['total'] = existing_item['quantity'] * price
+            else:
+                self.cart_items.append({
+                    'id': item_id,
+                    'name': service_name,
+                    'quantity': 1,
+                    'unit_price': price,
+                    'total': price,
+                    'is_service': True
+                })
+            
+            self.update_cart_tree()
+            self.update_totals()
+            confirm_window.destroy()
+        
+        # Botones
+        btn_frame = tk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        
+        CustomButton(
+            btn_frame,
+            text="Agregar",
+            command=add_to_cart,
+            padding=6,
+            width=10
+        ).pack(side=tk.LEFT, padx=5)
+        
+        CustomButton(
+            btn_frame,
+            text="Cancelar",
+            command=confirm_window.destroy,
+            padding=6,
+            width=10
+        ).pack(side=tk.LEFT, padx=5)
+
     def validate_quantity(self, text: str) -> bool:
         if not text:
             return True
@@ -657,8 +835,10 @@ class BillingScreen(tk.Frame):
             self.cart_tree.delete(item)
             
         for item in self.cart_items:
+            item_type = "Servicio" if item.get('is_service', False) else "Producto"
             self.cart_tree.insert("", tk.END, values=(
                 item['id'],
+                item_type,
                 item['name'],
                 item['quantity'],
                 f"{item['unit_price']:.2f}",
@@ -677,7 +857,7 @@ class BillingScreen(tk.Frame):
         column = self.cart_tree.identify_column(event.x)
         selected = self.cart_tree.identify_row(event.y)
         
-        if column == "#6":  # Columna de acción
+        if column == "#7":  # Columna de acción
             item_id = self.cart_tree.item(selected)['values'][0]
             self.remove_from_cart(item_id)
 
