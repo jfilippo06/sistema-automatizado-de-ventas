@@ -176,24 +176,24 @@ class BillingScreen(tk.Frame):
         lbl_products.pack(anchor=tk.W)
 
         products_frame = tk.Frame(products_tab)
-        products_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        products_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.products_tree = ttk.Treeview(
             products_frame, 
             columns=("ID", "Código", "Producto", "Existencias", "Stock mínimo", "Stock máximo", "Precio"),
             show="headings",
-            height=5,
+            height=8,
             style="Custom.Treeview"
         )
 
         columns = [
-            ("ID", 50, tk.CENTER),
-            ("Código", 80, tk.CENTER),
-            ("Producto", 200, tk.W),
-            ("Existencias", 80, tk.CENTER),
-            ("Stock mínimo", 80, tk.CENTER),
-            ("Stock máximo", 80, tk.CENTER),
-            ("Precio", 100, tk.CENTER)
+            ("ID", 60, tk.CENTER),
+            ("Código", 100, tk.CENTER),
+            ("Producto", 250, tk.W),
+            ("Existencias", 100, tk.CENTER),
+            ("Stock mínimo", 100, tk.CENTER),
+            ("Stock máximo", 100, tk.CENTER),
+            ("Precio", 120, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -221,21 +221,21 @@ class BillingScreen(tk.Frame):
         lbl_services.pack(anchor=tk.W)
 
         services_frame = tk.Frame(services_tab)
-        services_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        services_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.services_tree = ttk.Treeview(
             services_frame, 
             columns=("ID", "Código", "Servicio", "Precio", "Descripción"),
             show="headings",
-            height=5,
+            height=8,
             style="Custom.Treeview"
         )
 
         service_columns = [
-            ("ID", 50, tk.CENTER),
-            ("Código", 80, tk.CENTER),
-            ("Servicio", 200, tk.W),
-            ("Precio", 100, tk.CENTER),
+            ("ID", 60, tk.CENTER),
+            ("Código", 100, tk.CENTER),
+            ("Servicio", 250, tk.W),
+            ("Precio", 120, tk.CENTER),
             ("Descripción", 300, tk.W)
         ]
 
@@ -253,7 +253,7 @@ class BillingScreen(tk.Frame):
         self.services_tree.pack(fill=tk.BOTH, expand=True)
         self.services_tree.bind("<Button-1>", self.on_service_click)
 
-        # Treeview para carrito de compras
+        # Treeview para carrito de compras (más ancha)
         lbl_cart = CustomLabel(
             tables_frame,
             text="Carrito de Compras",
@@ -264,24 +264,24 @@ class BillingScreen(tk.Frame):
         lbl_cart.pack(anchor=tk.W)
 
         cart_frame = tk.Frame(tables_frame)
-        cart_frame.pack(fill=tk.X)
+        cart_frame.pack(fill=tk.BOTH, expand=True)
 
         self.cart_tree = ttk.Treeview(
             cart_frame, 
             columns=("ID", "Tipo", "Nombre", "Cantidad", "Precio Unitario", "Total", "Acción"),
             show="headings",
-            height=5,
+            height=8,
             style="Custom.Treeview"
         )
 
         cart_columns = [
-            ("ID", 50, tk.CENTER),
-            ("Tipo", 80, tk.CENTER),
-            ("Nombre", 200, tk.W),
-            ("Cantidad", 80, tk.CENTER),
-            ("Precio Unitario", 120, tk.CENTER),
-            ("Total", 120, tk.CENTER),
-            ("Acción", 80, tk.CENTER)
+            ("ID", 60, tk.CENTER),
+            ("Tipo", 100, tk.CENTER),
+            ("Nombre", 250, tk.W),
+            ("Cantidad", 100, tk.CENTER),
+            ("Precio Unitario", 150, tk.CENTER),
+            ("Total", 150, tk.CENTER),
+            ("Acción", 100, tk.CENTER)
         ]
 
         for col, width, anchor in cart_columns:
@@ -707,22 +707,22 @@ class BillingScreen(tk.Frame):
                     parent=quantity_window
                 )
         
-        # Botones
+        # Botones (orden cambiado: Cancelar primero, luego Agregar)
         btn_frame = tk.Frame(main_frame)
         btn_frame.pack(pady=10)
         
         CustomButton(
             btn_frame,
-            text="Agregar",
-            command=add_to_cart,
+            text="Cancelar",
+            command=quantity_window.destroy,
             padding=6,
             width=10
         ).pack(side=tk.LEFT, padx=5)
-        
+
         CustomButton(
             btn_frame,
-            text="Cancelar",
-            command=quantity_window.destroy,
+            text="Agregar",
+            command=add_to_cart,
             padding=6,
             width=10
         ).pack(side=tk.LEFT, padx=5)
@@ -805,22 +805,22 @@ class BillingScreen(tk.Frame):
             self.update_totals()
             confirm_window.destroy()
         
-        # Botones
+        # Botones (orden cambiado: Cancelar primero, luego Agregar)
         btn_frame = tk.Frame(main_frame)
         btn_frame.pack(pady=10)
         
         CustomButton(
             btn_frame,
-            text="Agregar",
-            command=add_to_cart,
+            text="Cancelar",
+            command=confirm_window.destroy,
             padding=6,
             width=10
         ).pack(side=tk.LEFT, padx=5)
-        
+
         CustomButton(
             btn_frame,
-            text="Cancelar",
-            command=confirm_window.destroy,
+            text="Agregar",
+            command=add_to_cart,
             padding=6,
             width=10
         ).pack(side=tk.LEFT, padx=5)
