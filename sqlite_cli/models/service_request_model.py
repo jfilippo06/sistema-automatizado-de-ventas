@@ -10,7 +10,7 @@ class ServiceRequest:
         quantity: int = 1,
         employee_id: int = 0,  # Valor por defecto
         request_status_id: int = 1
-    ) -> None:
+    ) -> int:  # Cambiado el tipo de retorno a int
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -39,6 +39,7 @@ class ServiceRequest:
             )
             
             conn.commit()
+            return request_id  # Devolvemos el ID del registro creado
         except Exception as e:
             conn.rollback()
             raise e

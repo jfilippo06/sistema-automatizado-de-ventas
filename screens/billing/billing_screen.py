@@ -478,45 +478,40 @@ class BillingScreen(tk.Frame):
                     
                 total = subtotal + taxes
                 
-                # Crear la factura (ahora maneja tanto productos como servicios)
+                # Crear la factura
                 invoice_id = Invoice.create_paid_invoice(
                     customer_id=self.current_customer['id'],
                     subtotal=subtotal,
                     taxes=taxes,
                     total=total,
-                    items=self.cart_items  # Pasa todos los items (productos y servicios)
+                    items=self.cart_items
                 )
                 
-                # Mostrar mensaje de éxito con el número de factura
+                # Mostrar mensaje de éxito
                 messagebox.showinfo(
                     "Éxito", 
-                    f"Venta realizada y facturada correctamente\nNúmero de factura: {invoice_id}\nEstado: Pagada completamente",
+                    f"Venta realizada correctamente\nN° Factura: {invoice_id}",
                     parent=self
                 )
                 
-                # Mostrar factura digital (incluyendo ambos tipos de items)
-                customer_info = f"{self.current_customer['first_name']} {self.current_customer['last_name']} - {self.current_customer['id_number']}"
+                # Mostrar factura
+                customer_info = f"{self.current_customer['first_name']} {self.current_customer['last_name']}"
                 InvoiceViewer(
                     self,
                     invoice_id,
                     customer_info,
-                    self.cart_items,  # Pasamos todos los items para mostrar
+                    self.cart_items,
                     subtotal,
                     taxes,
                     total
                 )
                 
-                # Limpiar y actualizar
                 self.refresh_data()
                 
             except ValueError as e:
                 messagebox.showerror("Error de validación", str(e), parent=self)
             except Exception as e:
-                messagebox.showerror(
-                    "Error", 
-                    f"No se pudo completar la venta: {str(e)}", 
-                    parent=self
-                )
+                messagebox.showerror("Error", f"No se pudo completar la venta: {str(e)}", parent=self)
 
     def search_customer(self) -> None:
         id_number = self.customer_id_var.get().strip()

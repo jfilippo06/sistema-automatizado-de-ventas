@@ -107,9 +107,9 @@ class Invoice:
                 Invoice._execute_sql(
                     '''
                     INSERT INTO invoice_details (
-                        invoice_id, service_request_id, quantity, 
-                        unit_price, subtotal
-                    ) VALUES (?, ?, ?, ?, ?)
+                        invoice_id, service_request_id, product_id,
+                        quantity, unit_price, subtotal
+                    ) VALUES (?, ?, NULL, ?, ?, ?)
                     ''',
                     (invoice_id, service_request_id, item['quantity'], 
                      item['unit_price'], item['total'])
@@ -166,9 +166,9 @@ class Invoice:
                 Invoice._execute_sql(
                     '''
                     INSERT INTO invoice_details (
-                        invoice_id, product_id, quantity, 
-                        unit_price, subtotal
-                    ) VALUES (?, ?, ?, ?, ?)
+                        invoice_id, product_id, service_request_id,
+                        quantity, unit_price, subtotal
+                    ) VALUES (?, ?, NULL, ?, ?, ?)
                     ''',
                     (invoice_id, item['id'], item['quantity'], 
                      item['unit_price'], item['total'])
@@ -254,7 +254,7 @@ class Invoice:
                 d.id,
                 d.invoice_id,
                 d.product_id,
-                NULL as service_request_id,
+                d.service_request_id,
                 d.quantity,
                 d.unit_price,
                 d.subtotal,
@@ -277,7 +277,7 @@ class Invoice:
             SELECT 
                 d.id,
                 d.invoice_id,
-                NULL as product_id,
+                d.product_id,
                 d.service_request_id,
                 d.quantity,
                 d.unit_price,
