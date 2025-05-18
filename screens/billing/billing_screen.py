@@ -478,27 +478,14 @@ class BillingScreen(tk.Frame):
                     
                 total = subtotal + taxes
                 
-                # Separar productos y servicios
-                products = [item for item in self.cart_items if not item.get('is_service', False)]
-                services = [item for item in self.cart_items if item.get('is_service', False)]
-                
-                # Crear la factura como pagada completamente (tipo Venta)
+                # Crear la factura (ahora maneja tanto productos como servicios)
                 invoice_id = Invoice.create_paid_invoice(
                     customer_id=self.current_customer['id'],
                     subtotal=subtotal,
                     taxes=taxes,
                     total=total,
-                    items=products  # Solo pasamos productos para el manejo de inventario
+                    items=self.cart_items  # Pasa todos los items (productos y servicios)
                 )
-                
-                # Registrar servicios en service_requests
-                for service in services:
-                    ServiceRequest.create(
-                        customer_id=self.current_customer['id'],
-                        service_id=service['id'],
-                        description=f"Servicio vendido en factura #{invoice_id}",
-                        quantity=service['quantity']
-                    )
                 
                 # Mostrar mensaje de éxito con el número de factura
                 messagebox.showinfo(

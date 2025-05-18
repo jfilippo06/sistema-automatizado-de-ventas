@@ -6,6 +6,8 @@ from datetime import datetime
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.inventory_movement_model import InventoryMovement
 from sqlite_cli.models.movement_type_model import MovementType
+from sqlite_cli.models.service_request_model import ServiceRequest
+from sqlite_cli.models.service_model import Service
 from utils.session_manager import SessionManager
 
 class Invoice:
@@ -37,16 +39,6 @@ class Invoice:
     ) -> Union[List[Dict], int, None]:
         """
         Ejecuta una consulta SQL con manejo de errores y reintentos.
-        
-        Args:
-            query: Consulta SQL a ejecutar
-            params: Parámetros para la consulta
-            fetch: Si es True, retorna los resultados
-            
-        Returns:
-            - Lista de diccionarios si fetch=True
-            - ID del último registro si es INSERT
-            - None para otras operaciones
         """
         conn = None
         last_exception = None
@@ -92,7 +84,7 @@ class Invoice:
     ) -> int:
         """
         Crea una factura pagada completamente (tipo Venta)
-        Solo maneja productos (los servicios se manejan aparte)
+        Maneja productos y servicios en registros separados
         """
         # Obtener ID del tipo de factura "Venta"
         invoice_type_id = Invoice._get_invoice_type_id("Venta")
@@ -100,10 +92,87 @@ class Invoice:
         # 1. Registrar factura principal
         invoice_id = Invoice._create_invoice(customer_id, invoice_type_id, subtotal, taxes, total)
         
-        # 2. Procesar solo items de productos (no servicios)
+        # 2. Procesar items
         for item in items:
-            if not item.get('is_service', False):
-                Invoice._process_item(invoice_id, item)
+            if item.get('is_service', False):
+                # Para servicios: crear service_request y luego detalle de servicio
+                service_request_id = ServiceRequest.create(
+                    customer_id=customer_id,
+                    service_id=item['id'],
+                    description=f"Servicio vendido en factura #{invoice_id}",
+                    quantity=item['quantity']
+                )
+                
+                # Registrar detalle de servicio (con service_request_id y product_id=NULL)
+                Invoice._execute_sql(
+                    '''
+                    INSERT INTO invoice_details (
+                        invoice_id, service_request_id, quantity, 
+                        unit_price, subtotal
+                    ) VALUES (?, ?, ?, ?, ?)
+                    ''',
+                    (invoice_id, service_request_id, item['quantity'], 
+                     item['unit_price'], item['total'])
+                )
+            else:
+                # Para productos: manejar inventario
+                product = InventoryItem.get_by_id(item['id'])
+                if not product:
+                    raise ValueError(f"Producto ID {item['id']} no encontrado")
+                
+                new_quantity = product['quantity'] - item['quantity']
+                new_stock = product['stock'] - item['quantity']
+                
+                if new_quantity < 0 or new_stock < 0:
+                    raise ValueError(f"Stock insuficiente para el producto ID {item['id']}")
+                
+                # Actualizar inventario
+                Invoice._execute_sql(
+                    '''
+                    UPDATE inventory SET
+                        quantity = ?,
+                        stock = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    ''',
+                    (new_quantity, new_stock, item['id'])
+                )
+                
+                # Registrar movimiento de inventario
+                user_id = SessionManager.get_user_id()
+                if not user_id:
+                    raise ValueError("Usuario no autenticado")
+                
+                movement_type = MovementType.get_by_name("Venta")
+                if not movement_type:
+                    raise ValueError("Tipo de movimiento 'Venta' no encontrado")
+                
+                InventoryMovement.create(
+                    inventory_id=item['id'],
+                    movement_type_id=movement_type['id'],
+                    quantity_change=-item['quantity'],
+                    stock_change=-item['quantity'],
+                    previous_quantity=product['quantity'],
+                    new_quantity=new_quantity,
+                    previous_stock=product['stock'],
+                    new_stock=new_stock,
+                    reference_id=invoice_id,
+                    reference_type="invoice",
+                    user_id=user_id,
+                    notes=f"Venta factura #{invoice_id}"
+                )
+                
+                # Registrar detalle de producto (con product_id y service_request_id=NULL)
+                Invoice._execute_sql(
+                    '''
+                    INSERT INTO invoice_details (
+                        invoice_id, product_id, quantity, 
+                        unit_price, subtotal
+                    ) VALUES (?, ?, ?, ?, ?)
+                    ''',
+                    (invoice_id, item['id'], item['quantity'], 
+                     item['unit_price'], item['total'])
+                )
         
         return invoice_id
 
@@ -127,75 +196,6 @@ class Invoice:
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''',
             (customer_id, invoice_type_id, issue_date, subtotal, taxes, total, status_id)
-        )
-
-    @staticmethod
-    def _process_item(invoice_id: int, item: Dict) -> None:
-        """Procesa un item completo (detalle + inventario + movimiento)."""
-        # 1. Registrar detalle
-        Invoice._create_detail(invoice_id, item)
-        
-        # 2. Validar y actualizar inventario
-        product = InventoryItem.get_by_id(item['id'])
-        if not product:
-            raise ValueError(f"Producto ID {item['id']} no encontrado")
-        
-        new_quantity = product['quantity'] - item['quantity']
-        new_stock = product['stock'] - item['quantity']
-        
-        if new_quantity < 0 or new_stock < 0:
-            raise ValueError(f"Stock insuficiente para el producto ID {item['id']}")
-        
-        Invoice._update_inventory(item['id'], new_quantity, new_stock)
-        
-        # 3. Registrar movimiento
-        user_id = SessionManager.get_user_id()
-        if not user_id:
-            raise ValueError("Usuario no autenticado")
-        
-        movement_type = MovementType.get_by_name("Venta")
-        if not movement_type:
-            raise ValueError("Tipo de movimiento 'Venta' no encontrado")
-        
-        InventoryMovement.create(
-            inventory_id=item['id'],
-            movement_type_id=movement_type['id'],
-            quantity_change=-item['quantity'],
-            stock_change=-item['quantity'],
-            previous_quantity=product['quantity'],
-            new_quantity=new_quantity,
-            previous_stock=product['stock'],
-            new_stock=new_stock,
-            reference_id=invoice_id,
-            reference_type="invoice",
-            user_id=user_id,
-            notes=f"Venta factura #{invoice_id}"
-        )
-
-    @staticmethod
-    def _create_detail(invoice_id: int, item: Dict) -> None:
-        """Registra un detalle de factura en 'invoice_details'."""
-        Invoice._execute_sql(
-            '''
-            INSERT INTO invoice_details (
-                invoice_id, product_id, quantity, unit_price, subtotal
-            ) VALUES (?, ?, ?, ?, ?)
-            ''',
-            (invoice_id, item['id'], item['quantity'], item['unit_price'], item['total'])
-        )
-
-    @staticmethod
-    def _update_inventory(product_id: int, new_quantity: int, new_stock: int) -> None:
-        """Actualiza el inventario para un producto."""
-        Invoice._execute_sql(
-            '''
-            UPDATE inventory SET
-                quantity = ?,
-                stock = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            ''',
-            (new_quantity, new_stock, product_id)
         )
 
     @staticmethod
@@ -246,20 +246,57 @@ class Invoice:
 
     @staticmethod
     def get_details(invoice_id: int) -> List[Dict]:
-        """Obtiene los detalles de una factura con información de productos."""
-        return Invoice._execute_sql(
+        """Obtiene los detalles de una factura con información específica para cada tipo"""
+        # Detalles de productos
+        product_details = Invoice._execute_sql(
             '''
             SELECT 
-                d.*,
-                i.product as product_name,
-                i.code as product_code
+                d.id,
+                d.invoice_id,
+                d.product_id,
+                NULL as service_request_id,
+                d.quantity,
+                d.unit_price,
+                d.subtotal,
+                d.created_at,
+                d.updated_at,
+                i.product as name,
+                i.code,
+                'product' as item_type
             FROM invoice_details d
             JOIN inventory i ON d.product_id = i.id
-            WHERE d.invoice_id = ?
+            WHERE d.invoice_id = ? AND d.product_id IS NOT NULL
             ''',
             (invoice_id,),
             fetch=True
         ) or []
+        
+        # Detalles de servicios
+        service_details = Invoice._execute_sql(
+            '''
+            SELECT 
+                d.id,
+                d.invoice_id,
+                NULL as product_id,
+                d.service_request_id,
+                d.quantity,
+                d.unit_price,
+                d.subtotal,
+                d.created_at,
+                d.updated_at,
+                s.name as name,
+                s.code,
+                'service' as item_type
+            FROM invoice_details d
+            JOIN service_requests sr ON d.service_request_id = sr.id
+            JOIN services s ON sr.service_id = s.id
+            WHERE d.invoice_id = ? AND d.service_request_id IS NOT NULL
+            ''',
+            (invoice_id,),
+            fetch=True
+        ) or []
+        
+        return product_details + service_details
 
     @staticmethod
     def update_status(invoice_id: int, new_status: str) -> bool:
@@ -286,7 +323,7 @@ class Invoice:
 
     @staticmethod
     def _handle_cancellation(invoice_id: int) -> None:
-        """Maneja la lógica de cancelación de facturas."""
+        """Maneja la lógica de cancelación de facturas (solo para productos)."""
         details = Invoice.get_details(invoice_id)
         user_id = SessionManager.get_user_id()
         if not user_id:
@@ -297,29 +334,41 @@ class Invoice:
             raise ValueError("Tipo de movimiento 'Ajuste positivo' no encontrado")
         
         for detail in details:
-            product = InventoryItem.get_by_id(detail['product_id'])
-            if not product:
-                continue
-            
-            new_quantity = product['quantity'] + detail['quantity']
-            new_stock = product['stock'] + detail['quantity']
-            
-            Invoice._update_inventory(detail['product_id'], new_quantity, new_stock)
-            
-            InventoryMovement.create(
-                inventory_id=detail['product_id'],
-                movement_type_id=movement_type['id'],
-                quantity_change=detail['quantity'],
-                stock_change=detail['quantity'],
-                previous_quantity=product['quantity'],
-                new_quantity=new_quantity,
-                previous_stock=product['stock'],
-                new_stock=new_stock,
-                reference_id=invoice_id,
-                reference_type="invoice_cancellation",
-                user_id=user_id,
-                notes=f"Cancelación factura #{invoice_id}"
-            )
+            if detail['item_type'] == 'product' and detail['product_id']:
+                product = InventoryItem.get_by_id(detail['product_id'])
+                if not product:
+                    continue
+                
+                new_quantity = product['quantity'] + detail['quantity']
+                new_stock = product['stock'] + detail['quantity']
+                
+                # Actualizar inventario
+                Invoice._execute_sql(
+                    '''
+                    UPDATE inventory SET
+                        quantity = ?,
+                        stock = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    ''',
+                    (new_quantity, new_stock, detail['product_id'])
+                )
+                
+                # Registrar movimiento
+                InventoryMovement.create(
+                    inventory_id=detail['product_id'],
+                    movement_type_id=movement_type['id'],
+                    quantity_change=detail['quantity'],
+                    stock_change=detail['quantity'],
+                    previous_quantity=product['quantity'],
+                    new_quantity=new_quantity,
+                    previous_stock=product['stock'],
+                    new_stock=new_stock,
+                    reference_id=invoice_id,
+                    reference_type="invoice_cancellation",
+                    user_id=user_id,
+                    notes=f"Cancelación factura #{invoice_id}"
+                )
 
     @staticmethod
     def search(
