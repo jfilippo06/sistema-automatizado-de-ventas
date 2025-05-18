@@ -104,7 +104,7 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             code TEXT NOT NULL UNIQUE,
             product TEXT NOT NULL,
-            description TEXT,  -- New field for English description
+            description TEXT NOT NULL DEFAULT 0,
             quantity INTEGER NOT NULL,
             stock INTEGER NOT NULL,
             min_stock INTEGER NOT NULL DEFAULT 0,
