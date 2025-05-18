@@ -297,12 +297,12 @@ class InventoryItem:
         item_id: int,
         code: str,
         product: str,
-        description: str,
         quantity: int,
         stock: int,
         min_stock: int,
         max_stock: int,
         price: float,
+        description: Optional[str] = None,  # Hacer el parámetro opcional
         supplier_id: Optional[int] = None,
         expiration_date: Optional[str] = None,
         image_path: Optional[str] = None
@@ -332,11 +332,12 @@ class InventoryItem:
         
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('''
+        
+        # Construir la consulta dinámicamente según los parámetros proporcionados
+        query = '''
             UPDATE inventory SET
                 code = ?,
                 product = ?,
-                description = ?,
                 quantity = ?,
                 stock = ?,
                 min_stock = ?,
@@ -346,11 +347,22 @@ class InventoryItem:
                 expiration_date = ?,
                 image_path = ?,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        ''', (
-            code, product, description, quantity, stock, min_stock, max_stock, price, 
-            supplier_id, expiration_date, saved_image_path, item_id
-        ))
+        '''
+        params = [
+            code, product, quantity, stock, 
+            min_stock, max_stock, price, 
+            supplier_id, expiration_date, saved_image_path
+        ]
+        
+        # Añadir description solo si se proporciona
+        if description is not None:
+            query = query.replace('product = ?,', 'product = ?, description = ?,')
+            params.insert(2, description)  # Insertar después de product
+        
+        query += ' WHERE id = ?'
+        params.append(item_id)
+        
+        cursor.execute(query, params)
         conn.commit()
         conn.close()
 
