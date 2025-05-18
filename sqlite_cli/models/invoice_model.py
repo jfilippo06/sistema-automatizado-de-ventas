@@ -112,7 +112,7 @@ class Invoice:
                     ) VALUES (?, ?, NULL, ?, ?, ?)
                     ''',
                     (invoice_id, service_request_id, item['quantity'], 
-                     item['unit_price'], item['total'])
+                    item['unit_price'], item['total'])
                 )
             else:
                 # Para productos: manejar inventario
@@ -120,22 +120,21 @@ class Invoice:
                 if not product:
                     raise ValueError(f"Producto ID {item['id']} no encontrado")
                 
-                new_quantity = product['quantity'] - item['quantity']
+                # Solo disminuir el stock (disponible para vender), no quantity (inventario físico)
                 new_stock = product['stock'] - item['quantity']
                 
-                if new_quantity < 0 or new_stock < 0:
+                if new_stock < 0:
                     raise ValueError(f"Stock insuficiente para el producto ID {item['id']}")
                 
-                # Actualizar inventario
+                # Actualizar solo el stock en el inventario
                 Invoice._execute_sql(
                     '''
                     UPDATE inventory SET
-                        quantity = ?,
                         stock = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                     ''',
-                    (new_quantity, new_stock, item['id'])
+                    (new_stock, item['id'])
                 )
                 
                 # Registrar movimiento de inventario
@@ -150,10 +149,10 @@ class Invoice:
                 InventoryMovement.create(
                     inventory_id=item['id'],
                     movement_type_id=movement_type['id'],
-                    quantity_change=-item['quantity'],
-                    stock_change=-item['quantity'],
+                    quantity_change=0,  # No cambia el quantity (inventario físico)
+                    stock_change=-item['quantity'],  # Solo disminuye el stock
                     previous_quantity=product['quantity'],
-                    new_quantity=new_quantity,
+                    new_quantity=product['quantity'],  # Se mantiene igual
                     previous_stock=product['stock'],
                     new_stock=new_stock,
                     reference_id=invoice_id,
@@ -171,7 +170,7 @@ class Invoice:
                     ) VALUES (?, ?, NULL, ?, ?, ?)
                     ''',
                     (invoice_id, item['id'], item['quantity'], 
-                     item['unit_price'], item['total'])
+                    item['unit_price'], item['total'])
                 )
         
         return invoice_id
