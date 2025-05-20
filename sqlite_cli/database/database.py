@@ -109,6 +109,7 @@ def init_db() -> None:
             stock INTEGER NOT NULL,
             min_stock INTEGER NOT NULL DEFAULT 0,
             max_stock INTEGER NOT NULL DEFAULT 0,
+            cost REAL NOT NULL,
             price REAL NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
