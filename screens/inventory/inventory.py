@@ -80,11 +80,15 @@ class Inventory(tk.Frame):
             "ID",
             "Código",
             "Producto",
+            "Descripción",
             "Proveedor",
             "Cantidad",
             "Existencias",
             "Stock mínimo",
-            "Stock máximo"
+            "Stock máximo",
+            "Precio de compra",
+            "Precio de venta",
+            "Vencimiento"
         ]
         
         search_combobox = CustomCombobox(
@@ -165,7 +169,7 @@ class Inventory(tk.Frame):
 
         self.tree = ttk.Treeview(tree_frame, columns=(
             "ID", "Código", "Producto", "Cantidad", "Existencias", "Stock mínimo", 
-            "Stock máximo", "Precio", "Proveedor", "Vencimiento"
+            "Stock máximo", "Precio compra", "Precio venta", "Proveedor", "Vencimiento"
         ), show="headings")
 
         columns = [
@@ -176,7 +180,8 @@ class Inventory(tk.Frame):
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
             ("Stock máximo", 80, tk.CENTER),
-            ("Precio", 100, tk.CENTER),
+            ("Precio compra", 100, tk.CENTER),
+            ("Precio venta", 100, tk.CENTER),
             ("Proveedor", 150, tk.W),
             ("Vencimiento", 100, tk.CENTER)
         ]
@@ -276,6 +281,7 @@ class Inventory(tk.Frame):
                 item['stock'],
                 item['min_stock'],
                 item['max_stock'],
+                item['cost'],
                 item['price'],
                 item.get('supplier_company', ''),
                 item.get('expiration_date', '')

@@ -50,6 +50,7 @@ class InventoryItem:
         stock: int,
         min_stock: int,
         max_stock: int,
+        cost: float,
         price: float,
         supplier_id: Optional[int] = None,
         expiration_date: Optional[str] = None,
@@ -65,12 +66,12 @@ class InventoryItem:
             # Insertamos el producto
             cursor.execute('''
                 INSERT INTO inventory (
-                    code, product, description, quantity, stock, min_stock, max_stock, price, 
+                    code, product, description, quantity, stock, min_stock, max_stock, cost, price, 
                     supplier_id, expiration_date, image_path, status_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)  -- 1 = activo por defecto
                 RETURNING *  -- Esto retorna el registro insertado
             ''', (
-                code, product, description, quantity, stock, min_stock, max_stock, price, 
+                code, product, description, quantity, stock, min_stock, max_stock, cost, price, 
                 supplier_id, expiration_date, saved_image_path
             ))
             
@@ -156,7 +157,8 @@ class InventoryItem:
                     "Existencias": "i.stock",
                     "Stock mínimo": "i.min_stock",
                     "Stock máximo": "i.max_stock",
-                    "Precio": "i.price",
+                    "Precio de compra": "i.cost",
+                    "Precio de venta": "i.price",
                     "Vencimiento": "i.expiration_date"
                 }
                 field_name = field_map.get(field)
@@ -189,10 +191,11 @@ class InventoryItem:
                         CAST(i.stock AS TEXT) LIKE ? OR
                         CAST(i.min_stock AS TEXT) LIKE ? OR
                         CAST(i.max_stock AS TEXT) LIKE ? OR
+                        CAST(i.cost AS TEXT) LIKE ? OR
                         CAST(i.price AS TEXT) LIKE ? OR
                         i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term.lower()}%"] * 10)
+                params.extend([f"%{search_term.lower()}%"] * 11)
         
         base_query += " ORDER BY i.product ASC"
         cursor.execute(base_query, params)
@@ -228,7 +231,8 @@ class InventoryItem:
                     "Existencias": "i.stock",
                     "Stock mínimo": "i.min_stock",
                     "Stock máximo": "i.max_stock",
-                    "Precio": "i.price",
+                    "Precio de compra": "i.cost",
+                    "Precio de venta": "i.price",
                     "Vencimiento": "i.expiration_date"
                 }
                 field_name = field_map.get(field)
@@ -260,10 +264,11 @@ class InventoryItem:
                         CAST(i.stock AS TEXT) LIKE ? OR
                         CAST(i.min_stock AS TEXT) LIKE ? OR
                         CAST(i.max_stock AS TEXT) LIKE ? OR
+                        CAST(i.cost AS TEXT) LIKE ? OR
                         CAST(i.price AS TEXT) LIKE ? OR
                         i.expiration_date LIKE ?)
                 '''
-                params.extend([f"%{search_term.lower()}%"] * 10)
+                params.extend([f"%{search_term.lower()}%"] * 11)
         
         base_query += " ORDER BY i.product ASC"
         cursor.execute(base_query, params)
@@ -301,8 +306,9 @@ class InventoryItem:
         stock: int,
         min_stock: int,
         max_stock: int,
+        cost: float,
         price: float,
-        description: Optional[str] = None,  # Hacer el parámetro opcional
+        description: Optional[str] = None,
         supplier_id: Optional[int] = None,
         expiration_date: Optional[str] = None,
         image_path: Optional[str] = None
@@ -342,6 +348,7 @@ class InventoryItem:
                 stock = ?,
                 min_stock = ?,
                 max_stock = ?,
+                cost = ?,
                 price = ?,
                 supplier_id = ?,
                 expiration_date = ?,
@@ -350,7 +357,7 @@ class InventoryItem:
         '''
         params = [
             code, product, quantity, stock, 
-            min_stock, max_stock, price, 
+            min_stock, max_stock, cost, price,
             supplier_id, expiration_date, saved_image_path
         ]
         

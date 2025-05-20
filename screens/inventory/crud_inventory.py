@@ -1,4 +1,3 @@
-# screens/inventory/crud_inventory.py
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from typing import Callable, Optional, Dict, Any
@@ -34,7 +33,7 @@ class CrudInventory(tk.Toplevel):
         # Configuración de la ventana
         title = "Agregar al Carrito" if from_sales else ("Guardar Producto" if mode == "create" else "Editar Producto")
         self.title(title)
-        self.geometry("900x650")  # Increased height to accommodate new field
+        self.geometry("900x700")  # Increased height to accommodate new field
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
         
@@ -49,6 +48,7 @@ class CrudInventory(tk.Toplevel):
         self.stock_var = tk.StringVar(value="0")
         self.min_stock_var = tk.StringVar(value="0")
         self.max_stock_var = tk.StringVar(value="0")
+        self.cost_var = tk.StringVar(value="0.0")
         self.price_var = tk.StringVar(value="0.0")
         self.supplier_var = tk.StringVar()
         self.expiration_var = tk.StringVar()
@@ -86,12 +86,13 @@ class CrudInventory(tk.Toplevel):
         fields = [
             ("Código:", self.code_var, 'text', not (self.mode == "edit")),
             ("Producto:", self.product_var, 'text', True),
-            ("Descripción:", self.description_var, 'text', True),  # New field
+            ("Descripción:", self.description_var, 'text', True),
             ("Cantidad:", self.quantity_var, 'number', self.mode == "create" or self.from_sales),
             ("Existencias:", self.stock_var, 'number', self.mode == "create" and not self.from_sales),
             ("Stock mínimo:", self.min_stock_var, 'number', not self.from_sales),
             ("Stock máximo:", self.max_stock_var, 'number', not self.from_sales),
-            ("Precio:", self.price_var, 'decimal', True),
+            ("Precio de compra:", self.cost_var, 'decimal', not self.from_sales),
+            ("Precio de venta:", self.price_var, 'decimal', True),
             ("Proveedor:", self.supplier_var, None, True),
             ("Vencimiento:", self.expiration_var, 'date', not self.from_sales)
         ]
@@ -307,7 +308,7 @@ class CrudInventory(tk.Toplevel):
                 "Código:": self.code_var.get(),
                 "Producto:": self.product_var.get(),
                 "Cantidad:": self.quantity_var.get(),
-                "Precio:": self.price_var.get()
+                "Precio de venta:": self.price_var.get()
             }
         else:
             required_fields = {
@@ -315,7 +316,8 @@ class CrudInventory(tk.Toplevel):
                 "Producto:": self.product_var.get(),
                 "Cantidad:": self.quantity_var.get(),
                 "Existencias:": self.stock_var.get(),
-                "Precio:": self.price_var.get()
+                "Precio de compra:": self.cost_var.get(),
+                "Precio de venta:": self.price_var.get()
             }
         
         if not Validations.validate_required_fields(self.entries, required_fields, self):
@@ -323,7 +325,8 @@ class CrudInventory(tk.Toplevel):
             
         numeric_fields = {
             "Cantidad:": (self.quantity_var.get(), False),
-            "Precio:": (self.price_var.get(), True)
+            "Precio de compra:": (self.cost_var.get(), True),
+            "Precio de venta:": (self.price_var.get(), True)
         }
         
         if not self.from_sales:
@@ -344,11 +347,12 @@ class CrudInventory(tk.Toplevel):
         
         self.code_var.set(item['code'])
         self.product_var.set(item['product'])
-        self.description_var.set(item['description'])  # Load English description
+        self.description_var.set(item['description'])
         self.quantity_var.set(str(item['quantity']))
         self.stock_var.set(str(item['stock']))
         self.min_stock_var.set(str(item['min_stock']))
         self.max_stock_var.set(str(item['max_stock']))
+        self.cost_var.set(str(item['cost']))
         self.price_var.set(str(item['price']))
         self.expiration_var.set(item.get('expiration_date', ''))
         
@@ -383,11 +387,12 @@ class CrudInventory(tk.Toplevel):
             InventoryItem.create(
                 code=self.code_var.get(),
                 product=self.product_var.get(),
-                description=self.description_var.get(),  # Include English description
+                description=self.description_var.get(),
                 quantity=int(self.quantity_var.get()),
                 stock=int(self.stock_var.get()),
                 min_stock=int(self.min_stock_var.get()),
                 max_stock=int(self.max_stock_var.get()),
+                cost=float(self.cost_var.get()),
                 price=float(self.price_var.get()),
                 supplier_id=supplier_id,
                 expiration_date=self.expiration_var.get() or None,
@@ -421,11 +426,12 @@ class CrudInventory(tk.Toplevel):
                 item_id=self.item_id,
                 code=self.code_var.get(),
                 product=self.product_var.get(),
-                description=self.description_var.get() or None,  # Include English description
+                description=self.description_var.get() or None,
                 quantity=int(self.quantity_var.get()),
                 stock=int(self.stock_var.get()),
                 min_stock=int(self.min_stock_var.get()),
                 max_stock=int(self.max_stock_var.get()),
+                cost=float(self.cost_var.get()),
                 price=float(self.price_var.get()),
                 supplier_id=supplier_id,
                 expiration_date=self.expiration_var.get() or None,
@@ -454,8 +460,9 @@ class CrudInventory(tk.Toplevel):
                 'id': -1,  # ID negativo indica que es un producto nuevo
                 'code': self.code_var.get(),
                 'name': self.product_var.get(),
-                'description': self.description_var.get(),  # Include English description
+                'description': self.description_var.get(),
                 'quantity': int(self.quantity_var.get()),
+                'cost': float(self.cost_var.get()),
                 'unit_price': float(self.price_var.get()),
                 'total': int(self.quantity_var.get()) * float(self.price_var.get()),
                 'is_new': True  # Indica que es un producto nuevo
