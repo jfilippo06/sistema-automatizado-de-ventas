@@ -128,33 +128,33 @@ class PurchaseOrdersScreen(tk.Frame):
         # Línea divisoria
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Sección Proveedor (estilo similar al catálogo)
+        # Sección Proveedor (2 filas con 4 columnas)
         supplier_frame = tk.Frame(form_frame, bg="white")
         supplier_frame.pack(fill=tk.X, pady=10)
 
         CustomLabel(
             supplier_frame,
-            text="PROVEEDOR:",
+            text="INFORMACIÓN DEL PROVEEDOR:",
             font=("Arial", 12, "bold"),
             bg="white"
-        ).pack(anchor=tk.W)
+        ).pack(anchor=tk.W, pady=(0, 10))
 
-        # Campos del proveedor en un grid (3 columnas)
-        supplier_fields_frame = tk.Frame(supplier_frame, bg="white")
-        supplier_fields_frame.pack(fill=tk.X, pady=5)
+        # Primera fila de campos del proveedor (4 columnas)
+        row1_frame = tk.Frame(supplier_frame, bg="white")
+        row1_frame.pack(fill=tk.X, pady=5)
 
-        # Columna 1
-        col1 = tk.Frame(supplier_fields_frame, bg="white")
-        col1.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        fields_col1 = [
+        fields_row1 = [
             ("Cédula/RIF:", "supplier_id", 20),
             ("Nombre:", "supplier_first_name", 20),
-            ("Apellido:", "supplier_last_name", 20)
+            ("Apellido:", "supplier_last_name", 20),
+            ("Empresa:", "supplier_company", 25)
         ]
 
-        for label, var_name, width in fields_col1:
-            frame = tk.Frame(col1, bg="white")
+        for label, var_name, width in fields_row1:
+            col = tk.Frame(row1_frame, bg="white")
+            col.pack(side=tk.LEFT, padx=5, expand=True)
+            
+            frame = tk.Frame(col, bg="white")
             frame.pack(fill=tk.X, pady=2)
             
             CustomLabel(
@@ -162,7 +162,6 @@ class PurchaseOrdersScreen(tk.Frame):
                 text=label,
                 font=("Arial", 11),
                 bg="white",
-                width=12,
                 anchor=tk.W
             ).pack(side=tk.LEFT)
             
@@ -171,51 +170,25 @@ class PurchaseOrdersScreen(tk.Frame):
                 font=("Arial", 11),
                 width=width
             )
-            entry.pack(side=tk.LEFT, padx=5)
+            entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
             setattr(self, var_name, entry)
 
-        # Columna 2
-        col2 = tk.Frame(supplier_fields_frame, bg="white")
-        col2.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # Segunda fila de campos del proveedor (4 columnas)
+        row2_frame = tk.Frame(supplier_frame, bg="white")
+        row2_frame.pack(fill=tk.X, pady=5)
 
-        fields_col2 = [
-            ("Empresa:", "supplier_company", 25),
+        fields_row2 = [
             ("Teléfono:", "supplier_phone", 15),
-            ("Email:", "supplier_email", 25)
-        ]
-
-        for label, var_name, width in fields_col2:
-            frame = tk.Frame(col2, bg="white")
-            frame.pack(fill=tk.X, pady=2)
-            
-            CustomLabel(
-                frame,
-                text=label,
-                font=("Arial", 11),
-                bg="white",
-                width=10,
-                anchor=tk.W
-            ).pack(side=tk.LEFT)
-            
-            entry = CustomEntry(
-                frame,
-                font=("Arial", 11),
-                width=width
-            )
-            entry.pack(side=tk.LEFT, padx=5)
-            setattr(self, var_name, entry)
-
-        # Columna 3
-        col3 = tk.Frame(supplier_fields_frame, bg="white")
-        col3.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        fields_col3 = [
+            ("Email:", "supplier_email", 25),
             ("Dirección:", "supplier_address", 30),
             ("Fecha Entrega:", "delivery_date", 15)
         ]
 
-        for label, var_name, width in fields_col3:
-            frame = tk.Frame(col3, bg="white")
+        for label, var_name, width in fields_row2:
+            col = tk.Frame(row2_frame, bg="white")
+            col.pack(side=tk.LEFT, padx=5, expand=True)
+            
+            frame = tk.Frame(col, bg="white")
             frame.pack(fill=tk.X, pady=2)
             
             CustomLabel(
@@ -223,7 +196,6 @@ class PurchaseOrdersScreen(tk.Frame):
                 text=label,
                 font=("Arial", 11),
                 bg="white",
-                width=12,
                 anchor=tk.W
             ).pack(side=tk.LEFT)
             
@@ -232,29 +204,25 @@ class PurchaseOrdersScreen(tk.Frame):
                 font=("Arial", 11),
                 width=width
             )
-            entry.pack(side=tk.LEFT, padx=5)
+            entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
             setattr(self, var_name, entry)
 
         # Línea divisoria
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Sección Productos (estilo similar al catálogo)
-        products_frame = tk.Frame(form_frame, bg="white")
-        products_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Frame para agregar productos
-        add_product_frame = tk.Frame(products_frame, bg="white")
-        add_product_frame.pack(fill=tk.X, pady=10)
+        # Sección Agregar Productos (fuera del notebook)
+        add_products_frame = tk.Frame(form_frame, bg="white")
+        add_products_frame.pack(fill=tk.X, pady=10)
 
         CustomLabel(
-            add_product_frame,
+            add_products_frame,
             text="AGREGAR PRODUCTOS:",
             font=("Arial", 12, "bold"),
             bg="white"
         ).pack(anchor=tk.W)
 
         # Campos para producto en una fila
-        product_fields_frame = tk.Frame(add_product_frame, bg="white")
+        product_fields_frame = tk.Frame(add_products_frame, bg="white")
         product_fields_frame.pack(fill=tk.X, pady=5)
 
         product_fields = [
@@ -297,9 +265,9 @@ class PurchaseOrdersScreen(tk.Frame):
         )
         btn_add_product.pack(side=tk.LEFT, padx=5)
 
-        # Tabla de productos (estilo similar al catálogo)
-        table_frame = tk.Frame(products_frame, bg="white")
-        table_frame.pack(fill=tk.BOTH, expand=True)
+        # Tabla de productos (fuera del notebook)
+        table_frame = tk.Frame(form_frame, bg="white")
+        table_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Encabezado de tabla
         table_header = tk.Frame(table_frame, bg="white")
@@ -347,6 +315,9 @@ class PurchaseOrdersScreen(tk.Frame):
                 scrollregion=self.canvas.bbox("all")
             )
         )
+
+        # Línea divisoria
+        ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
         # Totales
         totals_frame = tk.Frame(form_frame, bg="white")
