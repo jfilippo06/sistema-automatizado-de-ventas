@@ -128,16 +128,20 @@ class PurchaseOrdersScreen(tk.Frame):
         # Línea divisoria
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Sección Proveedor (2 filas con 4 columnas)
-        supplier_frame = tk.Frame(form_frame, bg="white")
-        supplier_frame.pack(fill=tk.X, pady=10)
+        # Crear Notebook (pestañas)
+        notebook_frame = tk.Frame(form_frame, bg="white")
+        notebook_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        self.notebook = ttk.Notebook(notebook_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        CustomLabel(
-            supplier_frame,
-            text="INFORMACIÓN DEL PROVEEDOR:",
-            font=("Arial", 12, "bold"),
-            bg="white"
-        ).pack(anchor=tk.W, pady=(0, 10))
+        # Pestaña de Proveedor
+        supplier_tab = tk.Frame(self.notebook, bg="white")
+        self.notebook.add(supplier_tab, text="Información del Proveedor")
+
+        # Sección Proveedor (2 filas con 4 columnas)
+        supplier_frame = tk.Frame(supplier_tab, bg="white")
+        supplier_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Primera fila de campos del proveedor (4 columnas)
         row1_frame = tk.Frame(supplier_frame, bg="white")
@@ -207,11 +211,12 @@ class PurchaseOrdersScreen(tk.Frame):
             entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
             setattr(self, var_name, entry)
 
-        # Línea divisoria
-        ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
+        # Pestaña de Productos (solo campos de entrada, sin tabla)
+        products_tab = tk.Frame(self.notebook, bg="white")
+        self.notebook.add(products_tab, text="Agregar Productos")
 
-        # Sección Agregar Productos (fuera del notebook)
-        add_products_frame = tk.Frame(form_frame, bg="white")
+        # Sección Agregar Productos (dentro del notebook pero sin tabla)
+        add_products_frame = tk.Frame(products_tab, bg="white")
         add_products_frame.pack(fill=tk.X, pady=10)
 
         CustomLabel(
@@ -386,6 +391,7 @@ class PurchaseOrdersScreen(tk.Frame):
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
+    # Resto de los métodos permanecen igual...
     def go_back(self) -> None:
         self.parent.state('normal')
         self.open_previous_screen_callback()
