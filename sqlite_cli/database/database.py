@@ -303,9 +303,6 @@ def init_db() -> None:
             FOREIGN KEY (service_request_id) REFERENCES service_requests(id)
         )
     ''')
-    
-    conn.commit()
-    conn.close()
 
     # Tabla para los estados de órdenes de compra
     cursor.execute('''
@@ -358,3 +355,6 @@ def init_db() -> None:
             FOREIGN KEY (product_id) REFERENCES inventory(id)
         )
     ''')
+    
+    conn.commit()
+    conn.close()
