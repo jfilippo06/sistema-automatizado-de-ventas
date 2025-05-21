@@ -18,7 +18,8 @@ from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
-from screens.catalog.catalog_screen import CatalogScreen  # Nueva importación
+from screens.catalog.catalog_screen import CatalogScreen
+from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen  # Nueva importación
 from utils.session_manager import SessionManager
 
 def main() -> None:
@@ -27,51 +28,21 @@ def main() -> None:
     app.geometry("800x600")
     app.resizable(True, True)
     
-    # Función para verificar autenticación
     def check_auth_and_show_home():
         if SessionManager.is_authenticated():
             open_home_screen()
         else:
             open_login_screen()
 
-    # Callbacks para navegación
+    # Callbacks para navegación (actualizado con purchase_orders)
     def open_home_screen() -> None:
-        login_screen.pack_forget()
-        config_screen.pack_forget()
-        users_screen.pack_forget()
-        currency_screen.pack_forget()
-        taxes_screen.pack_forget()
-        maintenance_screen.pack_forget()
-        recovery_screen.pack_forget()
-        recovery_suppliers_screen.pack_forget()
-        recovery_inventory_screen.pack_forget()
-        recovery_service_requests_screen.pack_forget()
-        recovery_services_screen.pack_forget()
-        billing_screen.pack_forget()
-        reports_screen.pack_forget()
-        catalog_screen.pack_forget()  # Nueva línea
+        for screen in all_screens:
+            screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_login_screen() -> None:
-        home_screen.pack_forget()
-        inventory_screen.pack_forget()
-        suppliers_screen.pack_forget()
-        customers_screen.pack_forget()
-        service_requests_screen.pack_forget()
-        services_screen.pack_forget()
-        config_screen.pack_forget()
-        users_screen.pack_forget()
-        currency_screen.pack_forget()
-        taxes_screen.pack_forget()
-        maintenance_screen.pack_forget()
-        recovery_screen.pack_forget()
-        recovery_suppliers_screen.pack_forget()
-        recovery_inventory_screen.pack_forget()
-        recovery_service_requests_screen.pack_forget()
-        recovery_services_screen.pack_forget()
-        billing_screen.pack_forget()
-        reports_screen.pack_forget()
-        catalog_screen.pack_forget()  # Nueva línea
+        for screen in all_screens:
+            screen.pack_forget()
         login_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_inventory() -> None:
@@ -99,17 +70,14 @@ def main() -> None:
         config_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_users() -> None:
-        home_screen.pack_forget()
         config_screen.pack_forget()
         users_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_currency() -> None:
-        home_screen.pack_forget()
         config_screen.pack_forget()
         currency_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_taxes() -> None:
-        home_screen.pack_forget()
         config_screen.pack_forget()
         taxes_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -129,100 +97,18 @@ def main() -> None:
         home_screen.pack_forget()
         reports_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_catalog() -> None:  # Nueva función
+    def open_catalog() -> None:
         home_screen.pack_forget()
         catalog_screen.pack(fill=tk.BOTH, expand=True)
 
-    # Callbacks para recuperación
-    def open_recovery_suppliers() -> None:
-        recovery_screen.pack_forget()
-        recovery_suppliers_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_inventory() -> None:
-        recovery_screen.pack_forget()
-        recovery_inventory_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_service_requests() -> None:
-        recovery_screen.pack_forget()
-        recovery_service_requests_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_services() -> None:
-        recovery_screen.pack_forget()
-        recovery_services_screen.pack(fill=tk.BOTH, expand=True)
+    def open_purchase_orders() -> None:  # Nuevo callback
+        home_screen.pack_forget()
+        purchase_orders_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para regresar al home
-    def open_home_from_inventory() -> None:
-        inventory_screen.pack_forget()
+    def open_home_from_current(screen: tk.Frame) -> None:
+        screen.pack_forget()
         home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_suppliers() -> None:
-        suppliers_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_customers() -> None:
-        customers_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_service_requests() -> None:
-        service_requests_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_services() -> None:
-        services_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_config() -> None:
-        config_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_config_from_users() -> None:
-        users_screen.pack_forget()
-        config_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_config_from_currency() -> None:
-        currency_screen.pack_forget()
-        config_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_config_from_taxes() -> None:
-        taxes_screen.pack_forget()
-        config_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_maintenance() -> None:
-        maintenance_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_recovery() -> None:
-        recovery_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_billing() -> None:
-        billing_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_reports() -> None:
-        reports_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_home_from_catalog() -> None:  # Nueva función
-        catalog_screen.pack_forget()
-        home_screen.pack(fill=tk.BOTH, expand=True)
-
-    # Callbacks para regresar desde pantallas de recuperación
-    def open_recovery_from_suppliers() -> None:
-        recovery_suppliers_screen.pack_forget()
-        recovery_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_from_inventory() -> None:
-        recovery_inventory_screen.pack_forget()
-        recovery_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_from_service_requests() -> None:
-        recovery_service_requests_screen.pack_forget()
-        recovery_screen.pack(fill=tk.BOTH, expand=True)
-
-    def open_recovery_from_services() -> None:
-        recovery_services_screen.pack_forget()
-        recovery_screen.pack(fill=tk.BOTH, expand=True)
 
     # Creación de todas las pantallas
     login_screen = LoginScreen(app, check_auth_and_show_home)
@@ -240,36 +126,53 @@ def main() -> None:
         open_recovery,
         open_billing,
         open_reports,
-        open_catalog  # Nuevo callback
+        open_catalog,
+        open_purchase_orders  # Nuevo callback
     )
     
-    inventory_screen = Inventory(app, open_home_from_inventory)
-    suppliers_screen = Suppliers(app, open_home_from_suppliers)
-    customers_screen = CustomersScreen(app, open_home_from_customers)
-    service_requests_screen = ServiceRequestsScreen(app, open_home_from_service_requests)
-    services_screen = ServicesScreen(app, open_home_from_services)
-    config_screen = ConfigurationScreen(app, open_home_from_config, open_users, open_currency, open_taxes)
-    users_screen = UsersScreen(app, open_config_from_users)
-    currency_screen = CurrencyManagementScreen(app, open_config_from_currency)
-    taxes_screen = TaxesManagementScreen(app, open_config_from_taxes)
-    maintenance_screen = MaintenanceScreen(app, open_home_from_maintenance)
+    inventory_screen = Inventory(app, lambda: open_home_from_current(inventory_screen))
+    suppliers_screen = Suppliers(app, lambda: open_home_from_current(suppliers_screen))
+    customers_screen = CustomersScreen(app, lambda: open_home_from_current(customers_screen))
+    service_requests_screen = ServiceRequestsScreen(app, lambda: open_home_from_current(service_requests_screen))
+    services_screen = ServicesScreen(app, lambda: open_home_from_current(services_screen))
+    config_screen = ConfigurationScreen(app, lambda: open_home_from_current(config_screen), open_users, open_currency, open_taxes)
+    users_screen = UsersScreen(app, lambda: open_home_from_current(users_screen))
+    currency_screen = CurrencyManagementScreen(app, lambda: open_home_from_current(currency_screen))
+    taxes_screen = TaxesManagementScreen(app, lambda: open_home_from_current(taxes_screen))
+    maintenance_screen = MaintenanceScreen(app, lambda: open_home_from_current(maintenance_screen))
     recovery_screen = RecoveryScreen(
         app, 
-        open_home_from_recovery, 
-        open_recovery_suppliers,
-        open_recovery_inventory,
-        open_recovery_service_requests,
-        open_recovery_services
+        lambda: open_home_from_current(recovery_screen), 
+        lambda: None,  # Placeholder para callbacks de recovery
+        lambda: None,
+        lambda: None,
+        lambda: None
     )
-    recovery_suppliers_screen = RecoverySuppliers(app, open_recovery_from_suppliers)
-    recovery_inventory_screen = RecoveryInventory(app, open_recovery_from_inventory)
-    recovery_service_requests_screen = RecoveryServiceRequests(app, open_recovery_from_service_requests)
-    recovery_services_screen = RecoveryServices(app, open_recovery_from_services)
-    billing_screen = BillingScreen(app, open_home_from_billing)
-    reports_screen = ReportsScreen(app, open_home_from_reports)
-    catalog_screen = CatalogScreen(app, open_home_from_catalog)  # Nueva pantalla
+    billing_screen = BillingScreen(app, lambda: open_home_from_current(billing_screen))
+    reports_screen = ReportsScreen(app, lambda: open_home_from_current(reports_screen))
+    catalog_screen = CatalogScreen(app, lambda: open_home_from_current(catalog_screen))
+    purchase_orders_screen = PurchaseOrdersScreen(app, lambda: open_home_from_current(purchase_orders_screen))  # Nueva pantalla
 
-    # Mostrar pantalla inicial basada en autenticación
+    all_screens = [
+        login_screen,
+        home_screen,
+        inventory_screen,
+        suppliers_screen,
+        customers_screen,
+        service_requests_screen,
+        services_screen,
+        config_screen,
+        users_screen,
+        currency_screen,
+        taxes_screen,
+        maintenance_screen,
+        recovery_screen,
+        billing_screen,
+        reports_screen,
+        catalog_screen,
+        purchase_orders_screen
+    ]
+
     check_auth_and_show_home()
     app.mainloop()
 

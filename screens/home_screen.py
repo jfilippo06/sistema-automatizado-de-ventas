@@ -19,7 +19,8 @@ class HomeScreen(tk.Frame):
         open_recovery_callback: Callable[[], None],
         open_billing_callback: Callable[[], None],
         open_reports_callback: Callable[[], None],
-        open_catalog_callback: Callable[[], None]  # Nuevo callback
+        open_catalog_callback: Callable[[], None],
+        open_purchase_orders_callback: Callable[[], None]  # Nuevo callback
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -34,18 +35,18 @@ class HomeScreen(tk.Frame):
         self.open_recovery_callback = open_recovery_callback
         self.open_billing_callback = open_billing_callback
         self.open_reports_callback = open_reports_callback
-        self.open_catalog_callback = open_catalog_callback  # Nuevo callback
+        self.open_catalog_callback = open_catalog_callback
+        self.open_purchase_orders_callback = open_purchase_orders_callback  # Nuevo callback
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        """Sobrescribimos pack para verificar autenticación"""
         if not SessionManager.is_authenticated():
             self.open_login_screen_callback()
             return
             
-        self.parent.state('normal')  # Ensure normal state when showing home screen
+        self.parent.state('normal')
         self.parent.geometry("700x600")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
@@ -66,13 +67,13 @@ class HomeScreen(tk.Frame):
         buttons = [
             ("Proveedores", self.suppliers_control),
             ("Productos", self.inventory_control),
-            ("Orden de compra", self.purchases_control),
+            ("Orden de compra", self.purchase_orders_control),  # Actualizado
             ("Reportes", self.reports_control),
             ("Ventas", self.billing_control),
             ("Clientes", self.customers_control),
             ("Solicitudes de servicio", self.service_requests_control),
             ("Servicios", self.services_control),
-            ("Catálogo", self.catalog_control),  # Actualizado
+            ("Catálogo", self.catalog_control),
             ("Mantenimiento", self.maintenance),
             ("Recuperación", self.recovery),
             ("Configuración", self.config_control),
@@ -89,7 +90,7 @@ class HomeScreen(tk.Frame):
                 command=command,
                 padding=20,
                 width=30,
-                wraplength=150 if text == "Catálogo" else None
+                wraplength=150 if text in ["Catálogo", "Orden de compra"] else None
             )
             btn.grid(row=row, column=col, padx=10, pady=10, ipady=20, sticky="nsew")
 
@@ -104,8 +105,8 @@ class HomeScreen(tk.Frame):
     def inventory_control(self) -> None:
         self.open_inventory_callback()
 
-    def purchases_control(self) -> None:
-        return None
+    def purchase_orders_control(self) -> None:  # Actualizado
+        self.open_purchase_orders_callback()
 
     def reports_control(self) -> None:
         self.open_reports_callback()
@@ -122,7 +123,7 @@ class HomeScreen(tk.Frame):
     def services_control(self) -> None:
         self.open_services_callback()
 
-    def catalog_control(self) -> None:  # Actualizado
+    def catalog_control(self) -> None:
         self.open_catalog_callback()
 
     def maintenance(self) -> None:
