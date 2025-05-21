@@ -32,11 +32,40 @@ class PurchaseOrdersScreen(tk.Frame):
         )
         title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
-        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
+        # Botones en el header
+        buttons_frame = tk.Frame(header_frame, bg="#4a6fa5")
+        buttons_frame.pack(side=tk.RIGHT, padx=20, pady=5)
         
+        # Botones adicionales junto a "Regresar"
+        btn_view_orders = CustomButton(
+            buttons_frame,
+            text="Ver Órdenes",
+            command=self.view_orders,
+            padding=8,
+            width=12,
+        )
+        btn_view_orders.pack(side=tk.RIGHT, padx=5)
+
+        btn_search_product = CustomButton(
+            buttons_frame,
+            text="Buscar Producto",
+            command=self.search_product,
+            padding=8,
+            width=12,
+        )
+        btn_search_product.pack(side=tk.RIGHT, padx=5)
+
+        btn_search_supplier = CustomButton(
+            buttons_frame,
+            text="Buscar Proveedor",
+            command=self.search_supplier,
+            padding=8,
+            width=12,
+        )
+        btn_search_supplier.pack(side=tk.RIGHT, padx=5)
+
         btn_back = CustomButton(
-            back_frame,
+            buttons_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
@@ -99,7 +128,7 @@ class PurchaseOrdersScreen(tk.Frame):
         # Línea divisoria
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Sección Proveedor
+        # Sección Proveedor (estilo similar al catálogo)
         supplier_frame = tk.Frame(form_frame, bg="white")
         supplier_frame.pack(fill=tk.X, pady=10)
 
@@ -110,7 +139,7 @@ class PurchaseOrdersScreen(tk.Frame):
             bg="white"
         ).pack(anchor=tk.W)
 
-        # Campos del proveedor en 2 columnas
+        # Campos del proveedor en un grid (3 columnas)
         supplier_fields_frame = tk.Frame(supplier_frame, bg="white")
         supplier_fields_frame.pack(fill=tk.X, pady=5)
 
@@ -118,14 +147,13 @@ class PurchaseOrdersScreen(tk.Frame):
         col1 = tk.Frame(supplier_fields_frame, bg="white")
         col1.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        fields = [
-            ("Nombre/Razón Social:", "supplier_name"),
-            ("RIF/Cédula:", "supplier_id"),
-            ("Dirección:", "supplier_address"),
-            ("Teléfono:", "supplier_phone")
+        fields_col1 = [
+            ("Cédula/RIF:", "supplier_id", 20),
+            ("Nombre:", "supplier_first_name", 20),
+            ("Apellido:", "supplier_last_name", 20)
         ]
 
-        for label, var_name in fields:
+        for label, var_name, width in fields_col1:
             frame = tk.Frame(col1, bg="white")
             frame.pack(fill=tk.X, pady=2)
             
@@ -134,30 +162,29 @@ class PurchaseOrdersScreen(tk.Frame):
                 text=label,
                 font=("Arial", 11),
                 bg="white",
-                width=20,
+                width=12,
                 anchor=tk.W
             ).pack(side=tk.LEFT)
             
             entry = CustomEntry(
                 frame,
                 font=("Arial", 11),
-                width=40
+                width=width
             )
-            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+            entry.pack(side=tk.LEFT, padx=5)
             setattr(self, var_name, entry)
 
         # Columna 2
         col2 = tk.Frame(supplier_fields_frame, bg="white")
         col2.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        fields = [
-            ("Email:", "supplier_email"),
-            ("Persona Contacto:", "supplier_contact"),
-            ("Cond. Pago:", "payment_terms"),
-            ("Fecha Entrega:", "delivery_date")
+        fields_col2 = [
+            ("Empresa:", "supplier_company", 25),
+            ("Teléfono:", "supplier_phone", 15),
+            ("Email:", "supplier_email", 25)
         ]
 
-        for label, var_name in fields:
+        for label, var_name, width in fields_col2:
             frame = tk.Frame(col2, bg="white")
             frame.pack(fill=tk.X, pady=2)
             
@@ -166,43 +193,120 @@ class PurchaseOrdersScreen(tk.Frame):
                 text=label,
                 font=("Arial", 11),
                 bg="white",
-                width=15,
+                width=10,
                 anchor=tk.W
             ).pack(side=tk.LEFT)
             
-            if var_name == "payment_terms":
-                combobox = CustomCombobox(
-                    frame,
-                    values=["Contado", "15 días", "30 días", "60 días"],
-                    font=("Arial", 11),
-                    state="readonly",
-                    width=18
-                )
-                combobox.pack(side=tk.LEFT, padx=5)
-                combobox.set("Contado")
-                setattr(self, var_name, combobox)
-            else:
-                entry = CustomEntry(
-                    frame,
-                    font=("Arial", 11),
-                    width=25
-                )
-                entry.pack(side=tk.LEFT, padx=5)
-                setattr(self, var_name, entry)
+            entry = CustomEntry(
+                frame,
+                font=("Arial", 11),
+                width=width
+            )
+            entry.pack(side=tk.LEFT, padx=5)
+            setattr(self, var_name, entry)
+
+        # Columna 3
+        col3 = tk.Frame(supplier_fields_frame, bg="white")
+        col3.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        fields_col3 = [
+            ("Dirección:", "supplier_address", 30),
+            ("Fecha Entrega:", "delivery_date", 15)
+        ]
+
+        for label, var_name, width in fields_col3:
+            frame = tk.Frame(col3, bg="white")
+            frame.pack(fill=tk.X, pady=2)
+            
+            CustomLabel(
+                frame,
+                text=label,
+                font=("Arial", 11),
+                bg="white",
+                width=12,
+                anchor=tk.W
+            ).pack(side=tk.LEFT)
+            
+            entry = CustomEntry(
+                frame,
+                font=("Arial", 11),
+                width=width
+            )
+            entry.pack(side=tk.LEFT, padx=5)
+            setattr(self, var_name, entry)
 
         # Línea divisoria
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Tabla de productos
+        # Sección Productos (estilo similar al catálogo)
         products_frame = tk.Frame(form_frame, bg="white")
         products_frame.pack(fill=tk.BOTH, expand=True)
 
+        # Frame para agregar productos
+        add_product_frame = tk.Frame(products_frame, bg="white")
+        add_product_frame.pack(fill=tk.X, pady=10)
+
+        CustomLabel(
+            add_product_frame,
+            text="AGREGAR PRODUCTOS:",
+            font=("Arial", 12, "bold"),
+            bg="white"
+        ).pack(anchor=tk.W)
+
+        # Campos para producto en una fila
+        product_fields_frame = tk.Frame(add_product_frame, bg="white")
+        product_fields_frame.pack(fill=tk.X, pady=5)
+
+        product_fields = [
+            ("Código:", "product_code", 15),
+            ("Descripción:", "product_description", 30),
+            ("Cantidad:", "product_quantity", 10),
+            ("Precio Unit.:", "product_unit_price", 15)
+        ]
+
+        for label, var_name, width in product_fields:
+            col = tk.Frame(product_fields_frame, bg="white")
+            col.pack(side=tk.LEFT, padx=5)
+            
+            frame = tk.Frame(col, bg="white")
+            frame.pack(fill=tk.X, pady=2)
+            
+            CustomLabel(
+                frame,
+                text=label,
+                font=("Arial", 11),
+                bg="white",
+                anchor=tk.W
+            ).pack(side=tk.LEFT)
+            
+            entry = CustomEntry(
+                frame,
+                font=("Arial", 11),
+                width=width
+            )
+            entry.pack(side=tk.LEFT, padx=5)
+            setattr(self, var_name, entry)
+
+        # Botón para agregar producto (en la misma línea)
+        btn_add_product = CustomButton(
+            product_fields_frame,
+            text="Agregar",
+            command=self.add_product,
+            padding=6,
+            width=10
+        )
+        btn_add_product.pack(side=tk.LEFT, padx=5)
+
+        # Tabla de productos (estilo similar al catálogo)
+        table_frame = tk.Frame(products_frame, bg="white")
+        table_frame.pack(fill=tk.BOTH, expand=True)
+
         # Encabezado de tabla
-        table_header = tk.Frame(products_frame, bg="white")
+        table_header = tk.Frame(table_frame, bg="white")
         table_header.pack(fill=tk.X)
         
-        headers = ["Código", "Descripción", "Cant.", "Precio Unit.", "Total"]
-        widths = [100, 300, 80, 120, 120]
+        headers = ["Código", "Descripción", "Cant.", "Precio Unit.", "Total", "Acciones"]
+        widths = [100, 300, 80, 120, 120, 100]
         
         for i, (header, width) in enumerate(zip(headers, widths)):
             frame = tk.Frame(table_header, bg="#4a6fa5", bd=1, relief=tk.SOLID)
@@ -218,26 +322,46 @@ class PurchaseOrdersScreen(tk.Frame):
                 bg="#4a6fa5"
             ).pack(expand=True, fill=tk.BOTH)
 
-        # Cuerpo de la tabla (simulando filas)
-        table_body = tk.Frame(products_frame, bg="white", bd=1, relief=tk.SUNKEN)
-        table_body.pack(fill=tk.BOTH, expand=True)
+        # Cuerpo de la tabla con scroll
+        self.table_body = tk.Frame(table_frame, bg="white", bd=1, relief=tk.SUNKEN)
+        self.table_body.pack(fill=tk.BOTH, expand=True)
 
-        # Aquí irían las filas de productos, pero por ahora dejamos espacio
-        placeholder = tk.Frame(table_body, bg="white", height=200)
-        placeholder.pack(fill=tk.BOTH, expand=True)
+        # Scrollbar para la tabla
+        scrollbar = ttk.Scrollbar(self.table_body, orient=tk.VERTICAL)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Canvas para la tabla
+        self.canvas = tk.Canvas(self.table_body, bg="white", yscrollcommand=scrollbar.set)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar.config(command=self.canvas.yview)
+
+        # Frame interno para los productos
+        self.products_inner_frame = tk.Frame(self.canvas, bg="white")
+        self.canvas.create_window((0, 0), window=self.products_inner_frame, anchor=tk.NW)
+
+        # Configurar el scroll
+        self.products_inner_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
 
         # Totales
         totals_frame = tk.Frame(form_frame, bg="white")
         totals_frame.pack(fill=tk.X, pady=10)
 
         # Subtotal, IVA, Total (alineados a la derecha)
-        totals = [
-            ("Subtotal:", "0.00"),
-            ("IVA (16%):", "0.00"),
-            ("TOTAL:", "0.00")
-        ]
+        self.totals = {
+            "subtotal": tk.StringVar(value="0.00"),
+            "iva": tk.StringVar(value="0.00"),
+            "total": tk.StringVar(value="0.00")
+        }
 
-        for label, value in totals:
+        for label, var in [("Subtotal:", "subtotal"), 
+                          ("IVA (16%):", "iva"), 
+                          ("TOTAL:", "total")]:
             frame = tk.Frame(totals_frame, bg="white")
             frame.pack(anchor=tk.E, pady=2)
             
@@ -252,14 +376,14 @@ class PurchaseOrdersScreen(tk.Frame):
             
             CustomLabel(
                 frame,
-                text=value,
+                text=self.totals[var],
                 font=("Arial", 12, "bold"),
                 bg="white",
                 width=15,
                 anchor=tk.E
             ).pack(side=tk.LEFT)
 
-        # Botones de acción (agrupados como en tu versión)
+        # Botones de acción
         controls_frame = tk.Frame(self, bg="#f5f5f5")
         controls_frame.pack(fill=tk.X, padx=20, pady=10)
 
@@ -268,9 +392,7 @@ class PurchaseOrdersScreen(tk.Frame):
 
         buttons = [
             ("Crear Orden", self.create_order),
-            ("Limpiar", self.clear_form),
-            ("Buscar Producto", self.search_product),
-            ("Ver Órdenes", self.view_orders)
+            ("Limpiar", self.clear_form)
         ]
 
         for text, command in buttons:
@@ -298,13 +420,126 @@ class PurchaseOrdersScreen(tk.Frame):
         self.open_previous_screen_callback()
 
     def create_order(self) -> None:
-        pass
+        self.status_bar.config(text="Orden creada exitosamente")
 
     def clear_form(self) -> None:
-        pass
+        # Limpiar campos de proveedor
+        for field in ["supplier_id", "supplier_first_name", "supplier_last_name",
+                     "supplier_company", "supplier_address", "supplier_phone",
+                     "supplier_email", "delivery_date"]:
+            getattr(self, field).delete(0, tk.END)
+        
+        # Limpiar campos de producto
+        for field in ["product_code", "product_description", 
+                     "product_quantity", "product_unit_price"]:
+            getattr(self, field).delete(0, tk.END)
+        
+        # Limpiar tabla de productos
+        for widget in self.products_inner_frame.winfo_children():
+            widget.destroy()
+        
+        # Resetear totales
+        for var in self.totals.values():
+            var.set("0.00")
+        
+        self.status_bar.config(text="Formulario limpiado")
 
     def search_product(self) -> None:
-        pass
+        self.status_bar.config(text="Buscando producto...")
+
+    def search_supplier(self) -> None:
+        self.status_bar.config(text="Buscando proveedor...")
 
     def view_orders(self) -> None:
-        pass
+        self.status_bar.config(text="Mostrando órdenes existentes...")
+
+    def add_product(self) -> None:
+        # Obtener datos del producto
+        code = self.product_code.get()
+        description = self.product_description.get()
+        quantity = self.product_quantity.get()
+        unit_price = self.product_unit_price.get()
+        
+        if not code or not description or not quantity or not unit_price:
+            self.status_bar.config(text="Error: Todos los campos del producto son requeridos")
+            return
+        
+        try:
+            quantity = float(quantity)
+            unit_price = float(unit_price)
+            total = quantity * unit_price
+        except ValueError:
+            self.status_bar.config(text="Error: Cantidad y precio deben ser números válidos")
+            return
+        
+        # Crear fila en la tabla
+        row_frame = tk.Frame(self.products_inner_frame, bg="white")
+        row_frame.pack(fill=tk.X, pady=1)
+        
+        # Campos de la fila
+        fields = [code, description, f"{quantity:.2f}", f"{unit_price:.2f}", f"{total:.2f}"]
+        widths = [100, 300, 80, 120, 120]
+        
+        for i, (value, width) in enumerate(zip(fields, widths)):
+            frame = tk.Frame(row_frame, bg="white", bd=1, relief=tk.SOLID)
+            frame.pack(side=tk.LEFT)
+            frame.pack_propagate(False)
+            frame.configure(width=width, height=30)
+            
+            CustomLabel(
+                frame,
+                text=value,
+                font=("Arial", 11),
+                bg="white"
+            ).pack(expand=True, fill=tk.BOTH)
+        
+        # Botón para eliminar
+        frame = tk.Frame(row_frame, bg="white", bd=1, relief=tk.SOLID)
+        frame.pack(side=tk.LEFT)
+        frame.pack_propagate(False)
+        frame.configure(width=100, height=30)
+        
+        btn_remove = CustomButton(
+            frame,
+            text="Eliminar",
+            command=lambda: self.remove_product(row_frame, total),
+            padding=2,
+            width=8
+        )
+        btn_remove.pack(expand=True, fill=tk.BOTH)
+        
+        # Actualizar totales
+        self.update_totals(total, add=True)
+        
+        # Limpiar campos de producto
+        self.product_code.delete(0, tk.END)
+        self.product_description.delete(0, tk.END)
+        self.product_quantity.delete(0, tk.END)
+        self.product_unit_price.delete(0, tk.END)
+        
+        self.status_bar.config(text="Producto agregado a la orden")
+
+    def remove_product(self, row_frame: tk.Frame, total: float) -> None:
+        row_frame.destroy()
+        self.update_totals(total, add=False)
+        self.status_bar.config(text="Producto eliminado de la orden")
+
+    def update_totals(self, amount: float, add: bool = True) -> None:
+        try:
+            subtotal = float(self.totals["subtotal"].get())
+            iva = float(self.totals["iva"].get())
+            total = float(self.totals["total"].get())
+            
+            if add:
+                subtotal += amount
+            else:
+                subtotal -= amount
+            
+            iva = subtotal * 0.16
+            total = subtotal + iva
+            
+            self.totals["subtotal"].set(f"{subtotal:.2f}")
+            self.totals["iva"].set(f"{iva:.2f}")
+            self.totals["total"].set(f"{total:.2f}")
+        except ValueError:
+            self.status_bar.config(text="Error actualizando totales")
