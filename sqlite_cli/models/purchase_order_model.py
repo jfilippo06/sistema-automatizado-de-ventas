@@ -5,19 +5,18 @@ from datetime import datetime
 class PurchaseOrder:
     @staticmethod
     def get_next_order_number() -> str:
-        """Obtiene el próximo número de orden de compra"""
-        # En una implementación real, esto consultaría la base de datos
+        """Get next purchase order number"""
         now = datetime.now()
         return f"OC-{now.year}{now.month:02d}{now.day:02d}-0001"
 
     @staticmethod
     def get_suppliers(search_term: str = "") -> List[Dict]:
-        """Obtiene proveedores activos con opción de búsqueda"""
+        """Get active suppliers with optional search"""
         return Supplier.search_active(search_term)
 
     @staticmethod
     def get_supplier_by_id(supplier_id: int) -> Optional[Dict]:
-        """Obtiene un proveedor por su ID"""
+        """Get supplier by ID"""
         return Supplier.get_by_id(supplier_id)
 
     @staticmethod
@@ -30,12 +29,12 @@ class PurchaseOrder:
         iva: float,
         total: float
     ) -> bool:
-        """Crea una nueva orden de compra en la base de datos"""
-        # Implementación temporal - debería guardar en la base de datos
-        print(f"Orden creada: {order_number}")
-        print(f"Proveedor ID: {supplier_id}")
-        print(f"Fecha entrega: {delivery_date}")
-        print(f"Productos: {products}")
+        """Create a new purchase order in the database"""
+        # Implementation should save to database
+        print(f"Order created: {order_number}")
+        print(f"Supplier ID: {supplier_id}")
+        print(f"Delivery date: {delivery_date}")
+        print(f"Products: {products}")
         print(f"Subtotal: {subtotal}")
         print(f"IVA: {iva}")
         print(f"Total: {total}")
