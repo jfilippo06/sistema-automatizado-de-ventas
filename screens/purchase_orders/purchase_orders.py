@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 from typing import Any, Callable
+from sqlite_cli.models.purchase_order_model import PurchaseOrder
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -58,7 +60,7 @@ class PurchaseOrdersScreen(tk.Frame):
         btn_search_supplier = CustomButton(
             buttons_frame,
             text="Buscar Proveedor",
-            command=self.search_supplier,
+            command=self.open_suppliers_search,
             padding=8,
             width=12,
         )
@@ -390,6 +392,189 @@ class PurchaseOrdersScreen(tk.Frame):
             bg="#f5f5f5"
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
+
+    def open_suppliers_search(self) -> None:
+        """Abre la ventana de búsqueda de proveedores"""
+        search_window = tk.Toplevel(self)
+        search_window.title("Seleccionar Proveedor")
+        search_window.geometry("800x600")
+        search_window.transient(self)
+        search_window.grab_set()
+        
+        # Frame principal
+        main_frame = tk.Frame(search_window, bg="#f5f5f5")
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Barra de búsqueda
+        search_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        search_frame.pack(fill=tk.X, pady=10)
+        
+        self.search_var = tk.StringVar()
+        search_entry = CustomEntry(
+            search_frame,
+            textvariable=self.search_var,
+            width=40,
+            font=("Arial", 12)
+        )
+        search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        search_entry.bind("<KeyRelease>", self.search_suppliers)
+        
+        # Botón de búsqueda
+        btn_search = CustomButton(
+            search_frame,
+            text="Buscar",
+            command=lambda: self.search_suppliers(),
+            padding=8,
+            width=10
+        )
+        btn_search.pack(side=tk.LEFT, padx=5)
+        
+        # Treeview para mostrar proveedores
+        tree_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.tree = ttk.Treeview(tree_frame, columns=(
+            "ID", "Código", "Cédula", "Nombres", "Apellidos", 
+            "Empresa", "Teléfono", "Email", "RIF"
+        ), show="headings")
+        
+        columns = [
+            ("ID", 50, tk.CENTER),
+            ("Código", 80, tk.CENTER),
+            ("Cédula", 100, tk.CENTER),
+            ("Nombres", 150, tk.W),
+            ("Apellidos", 150, tk.W),
+            ("Empresa", 200, tk.W),
+            ("Teléfono", 100, tk.CENTER),
+            ("Email", 150, tk.W),
+            ("RIF", 100, tk.CENTER)
+        ]
+        
+        for col, width, anchor in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=width, anchor=anchor)
+        
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+        
+        # Botones de acción
+        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        btn_frame.pack(fill=tk.X, pady=10)
+        
+        btn_select = CustomButton(
+            btn_frame,
+            text="Seleccionar",
+            command=lambda: self.select_supplier(search_window),
+            padding=8,
+            width=12
+        )
+        btn_select.pack(side=tk.LEFT, padx=5)
+        
+        btn_create = CustomButton(
+            btn_frame,
+            text="Crear Proveedor",
+            command=self.create_supplier,
+            padding=8,
+            width=15
+        )
+        btn_create.pack(side=tk.LEFT, padx=5)
+        
+        btn_cancel = CustomButton(
+            btn_frame,
+            text="Cancelar",
+            command=search_window.destroy,
+            padding=8,
+            width=12
+        )
+        btn_cancel.pack(side=tk.RIGHT, padx=5)
+        
+        # Cargar datos iniciales
+        self.search_suppliers()
+    
+    def search_suppliers(self, event=None) -> None:
+        """Busca proveedores según el término de búsqueda"""
+        search_term = self.search_var.get().lower()
+        
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+            
+        suppliers = PurchaseOrder.get_suppliers(search_term)
+        
+        for supplier in suppliers:
+            self.tree.insert("", tk.END, values=(
+                supplier['id'],
+                supplier['code'],
+                supplier['id_number'],
+                supplier['first_name'],
+                supplier['last_name'],
+                supplier['company'],
+                supplier['phone'],
+                supplier['email'],
+                supplier['tax_id']
+            ))
+    
+    def select_supplier(self, window: tk.Toplevel) -> None:
+        """Selecciona el proveedor y llena los campos en la pantalla principal"""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=window)
+            return
+            
+        supplier_id = self.tree.item(selected[0])['values'][0]
+        supplier = PurchaseOrder.get_supplier_by_id(supplier_id)
+        
+        if supplier:
+            self.supplier_id.delete(0, tk.END)
+            self.supplier_id.insert(0, supplier['id_number'])
+            
+            self.supplier_first_name.delete(0, tk.END)
+            self.supplier_first_name.insert(0, supplier['first_name'])
+            
+            self.supplier_last_name.delete(0, tk.END)
+            self.supplier_last_name.insert(0, supplier['last_name'])
+            
+            self.supplier_company.delete(0, tk.END)
+            self.supplier_company.insert(0, supplier['company'])
+            
+            self.supplier_phone.delete(0, tk.END)
+            self.supplier_phone.insert(0, supplier['phone'])
+            
+            self.supplier_email.delete(0, tk.END)
+            self.supplier_email.insert(0, supplier['email'])
+            
+            self.supplier_address.delete(0, tk.END)
+            self.supplier_address.insert(0, supplier['address'])
+            
+            window.destroy()
+            self.status_bar.config(text=f"Proveedor seleccionado: {supplier['company']}")
+    
+    def create_supplier(self) -> None:
+        """Abre el formulario para crear un nuevo proveedor"""
+        from screens.supplier.crud_supplier import CrudSupplier
+        
+        crud = CrudSupplier(
+            self,
+            mode="create",
+            refresh_callback=self.refresh_suppliers_after_create,
+            lock_id_number=False
+        )
+        
+        # Centrar la ventana
+        self._center_window(crud, 360, 500)
+    
+    def refresh_suppliers_after_create(self) -> None:
+        """Actualiza la lista de proveedores después de crear uno nuevo"""
+        self.search_suppliers()
+    
+    def _center_window(self, window, width, height):
+        """Centra una ventana en la pantalla"""
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        window.geometry(f"{width}x{height}+{x}+{y}")
 
     # Resto de los métodos permanecen igual...
     def go_back(self) -> None:

@@ -211,3 +211,15 @@ class Supplier:
         item = cursor.fetchone()
         conn.close()
         return dict(item) if item else None
+    
+    @staticmethod
+    def get_supplier_by_id(supplier_id: int) -> Optional[Dict]:
+        """Obtiene un proveedor por su ID"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM suppliers WHERE id = ?
+        ''', (supplier_id,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
