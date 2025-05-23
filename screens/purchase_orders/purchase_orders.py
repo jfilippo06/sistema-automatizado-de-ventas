@@ -29,7 +29,7 @@ class PurchaseOrdersScreen(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Órdenes de Compra",
+            text="Órden de Compra",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"
