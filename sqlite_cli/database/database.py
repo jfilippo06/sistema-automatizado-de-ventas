@@ -344,7 +344,7 @@ def init_db() -> None:
         CREATE TABLE IF NOT EXISTS purchase_order_details (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL,
+            product_id INTEGER DEFAULT 0,
             quantity INTEGER NOT NULL,
             unit_price REAL,
             reference_price REAL,
