@@ -40,6 +40,15 @@ class PurchaseOrdersScreen(tk.Frame):
         buttons_frame = tk.Frame(header_frame, bg="#4a6fa5")
         buttons_frame.pack(side=tk.RIGHT, padx=20, pady=5)
         
+        btn_create_order = CustomButton(
+            buttons_frame,
+            text="Crear Orden",
+            command=self.create_order,
+            padding=8,
+            width=12,
+        )
+        btn_create_order.pack(side=tk.RIGHT, padx=5)
+
         btn_view_orders = CustomButton(
             buttons_frame,
             text="Ver Órdenes",
@@ -101,7 +110,7 @@ class PurchaseOrdersScreen(tk.Frame):
             width=15,
         )
         self.order_number_entry.pack(side=tk.LEFT, padx=5)
-        self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
+        self.order_number_entry.delete(0, tk.END)  # Campo vacío inicialmente
 
         # Company info (left)
         company_frame = tk.Frame(doc_header_frame, bg="white")
@@ -109,14 +118,14 @@ class PurchaseOrdersScreen(tk.Frame):
 
         CustomLabel(
             company_frame,
-            text="EMPRESA XYZ, C.A.",
+            text="RN&M Servicios Integrales, C.A.",
             font=("Arial", 14, "bold"),
             bg="white"
         ).pack(anchor=tk.W)
 
         CustomLabel(
             company_frame,
-            text="RIF: J-12345678-9",
+            text="RIF: J-40339817-8",
             font=("Arial", 12),
             bg="white"
         ).pack(anchor=tk.W)
@@ -327,40 +336,79 @@ class PurchaseOrdersScreen(tk.Frame):
         # Separator
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Totals
+        # Totals - Horizontal layout
         totals_frame = tk.Frame(form_frame, bg="white")
         totals_frame.pack(fill=tk.X, pady=10)
 
-        # Subtotal, IVA, Total (right aligned)
         self.totals = {
             "subtotal": tk.StringVar(value="0.00"),
             "iva": tk.StringVar(value="0.00"),
             "total": tk.StringVar(value="0.00")
         }
 
-        for label, var in [("Subtotal:", "subtotal"), 
-                          ("IVA (16%):", "iva"), 
-                          ("TOTAL:", "total")]:
-            frame = tk.Frame(totals_frame, bg="white")
-            frame.pack(anchor=tk.E, pady=2)
-            
-            CustomLabel(
-                frame,
-                text=label,
-                font=("Arial", 12, "bold"),
-                bg="white",
-                width=15,
-                anchor=tk.E
-            ).pack(side=tk.LEFT)
-            
-            CustomLabel(
-                frame,
-                text=self.totals[var],
-                font=("Arial", 12, "bold"),
-                bg="white",
-                width=15,
-                anchor=tk.E
-            ).pack(side=tk.LEFT)
+        # Create frames for each total in a horizontal layout
+        subtotal_frame = tk.Frame(totals_frame, bg="white")
+        subtotal_frame.pack(side=tk.LEFT, padx=20)
+        
+        CustomLabel(
+            subtotal_frame,
+            text="Subtotal:",
+            font=("Arial", 12, "bold"),
+            bg="white",
+            width=10,
+            anchor=tk.E
+        ).pack(side=tk.LEFT)
+        
+        CustomLabel(
+            subtotal_frame,
+            text=self.totals["subtotal"],
+            font=("Arial", 12, "bold"),
+            bg="white",
+            width=15,
+            anchor=tk.E
+        ).pack(side=tk.LEFT)
+
+        iva_frame = tk.Frame(totals_frame, bg="white")
+        iva_frame.pack(side=tk.LEFT, padx=20)
+        
+        CustomLabel(
+            iva_frame,
+            text="IVA (16%):",
+            font=("Arial", 12, "bold"),
+            bg="white",
+            width=10,
+            anchor=tk.E
+        ).pack(side=tk.LEFT)
+        
+        CustomLabel(
+            iva_frame,
+            text=self.totals["iva"],
+            font=("Arial", 12, "bold"),
+            bg="white",
+            width=15,
+            anchor=tk.E
+        ).pack(side=tk.LEFT)
+
+        total_frame = tk.Frame(totals_frame, bg="white")
+        total_frame.pack(side=tk.LEFT, padx=20)
+        
+        CustomLabel(
+            total_frame,
+            text="TOTAL:",
+            font=("Arial", 12, "bold"),
+            bg="white",
+            width=10,
+            anchor=tk.E
+        ).pack(side=tk.LEFT)
+        
+        CustomLabel(
+            total_frame,
+            text=self.totals["total"],
+            font=("Arial", 12, "bold"),
+            bg="white",
+            width=15,
+            anchor=tk.E
+        ).pack(side=tk.LEFT)
 
         # Action buttons
         controls_frame = tk.Frame(self, bg="#f5f5f5")
@@ -413,7 +461,7 @@ class PurchaseOrdersScreen(tk.Frame):
         self.search_var = tk.StringVar()
         search_entry = CustomEntry(
             search_frame,
-            textvariable=self.search_var,
+            text=self.search_var,
             width=40,
             font=("Arial", 12)
         )
@@ -546,8 +594,13 @@ class PurchaseOrdersScreen(tk.Frame):
 
     def search_product(self) -> None:
         """Open product search window for the selected supplier"""
-        if not self.current_supplier_id:
-            messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor primero", parent=self)
+        # Check if supplier was selected and fields are not manually modified
+        if not self.current_supplier_id or not self.validate_supplier_fields():
+            messagebox.showwarning(
+                "Advertencia", 
+                "Por favor seleccione un proveedor primero usando el botón 'Buscar Proveedor'", 
+                parent=self
+            )
             return
             
         search_window = tk.Toplevel(self)
@@ -567,7 +620,7 @@ class PurchaseOrdersScreen(tk.Frame):
         self.product_search_var = tk.StringVar()
         search_entry = CustomEntry(
             search_frame,
-            textvariable=self.product_search_var,
+            text=self.product_search_var,
             width=40,
             font=("Arial", 12)
         )
@@ -589,7 +642,7 @@ class PurchaseOrdersScreen(tk.Frame):
         
         search_combobox = CustomCombobox(
             search_frame,
-            textvariable=self.product_search_field_var,
+            text=self.product_search_field_var,
             values=search_fields,
             state="readonly",
             width=20
@@ -650,6 +703,24 @@ class PurchaseOrdersScreen(tk.Frame):
         # Load initial data
         self.search_products()
     
+    def validate_supplier_fields(self) -> bool:
+        """Check if supplier fields match the selected supplier"""
+        if not self.current_supplier_id:
+            return False
+            
+        supplier = PurchaseOrder.get_supplier_by_id(self.current_supplier_id)
+        if not supplier:
+            return False
+            
+        # Check if any field was manually modified
+        return (self.supplier_id.get() == supplier['id_number'] and
+                self.supplier_first_name.get() == supplier['first_name'] and
+                self.supplier_last_name.get() == supplier['last_name'] and
+                self.supplier_company.get() == supplier['company'] and
+                self.supplier_phone.get() == supplier['phone'] and
+                self.supplier_email.get() == supplier['email'] and
+                self.supplier_address.get() == supplier['address'])
+    
     def search_products(self, event=None) -> None:
         """Search products for the selected supplier"""
         if not self.current_supplier_id:
@@ -705,63 +776,8 @@ class PurchaseOrdersScreen(tk.Frame):
 
     def create_order(self) -> None:
         """Create a new purchase order"""
-        # Validate required fields
-        if not self.supplier_id.get():
-            messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=self)
-            return
-            
-        if not any(self.products_inner_frame.winfo_children()):
-            messagebox.showwarning("Advertencia", "Por favor agregue al menos un producto", parent=self)
-            return
-            
-        # Get order data
-        order_number = self.order_number_entry.get()
-        supplier_id = self.current_supplier_id
-        delivery_date = self.delivery_date.get()
-        
-        # Get products from table
-        products = []
-        for child in self.products_inner_frame.winfo_children():
-            if isinstance(child, tk.Frame):
-                children = child.winfo_children()
-                if len(children) >= 5:  # Ensure we have all columns
-                    code = children[0].winfo_children()[0].cget("text")
-                    description = children[1].winfo_children()[0].cget("text")
-                    quantity = float(children[2].winfo_children()[0].cget("text"))
-                    unit_price = float(children[3].winfo_children()[0].cget("text").replace(",", ""))
-                    total = float(children[4].winfo_children()[0].cget("text").replace(",", ""))
-                    
-                    products.append({
-                        "code": code,
-                        "description": description,
-                        "quantity": quantity,
-                        "unit_price": unit_price,
-                        "total": total
-                    })
-        
-        # Get totals
-        subtotal = float(self.totals["subtotal"].get().replace(",", ""))
-        iva = float(self.totals["iva"].get().replace(",", ""))
-        total = float(self.totals["total"].get().replace(",", ""))
-        
-        # Create order
-        success = PurchaseOrder.create_order(
-            order_number=order_number,
-            supplier_id=supplier_id,
-            delivery_date=delivery_date,
-            products=products,
-            subtotal=subtotal,
-            iva=iva,
-            total=total
-        )
-        
-        if success:
-            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
-            self.clear_form()
-            self.order_number_entry.delete(0, tk.END)
-            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
-        else:
-            messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
+        # Placeholder function - implement your logic here
+        pass
 
     def clear_form(self) -> None:
         # Clear supplier fields
@@ -802,11 +818,11 @@ class PurchaseOrdersScreen(tk.Frame):
             return
         
         try:
-            quantity = float(quantity)
+            quantity = int(quantity)  # Changed to int instead of float
             unit_price = float(unit_price)
             total = quantity * unit_price
         except ValueError:
-            self.status_bar.config(text="Error: Cantidad y precio deben ser números válidos")
+            self.status_bar.config(text="Error: Cantidad debe ser entero y precio debe ser número válido")
             return
         
         # Create row in table
@@ -814,7 +830,7 @@ class PurchaseOrdersScreen(tk.Frame):
         row_frame.pack(fill=tk.X, pady=1)
         
         # Row fields
-        fields = [code, description, f"{quantity:.2f}", f"{unit_price:.2f}", f"{total:.2f}"]
+        fields = [code, description, f"{quantity}", f"{unit_price:.2f}", f"{total:.2f}"]  # Quantity as integer
         widths = [100, 300, 80, 120, 120]
         
         for i, (value, width) in enumerate(zip(fields, widths)):
