@@ -4,6 +4,7 @@ from tkinter import messagebox
 from typing import Any, Callable
 from sqlite_cli.models.purchase_order_model import PurchaseOrder
 from sqlite_cli.models.inventory_model import InventoryItem
+from sqlite_cli.models.tax_model import Tax
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -17,6 +18,7 @@ class PurchaseOrdersScreen(tk.Frame):
         self.current_supplier_id = None  # To store the selected supplier ID
         self.configure(bg="#f5f5f5")
         self.configure_ui()
+        self.update_totals()
 
     def pack(self, **kwargs: Any) -> None:
         self.parent.state('zoomed')
@@ -336,79 +338,44 @@ class PurchaseOrdersScreen(tk.Frame):
         # Separator
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=10)
 
-        # Totals - Horizontal layout
-        totals_frame = tk.Frame(form_frame, bg="white")
-        totals_frame.pack(fill=tk.X, pady=10)
+        # Totals - Similar al archivo de facturación
+        totals_frame = tk.Frame(form_frame, bg="#4a6fa5", padx=20, pady=10)
+        totals_frame.pack(fill=tk.X)
 
-        self.totals = {
-            "subtotal": tk.StringVar(value="0.00"),
-            "iva": tk.StringVar(value="0.00"),
-            "total": tk.StringVar(value="0.00")
-        }
+        # Obtener el impuesto IVA
+        self.iva_tax = Tax.get_by_name("IVA")
 
-        # Create frames for each total in a horizontal layout
-        subtotal_frame = tk.Frame(totals_frame, bg="white")
-        subtotal_frame.pack(side=tk.LEFT, padx=20)
-        
-        CustomLabel(
-            subtotal_frame,
-            text="Subtotal:",
+        # Inicializar labels de totales
+        self.lbl_subtotal = CustomLabel(
+            totals_frame,
+            text="Subtotal: 0.00",
             font=("Arial", 12, "bold"),
-            bg="white",
-            width=10,
-            anchor=tk.E
-        ).pack(side=tk.LEFT)
+            fg="white",
+            bg="#4a6fa5"
+        )
         
-        CustomLabel(
-            subtotal_frame,
-            text=self.totals["subtotal"],
+        self.lbl_iva = CustomLabel(
+            totals_frame,
+            text=f"IVA ({self.iva_tax['value']}%): 0.00" if self.iva_tax and self.iva_tax.get('status_name') == 'active' else "IVA (0%): 0.00",
             font=("Arial", 12, "bold"),
-            bg="white",
-            width=15,
-            anchor=tk.E
-        ).pack(side=tk.LEFT)
+            fg="white",
+            bg="#4a6fa5"
+        )
+        
+        self.lbl_total = CustomLabel(
+            totals_frame,
+            text="Total: 0.00",
+            font=("Arial", 12, "bold"),
+            fg="white",
+            bg="#4a6fa5"
+        )
 
-        iva_frame = tk.Frame(totals_frame, bg="white")
-        iva_frame.pack(side=tk.LEFT, padx=20)
+        # Mostrar los labels según estén activos los impuestos
+        if self.iva_tax and self.iva_tax.get('status_name') == 'active':
+            self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
+            self.lbl_iva.pack(side=tk.LEFT, padx=10)
         
-        CustomLabel(
-            iva_frame,
-            text="IVA (16%):",
-            font=("Arial", 12, "bold"),
-            bg="white",
-            width=10,
-            anchor=tk.E
-        ).pack(side=tk.LEFT)
-        
-        CustomLabel(
-            iva_frame,
-            text=self.totals["iva"],
-            font=("Arial", 12, "bold"),
-            bg="white",
-            width=15,
-            anchor=tk.E
-        ).pack(side=tk.LEFT)
-
-        total_frame = tk.Frame(totals_frame, bg="white")
-        total_frame.pack(side=tk.LEFT, padx=20)
-        
-        CustomLabel(
-            total_frame,
-            text="TOTAL:",
-            font=("Arial", 12, "bold"),
-            bg="white",
-            width=10,
-            anchor=tk.E
-        ).pack(side=tk.LEFT)
-        
-        CustomLabel(
-            total_frame,
-            text=self.totals["total"],
-            font=("Arial", 12, "bold"),
-            bg="white",
-            width=15,
-            anchor=tk.E
-        ).pack(side=tk.LEFT)
+        self.lbl_total.pack(side=tk.LEFT, padx=10)
 
         # Action buttons
         controls_frame = tk.Frame(self, bg="#f5f5f5")
@@ -442,6 +409,35 @@ class PurchaseOrdersScreen(tk.Frame):
         )
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=5)
 
+    def update_totals(self) -> None:
+        """Calculate and update subtotal, taxes and total"""
+        # Get all products from the table
+        subtotal = 0.0
+        
+        for child in self.products_inner_frame.winfo_children():
+            if isinstance(child, tk.Frame):
+                children = child.winfo_children()
+                if len(children) >= 5:  # Ensure we have all columns
+                    try:
+                        total_text = children[4].winfo_children()[0].cget("text")
+                        total = float(total_text.replace(",", ""))
+                        subtotal += total
+                    except (ValueError, AttributeError):
+                        continue
+        
+        # Calculate taxes and total
+        if self.iva_tax and self.iva_tax.get('status_name') == 'active':
+            iva_amount = subtotal * (self.iva_tax['value'] / 100)
+            total = subtotal + iva_amount
+            
+            # Update labels
+            self.lbl_subtotal.config(text=f"Subtotal: {subtotal:,.2f}")
+            self.lbl_iva.config(text=f"IVA ({self.iva_tax['value']}%): {iva_amount:,.2f}")
+        else:
+            total = subtotal
+        
+        self.lbl_total.config(text=f"Total: {total:,.2f}")
+
     def open_suppliers_search(self) -> None:
         """Open supplier search window"""
         search_window = tk.Toplevel(self)
@@ -461,7 +457,7 @@ class PurchaseOrdersScreen(tk.Frame):
         self.search_var = tk.StringVar()
         search_entry = CustomEntry(
             search_frame,
-            text=self.search_var,
+            textvariable=self.search_var,
             width=40,
             font=("Arial", 12)
         )
@@ -620,7 +616,7 @@ class PurchaseOrdersScreen(tk.Frame):
         self.product_search_var = tk.StringVar()
         search_entry = CustomEntry(
             search_frame,
-            text=self.product_search_var,
+            textvariable=self.product_search_var,
             width=40,
             font=("Arial", 12)
         )
@@ -642,7 +638,7 @@ class PurchaseOrdersScreen(tk.Frame):
         
         search_combobox = CustomCombobox(
             search_frame,
-            text=self.product_search_field_var,
+            textvariable=self.product_search_field_var,
             values=search_fields,
             state="readonly",
             width=20
@@ -776,8 +772,63 @@ class PurchaseOrdersScreen(tk.Frame):
 
     def create_order(self) -> None:
         """Create a new purchase order"""
-        # Placeholder function - implement your logic here
-        pass
+        # Validate required fields
+        if not self.supplier_id.get():
+            messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=self)
+            return
+            
+        if not any(self.products_inner_frame.winfo_children()):
+            messagebox.showwarning("Advertencia", "Por favor agregue al menos un producto", parent=self)
+            return
+            
+        # Get order data
+        order_number = self.order_number_entry.get()
+        supplier_id = self.current_supplier_id
+        delivery_date = self.delivery_date.get()
+        
+        # Get products from table
+        products = []
+        for child in self.products_inner_frame.winfo_children():
+            if isinstance(child, tk.Frame):
+                children = child.winfo_children()
+                if len(children) >= 5:  # Ensure we have all columns
+                    code = children[0].winfo_children()[0].cget("text")
+                    description = children[1].winfo_children()[0].cget("text")
+                    quantity = int(children[2].winfo_children()[0].cget("text"))  # Cantidad como entero
+                    unit_price = float(children[3].winfo_children()[0].cget("text").replace(",", ""))
+                    total = float(children[4].winfo_children()[0].cget("text").replace(",", ""))
+                    
+                    products.append({
+                        "code": code,
+                        "description": description,
+                        "quantity": quantity,
+                        "unit_price": unit_price,
+                        "total": total
+                    })
+        
+        # Get totals from labels
+        subtotal = float(self.lbl_subtotal.cget("text").split(":")[1].strip().replace(",", ""))
+        iva = float(self.lbl_iva.cget("text").split(":")[1].strip().replace(",", "")) if self.iva_tax and self.iva_tax.get('status_name') == 'active' else 0.0
+        total = float(self.lbl_total.cget("text").split(":")[1].strip().replace(",", ""))
+        
+        # Create order
+        success = PurchaseOrder.create_order(
+            order_number=order_number,
+            supplier_id=supplier_id,
+            delivery_date=delivery_date,
+            products=products,
+            subtotal=subtotal,
+            iva=iva,
+            total=total
+        )
+        
+        if success:
+            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
+            self.clear_form()
+            self.order_number_entry.delete(0, tk.END)
+            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
+        else:
+            messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
 
     def clear_form(self) -> None:
         # Clear supplier fields
@@ -796,8 +847,9 @@ class PurchaseOrdersScreen(tk.Frame):
             widget.destroy()
         
         # Reset totals
-        for var in self.totals.values():
-            var.set("0.00")
+        self.lbl_subtotal.config(text="Subtotal: 0.00")
+        self.lbl_iva.config(text=f"IVA ({self.iva_tax['value']}%): 0.00" if self.iva_tax and self.iva_tax.get('status_name') == 'active' else "IVA (0%): 0.00")
+        self.lbl_total.config(text="Total: 0.00")
         
         self.current_supplier_id = None
         self.status_bar.config(text="Formulario limpiado")
@@ -818,7 +870,7 @@ class PurchaseOrdersScreen(tk.Frame):
             return
         
         try:
-            quantity = int(quantity)  # Changed to int instead of float
+            quantity = int(quantity)  # Cantidad como entero
             unit_price = float(unit_price)
             total = quantity * unit_price
         except ValueError:
@@ -830,7 +882,7 @@ class PurchaseOrdersScreen(tk.Frame):
         row_frame.pack(fill=tk.X, pady=1)
         
         # Row fields
-        fields = [code, description, f"{quantity}", f"{unit_price:.2f}", f"{total:.2f}"]  # Quantity as integer
+        fields = [code, description, f"{quantity}", f"{unit_price:.2f}", f"{total:.2f}"]  # Cantidad como entero
         widths = [100, 300, 80, 120, 120]
         
         for i, (value, width) in enumerate(zip(fields, widths)):
@@ -862,7 +914,7 @@ class PurchaseOrdersScreen(tk.Frame):
         btn_remove.pack(expand=True, fill=tk.BOTH)
         
         # Update totals
-        self.update_totals(total, add=True)
+        self.update_totals()
         
         # Clear product fields
         self.product_code.delete(0, tk.END)
@@ -875,26 +927,5 @@ class PurchaseOrdersScreen(tk.Frame):
     def remove_product(self, row_frame: tk.Frame, total: float) -> None:
         """Remove product from the order table"""
         row_frame.destroy()
-        self.update_totals(total, add=False)
+        self.update_totals()
         self.status_bar.config(text="Producto eliminado de la orden")
-
-    def update_totals(self, amount: float, add: bool = True) -> None:
-        """Update order totals (subtotal, IVA, total)"""
-        try:
-            subtotal = float(self.totals["subtotal"].get().replace(",", ""))
-            iva = float(self.totals["iva"].get().replace(",", ""))
-            total = float(self.totals["total"].get().replace(",", ""))
-            
-            if add:
-                subtotal += amount
-            else:
-                subtotal -= amount
-            
-            iva = subtotal * 0.16
-            total = subtotal + iva
-            
-            self.totals["subtotal"].set(f"{subtotal:,.2f}")
-            self.totals["iva"].set(f"{iva:,.2f}")
-            self.totals["total"].set(f"{total:,.2f}")
-        except ValueError:
-            self.status_bar.config(text="Error actualizando totales")
