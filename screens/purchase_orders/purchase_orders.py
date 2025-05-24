@@ -823,7 +823,7 @@ class PurchaseOrdersScreen(tk.Frame):
         iva = float(self.lbl_iva.cget("text").split(":")[1].strip().replace(",", "")) if self.iva_tax and self.iva_tax.get('status_name') == 'active' else 0.0
         total = float(self.lbl_total.cget("text").split(":")[1].strip().replace(",", ""))
         
-        # Crear la orden
+        # Crear la orden (SOLO UNA VEZ)
         success = PurchaseOrder.create_order(
             order_number=order_number,
             supplier_id=supplier_id,
@@ -839,25 +839,6 @@ class PurchaseOrdersScreen(tk.Frame):
             messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
             self.clear_form()
             # Generar nuevo número de orden para la próxima
-            self.order_number_entry.delete(0, tk.END)
-            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
-        else:
-            messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
-        
-        # Create order
-        success = PurchaseOrder.create_order(
-            order_number=order_number,
-            supplier_id=supplier_id,
-            delivery_date=delivery_date,
-            products=products,
-            subtotal=subtotal,
-            iva=iva,
-            total=total
-        )
-        
-        if success:
-            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
-            self.clear_form()
             self.order_number_entry.delete(0, tk.END)
             self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
         else:
