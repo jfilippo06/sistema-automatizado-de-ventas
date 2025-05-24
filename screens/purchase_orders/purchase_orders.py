@@ -772,7 +772,7 @@ class PurchaseOrdersScreen(tk.Frame):
 
     def create_order(self) -> None:
         """Create a new purchase order"""
-        # Validate required fields
+        # Validar campos requeridos
         if not self.supplier_id.get():
             messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=self)
             return
@@ -781,24 +781,36 @@ class PurchaseOrdersScreen(tk.Frame):
             messagebox.showwarning("Advertencia", "Por favor agregue al menos un producto", parent=self)
             return
             
-        # Get order data
+        # Obtener datos de la orden
         order_number = self.order_number_entry.get()
+        if not order_number:
+            order_number = PurchaseOrder.get_next_order_number()
+            self.order_number_entry.delete(0, tk.END)
+            self.order_number_entry.insert(0, order_number)
+        
         supplier_id = self.current_supplier_id
         delivery_date = self.delivery_date.get()
         
-        # Get products from table
+        # Obtener productos de la tabla
         products = []
         for child in self.products_inner_frame.winfo_children():
             if isinstance(child, tk.Frame):
                 children = child.winfo_children()
-                if len(children) >= 5:  # Ensure we have all columns
+                if len(children) >= 5:  # Asegurar que tenemos todas las columnas
                     code = children[0].winfo_children()[0].cget("text")
                     description = children[1].winfo_children()[0].cget("text")
-                    quantity = int(children[2].winfo_children()[0].cget("text"))  # Cantidad como entero
+                    quantity = int(children[2].winfo_children()[0].cget("text"))
                     unit_price = float(children[3].winfo_children()[0].cget("text").replace(",", ""))
                     total = float(children[4].winfo_children()[0].cget("text").replace(",", ""))
                     
+                    # Buscar el ID del producto si existe en inventario
+                    product_id = None
+                    product = InventoryItem.get_by_code(code)
+                    if product:
+                        product_id = product['id']
+                    
                     products.append({
+                        "id": product_id,
                         "code": code,
                         "description": description,
                         "quantity": quantity,
@@ -806,10 +818,31 @@ class PurchaseOrdersScreen(tk.Frame):
                         "total": total
                     })
         
-        # Get totals from labels
+        # Obtener totales de las etiquetas
         subtotal = float(self.lbl_subtotal.cget("text").split(":")[1].strip().replace(",", ""))
         iva = float(self.lbl_iva.cget("text").split(":")[1].strip().replace(",", "")) if self.iva_tax and self.iva_tax.get('status_name') == 'active' else 0.0
         total = float(self.lbl_total.cget("text").split(":")[1].strip().replace(",", ""))
+        
+        # Crear la orden
+        success = PurchaseOrder.create_order(
+            order_number=order_number,
+            supplier_id=supplier_id,
+            delivery_date=delivery_date,
+            products=products,
+            subtotal=subtotal,
+            iva=iva,
+            total=total,
+            notes="Orden creada desde la interfaz gráfica"
+        )
+        
+        if success:
+            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
+            self.clear_form()
+            # Generar nuevo número de orden para la próxima
+            self.order_number_entry.delete(0, tk.END)
+            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
+        else:
+            messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
         
         # Create order
         success = PurchaseOrder.create_order(
@@ -859,7 +892,7 @@ class PurchaseOrdersScreen(tk.Frame):
 
     def add_product(self) -> None:
         """Add product to the order table"""
-        # Get product data
+        # Obtener datos del producto
         code = self.product_code.get()
         description = self.product_description.get()
         quantity = self.product_quantity.get()
@@ -870,19 +903,23 @@ class PurchaseOrdersScreen(tk.Frame):
             return
         
         try:
-            quantity = int(quantity)  # Cantidad como entero
+            quantity = int(quantity)
             unit_price = float(unit_price)
             total = quantity * unit_price
         except ValueError:
             self.status_bar.config(text="Error: Cantidad debe ser entero y precio debe ser número válido")
             return
         
-        # Create row in table
+        # Buscar el producto en inventario por código
+        product = InventoryItem.get_by_code(code)
+        product_id = product['id'] if product else None
+        
+        # Crear fila en la tabla
         row_frame = tk.Frame(self.products_inner_frame, bg="white")
         row_frame.pack(fill=tk.X, pady=1)
         
-        # Row fields
-        fields = [code, description, f"{quantity}", f"{unit_price:.2f}", f"{total:.2f}"]  # Cantidad como entero
+        # Campos de la fila
+        fields = [code, description, f"{quantity}", f"{unit_price:.2f}", f"{total:.2f}"]
         widths = [100, 300, 80, 120, 120]
         
         for i, (value, width) in enumerate(zip(fields, widths)):
@@ -898,7 +935,7 @@ class PurchaseOrdersScreen(tk.Frame):
                 bg="white"
             ).pack(expand=True, fill=tk.BOTH)
         
-        # Remove button
+        # Botón de eliminar
         frame = tk.Frame(row_frame, bg="white", bd=1, relief=tk.SOLID)
         frame.pack(side=tk.LEFT)
         frame.pack_propagate(False)
@@ -913,10 +950,10 @@ class PurchaseOrdersScreen(tk.Frame):
         )
         btn_remove.pack(expand=True, fill=tk.BOTH)
         
-        # Update totals
+        # Actualizar totales
         self.update_totals()
         
-        # Clear product fields
+        # Limpiar campos del producto
         self.product_code.delete(0, tk.END)
         self.product_description.delete(0, tk.END)
         self.product_quantity.delete(0, tk.END)

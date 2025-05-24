@@ -66,3 +66,18 @@ class PurchaseOrderStatus:
         conn.commit()
         conn.close()
         return affected_rows > 0
+    
+    @staticmethod
+    def get_by_name(name: str) -> Optional[Dict]:
+        """
+        Obtiene un estado por su nombre.
+        
+        :param name: Nombre del estado
+        :return: Diccionario con los datos del estado o None si no existe
+        """
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM purchase_order_status WHERE name = ?', (name,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None

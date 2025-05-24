@@ -386,3 +386,19 @@ class InventoryItem:
         ''', (status_id, item_id))
         conn.commit()
         conn.close()
+    
+    @staticmethod
+    def get_by_code(code: str) -> Optional[Dict]:
+        """Obtiene un producto por su código, independientemente de su estado"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT i.*, st.name as status_name, sp.company as supplier_company
+            FROM inventory i
+            JOIN status st ON i.status_id = st.id
+            LEFT JOIN suppliers sp ON i.supplier_id = sp.id
+            WHERE i.code = ?
+        ''', (code,))
+        item = cursor.fetchone()
+        conn.close()
+        return dict(item) if item else None
