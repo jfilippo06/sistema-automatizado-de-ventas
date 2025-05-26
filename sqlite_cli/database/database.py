@@ -345,6 +345,7 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_id INTEGER NOT NULL,
             product_id INTEGER DEFAULT 0,
+            product_name TEXT,
             quantity INTEGER NOT NULL,
             unit_price REAL,
             reference_price REAL,
