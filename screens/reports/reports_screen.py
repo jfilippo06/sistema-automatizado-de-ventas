@@ -16,7 +16,7 @@ class ReportsScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("550x370")
+        self.parent.geometry("500x370")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
@@ -33,17 +33,8 @@ class ReportsScreen(tk.Frame):
         )
         title.pack(pady=(10, 20))
 
-        # Creamos un frame para contener las dos columnas
-        columns_frame = tk.Frame(main_frame, bg="#f0f0f0")
-        columns_frame.pack()
-
-        # Frame para la columna izquierda
-        left_column = tk.Frame(columns_frame, bg="#f0f0f0")
-        left_column.pack(side=tk.LEFT, padx=10)
-
-        # Frame para la columna derecha
-        right_column = tk.Frame(columns_frame, bg="#f0f0f0")
-        right_column.pack(side=tk.LEFT, padx=10)
+        options_frame = tk.Frame(main_frame, bg="#f0f0f0")
+        options_frame.pack(pady=(0, 10))
 
         buttons = [
             ("Inventario de productos", self.inventory_report),
@@ -52,14 +43,13 @@ class ReportsScreen(tk.Frame):
             ("Regresar", self.go_back)
         ]
 
-        # Distribuimos los botones en las dos columnas
-        for i, (text, command) in enumerate(buttons):
+        for text, command in buttons:
             btn = CustomButton(
-                left_column if i % 2 == 0 else right_column,  # Alternamos columnas
+                options_frame,
                 text=text,
                 command=command,
                 padding=10,
-                width=25  # Reducimos un poco el ancho para que quepan dos columnas
+                width=30
             )
             btn.pack(pady=5, ipady=10, ipadx=10)
 
