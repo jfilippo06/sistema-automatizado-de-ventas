@@ -169,13 +169,13 @@ class PurchaseOrder:
                 PurchaseOrder._execute_sql(
                     '''
                     INSERT INTO purchase_order_details (
-                        order_id, product_id, quantity,
+                        order_id, product_id, product_name, quantity,
                         unit_price, reference_price, notes
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     ''',
                     (
-                        order_id, product_id, product['quantity'],
-                        product['unit_price'], product['unit_price'],
+                        order_id, product_id, product.get('name', product.get('description', '')), 
+                        product['quantity'], product['unit_price'], product['unit_price'],
                         f"Agregado en orden {order_number}"
                     )
                 )
@@ -194,6 +194,7 @@ class PurchaseOrder:
                 d.id,
                 d.order_id,
                 d.product_id,
+                d.product_name,
                 d.quantity,
                 d.unit_price,
                 d.reference_price,

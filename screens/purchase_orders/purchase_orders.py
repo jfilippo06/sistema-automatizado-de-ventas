@@ -5,6 +5,7 @@ from typing import Any, Callable
 from sqlite_cli.models.purchase_order_model import PurchaseOrder
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.tax_model import Tax
+from sqlite_cli.models.currency_model import Currency
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -50,15 +51,6 @@ class PurchaseOrdersScreen(tk.Frame):
             width=12,
         )
         btn_create_order.pack(side=tk.RIGHT, padx=5)
-
-        btn_view_orders = CustomButton(
-            buttons_frame,
-            text="Ver Órdenes",
-            command=self.view_orders,
-            padding=8,
-            width=12,
-        )
-        btn_view_orders.pack(side=tk.RIGHT, padx=5)
 
         btn_search_product = CustomButton(
             buttons_frame,
@@ -110,9 +102,11 @@ class PurchaseOrdersScreen(tk.Frame):
             order_num_frame,
             font=("Arial", 12, "bold"),
             width=15,
+            state="readonly"
         )
         self.order_number_entry.pack(side=tk.LEFT, padx=5)
         self.order_number_entry.delete(0, tk.END)
+        self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
 
         # Company info (left)
         company_frame = tk.Frame(doc_header_frame, bg="white")
@@ -344,10 +338,12 @@ class PurchaseOrdersScreen(tk.Frame):
         totals_frame = tk.Frame(form_frame, bg="#4a6fa5", padx=20, pady=10)
         totals_frame.pack(fill=tk.X)
 
-        # Get IVA tax
+        # Get taxes and currencies
         self.iva_tax = Tax.get_by_name("IVA")
+        self.dollar = Currency.get_by_name("Dólar")
+        self.euro = Currency.get_by_name("Euro")
 
-        # Initialize total labels
+        # Initialize total labels (always create them, show/hide based on status)
         self.lbl_subtotal = CustomLabel(
             totals_frame,
             text="Subtotal: 0.00",
@@ -371,13 +367,35 @@ class PurchaseOrdersScreen(tk.Frame):
             fg="white",
             bg="#4a6fa5"
         )
+        
+        self.lbl_dollar = CustomLabel(
+            totals_frame,
+            text="Dólares: $0.00",
+            font=("Arial", 12),
+            fg="white",
+            bg="#4a6fa5"
+        )
+        
+        self.lbl_euro = CustomLabel(
+            totals_frame,
+            text="Euros: €0.00",
+            font=("Arial", 12),
+            fg="white",
+            bg="#4a6fa5"
+        )
 
-        # Show labels according to active taxes
+        # Show labels according to active taxes/currencies
         if self.iva_tax and self.iva_tax.get('status_name') == 'active':
             self.lbl_subtotal.pack(side=tk.LEFT, padx=10)
             self.lbl_iva.pack(side=tk.LEFT, padx=10)
         
         self.lbl_total.pack(side=tk.LEFT, padx=10)
+        
+        if self.dollar and self.dollar.get('status_name') == 'active':
+            self.lbl_dollar.pack(side=tk.LEFT, padx=10)
+        
+        if self.euro and self.euro.get('status_name') == 'active':
+            self.lbl_euro.pack(side=tk.LEFT, padx=10)
 
         # Action buttons
         controls_frame = tk.Frame(self, bg="#f5f5f5")
@@ -426,6 +444,7 @@ class PurchaseOrdersScreen(tk.Frame):
                     except (ValueError, AttributeError):
                         continue
         
+        # Calculate totals based on active taxes
         if self.iva_tax and self.iva_tax.get('status_name') == 'active':
             iva_amount = subtotal * (self.iva_tax['value'] / 100)
             total = subtotal + iva_amount
@@ -436,6 +455,15 @@ class PurchaseOrdersScreen(tk.Frame):
             total = subtotal
         
         self.lbl_total.config(text=f"Total: {total:,.2f}")
+        
+        # Update currency values if active
+        if self.dollar and self.dollar.get('status_name') == 'active':
+            dollar_amount = total / self.dollar['value'] if self.dollar['value'] != 0 else 0
+            self.lbl_dollar.config(text=f"Dólares: ${dollar_amount:,.2f}")
+        
+        if self.euro and self.euro.get('status_name') == 'active':
+            euro_amount = total / self.euro['value'] if self.euro['value'] != 0 else 0
+            self.lbl_euro.config(text=f"Euros: €{euro_amount:,.2f}")
 
     def center_window(self, window: tk.Toplevel) -> None:
         """Center a window on the screen"""
@@ -629,6 +657,119 @@ class PurchaseOrdersScreen(tk.Frame):
             window.destroy()
             self.status_bar.config(text=f"Proveedor seleccionado: {supplier.get('company', '')}")
 
+    def go_back(self) -> None:
+        self.parent.state('normal')
+        self.open_previous_screen_callback()
+
+    def create_order(self) -> None:
+        """Create a new purchase order"""
+        if not self.supplier_id.get():
+            messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=self)
+            return
+            
+        if not any(self.products_inner_frame.winfo_children()):
+            messagebox.showwarning("Advertencia", "Por favor agregue al menos un producto", parent=self)
+            return
+            
+        order_number = self.order_number_entry.get()
+        if not order_number:
+            order_number = PurchaseOrder.get_next_order_number()
+            self.order_number_entry.delete(0, tk.END)
+            self.order_number_entry.insert(0, order_number)
+        
+        supplier_id = self.current_supplier_id
+        delivery_date = self.delivery_date.get()
+        
+        products = []
+        for child in self.products_inner_frame.winfo_children():
+            if isinstance(child, tk.Frame):
+                children = child.winfo_children()
+                if len(children) >= 5:
+                    code = children[0].winfo_children()[0].cget("text")
+                    description = children[1].winfo_children()[0].cget("text")
+                    quantity = int(children[2].winfo_children()[0].cget("text"))
+                    unit_price = float(children[3].winfo_children()[0].cget("text").replace(",", ""))
+                    total = float(children[4].winfo_children()[0].cget("text").replace(",", ""))
+                    
+                    product_id = None
+                    product = InventoryItem.get_by_code(code)
+                    if product:
+                        product_id = product['id']
+                    
+                    products.append({
+                        "id": product_id,
+                        "name": description,  # Save product name
+                        "code": code,
+                        "description": description,
+                        "quantity": quantity,
+                        "unit_price": unit_price,
+                        "total": total
+                    })
+        
+        subtotal = float(self.lbl_subtotal.cget("text").split(":")[1].strip().replace(",", ""))
+        iva = float(self.lbl_iva.cget("text").split(":")[1].strip().replace(",", "")) if self.iva_tax and self.iva_tax.get('status_name') == 'active' else 0.0
+        total = float(self.lbl_total.cget("text").split(":")[1].strip().replace(",", ""))
+        
+        success = PurchaseOrder.create_order(
+            order_number=order_number,
+            supplier_id=supplier_id,
+            delivery_date=delivery_date,
+            products=products,
+            subtotal=subtotal,
+            iva=iva,
+            total=total,
+            notes="Orden creada desde la interfaz gráfica"
+        )
+        
+        if success:
+            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
+            self.clear_form()
+            self.order_number_entry.delete(0, tk.END)
+            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
+        else:
+            messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
+
+    def clear_form(self) -> None:
+        """Clear the form and reset fields"""
+        # Temporarily enable readonly fields to clear them
+        fields = [
+            self.supplier_id,
+            self.supplier_first_name,
+            self.supplier_last_name,
+            self.supplier_company,
+            self.supplier_phone,
+            self.supplier_email,
+            self.supplier_address
+        ]
+        
+        for field in fields:
+            field.config(state="normal")
+            field.delete(0, tk.END)
+            field.config(state="readonly")
+        
+        # Clear product fields
+        for field in ["product_code", "product_description", 
+                     "product_quantity", "product_unit_price"]:
+            getattr(self, field).delete(0, tk.END)
+        
+        # Clear products table
+        for widget in self.products_inner_frame.winfo_children():
+            widget.destroy()
+        
+        # Reset totals
+        self.lbl_subtotal.config(text="Subtotal: 0.00")
+        self.lbl_iva.config(text=f"IVA ({self.iva_tax['value']}%): 0.00" if self.iva_tax and self.iva_tax.get('status_name') == 'active' else "IVA (0%): 0.00")
+        self.lbl_total.config(text="Total: 0.00")
+        
+        if self.dollar and self.dollar.get('status_name') == 'active':
+            self.lbl_dollar.config(text="Dólares: $0.00")
+        
+        if self.euro and self.euro.get('status_name') == 'active':
+            self.lbl_euro.config(text="Euros: €0.00")
+        
+        self.current_supplier_id = None
+        self.status_bar.config(text="Formulario limpiado")
+
     def search_product(self) -> None:
         """Open product search window for the selected supplier"""
         if not self.current_supplier_id or not self.validate_supplier_fields():
@@ -802,115 +943,6 @@ class PurchaseOrdersScreen(tk.Frame):
         
         window.destroy()
         self.status_bar.config(text=f"Producto seleccionado: {product[2]}")
-
-    def go_back(self) -> None:
-        self.parent.state('normal')
-        self.open_previous_screen_callback()
-
-    def create_order(self) -> None:
-        """Create a new purchase order"""
-        if not self.supplier_id.get():
-            messagebox.showwarning("Advertencia", "Por favor seleccione un proveedor", parent=self)
-            return
-            
-        if not any(self.products_inner_frame.winfo_children()):
-            messagebox.showwarning("Advertencia", "Por favor agregue al menos un producto", parent=self)
-            return
-            
-        order_number = self.order_number_entry.get()
-        if not order_number:
-            order_number = PurchaseOrder.get_next_order_number()
-            self.order_number_entry.delete(0, tk.END)
-            self.order_number_entry.insert(0, order_number)
-        
-        supplier_id = self.current_supplier_id
-        delivery_date = self.delivery_date.get()
-        
-        products = []
-        for child in self.products_inner_frame.winfo_children():
-            if isinstance(child, tk.Frame):
-                children = child.winfo_children()
-                if len(children) >= 5:
-                    code = children[0].winfo_children()[0].cget("text")
-                    description = children[1].winfo_children()[0].cget("text")
-                    quantity = int(children[2].winfo_children()[0].cget("text"))
-                    unit_price = float(children[3].winfo_children()[0].cget("text").replace(",", ""))
-                    total = float(children[4].winfo_children()[0].cget("text").replace(",", ""))
-                    
-                    product_id = None
-                    product = InventoryItem.get_by_code(code)
-                    if product:
-                        product_id = product['id']
-                    
-                    products.append({
-                        "id": product_id,
-                        "code": code,
-                        "description": description,
-                        "quantity": quantity,
-                        "unit_price": unit_price,
-                        "total": total
-                    })
-        
-        subtotal = float(self.lbl_subtotal.cget("text").split(":")[1].strip().replace(",", ""))
-        iva = float(self.lbl_iva.cget("text").split(":")[1].strip().replace(",", "")) if self.iva_tax and self.iva_tax.get('status_name') == 'active' else 0.0
-        total = float(self.lbl_total.cget("text").split(":")[1].strip().replace(",", ""))
-        
-        success = PurchaseOrder.create_order(
-            order_number=order_number,
-            supplier_id=supplier_id,
-            delivery_date=delivery_date,
-            products=products,
-            subtotal=subtotal,
-            iva=iva,
-            total=total,
-            notes="Orden creada desde la interfaz gráfica"
-        )
-        
-        if success:
-            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
-            self.clear_form()
-            self.order_number_entry.delete(0, tk.END)
-            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
-        else:
-            messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
-
-    def clear_form(self) -> None:
-        """Clear the form and reset fields"""
-        # Temporarily enable readonly fields to clear them
-        fields = [
-            self.supplier_id,
-            self.supplier_first_name,
-            self.supplier_last_name,
-            self.supplier_company,
-            self.supplier_phone,
-            self.supplier_email,
-            self.supplier_address
-        ]
-        
-        for field in fields:
-            field.config(state="normal")
-            field.delete(0, tk.END)
-            field.config(state="readonly")
-        
-        # Clear product fields
-        for field in ["product_code", "product_description", 
-                     "product_quantity", "product_unit_price"]:
-            getattr(self, field).delete(0, tk.END)
-        
-        # Clear products table
-        for widget in self.products_inner_frame.winfo_children():
-            widget.destroy()
-        
-        # Reset totals
-        self.lbl_subtotal.config(text="Subtotal: 0.00")
-        self.lbl_iva.config(text=f"IVA ({self.iva_tax['value']}%): 0.00" if self.iva_tax and self.iva_tax.get('status_name') == 'active' else "IVA (0%): 0.00")
-        self.lbl_total.config(text="Total: 0.00")
-        
-        self.current_supplier_id = None
-        self.status_bar.config(text="Formulario limpiado")
-
-    def view_orders(self) -> None:
-        self.status_bar.config(text="Mostrando órdenes existentes...")
 
     def add_product(self) -> None:
         """Add product to the order table"""
