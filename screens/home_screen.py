@@ -20,7 +20,7 @@ class HomeScreen(tk.Frame):
         open_billing_callback: Callable[[], None],
         open_reports_callback: Callable[[], None],
         open_catalog_callback: Callable[[], None],
-        open_purchase_orders_callback: Callable[[], None]  # Nuevo callback
+        open_purchase_orders_callback: Callable[[], None]
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -36,7 +36,7 @@ class HomeScreen(tk.Frame):
         self.open_billing_callback = open_billing_callback
         self.open_reports_callback = open_reports_callback
         self.open_catalog_callback = open_catalog_callback
-        self.open_purchase_orders_callback = open_purchase_orders_callback  # Nuevo callback
+        self.open_purchase_orders_callback = open_purchase_orders_callback
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()
@@ -67,7 +67,7 @@ class HomeScreen(tk.Frame):
         buttons = [
             ("Proveedores", self.suppliers_control),
             ("Productos", self.inventory_control),
-            ("Orden de compra", self.purchase_orders_control),  # Actualizado
+            ("Orden de compra", self.purchase_orders_control),
             ("Reportes", self.reports_control),
             ("Ventas", self.billing_control),
             ("Clientes", self.customers_control),
@@ -105,7 +105,7 @@ class HomeScreen(tk.Frame):
     def inventory_control(self) -> None:
         self.open_inventory_callback()
 
-    def purchase_orders_control(self) -> None:  # Actualizado
+    def purchase_orders_control(self) -> None:
         self.open_purchase_orders_callback()
 
     def reports_control(self) -> None:

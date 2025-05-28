@@ -18,8 +18,9 @@ from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
+from screens.reports.sales_report_screen import SalesReportScreen  # Nueva importación
 from screens.catalog.catalog_screen import CatalogScreen
-from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen  # Nueva importación
+from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen
 from utils.session_manager import SessionManager
 
 def main() -> None:
@@ -34,7 +35,7 @@ def main() -> None:
         else:
             open_login_screen()
 
-    # Callbacks para navegación (actualizado con purchase_orders)
+    # Callbacks para navegación
     def open_home_screen() -> None:
         for screen in all_screens:
             screen.pack_forget()
@@ -97,11 +98,15 @@ def main() -> None:
         home_screen.pack_forget()
         reports_screen.pack(fill=tk.BOTH, expand=True)
 
+    def open_sales_report() -> None:  # Nueva función para reporte de ventas
+        home_screen.pack_forget()
+        sales_report_screen.pack(fill=tk.BOTH, expand=True)
+
     def open_catalog() -> None:
         home_screen.pack_forget()
         catalog_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_purchase_orders() -> None:  # Nuevo callback
+    def open_purchase_orders() -> None:
         home_screen.pack_forget()
         purchase_orders_screen.pack(fill=tk.BOTH, expand=True)
 
@@ -127,7 +132,7 @@ def main() -> None:
         open_billing,
         open_reports,
         open_catalog,
-        open_purchase_orders  # Nuevo callback
+        open_purchase_orders
     )
     
     inventory_screen = Inventory(app, lambda: open_home_from_current(inventory_screen))
@@ -150,8 +155,9 @@ def main() -> None:
     )
     billing_screen = BillingScreen(app, lambda: open_home_from_current(billing_screen))
     reports_screen = ReportsScreen(app, lambda: open_home_from_current(reports_screen))
+    sales_report_screen = SalesReportScreen(app, lambda: open_home_from_current(sales_report_screen))  # Nueva pantalla
     catalog_screen = CatalogScreen(app, lambda: open_home_from_current(catalog_screen))
-    purchase_orders_screen = PurchaseOrdersScreen(app, lambda: open_home_from_current(purchase_orders_screen))  # Nueva pantalla
+    purchase_orders_screen = PurchaseOrdersScreen(app, lambda: open_home_from_current(purchase_orders_screen))
 
     all_screens = [
         login_screen,
@@ -169,6 +175,7 @@ def main() -> None:
         recovery_screen,
         billing_screen,
         reports_screen,
+        sales_report_screen,  # Nueva pantalla
         catalog_screen,
         purchase_orders_screen
     ]

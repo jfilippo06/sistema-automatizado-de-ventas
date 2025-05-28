@@ -2,6 +2,7 @@ import tkinter as tk
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from typing import Any, Callable
+from screens.reports.sales_report_screen import SalesReportScreen
 
 class ReportsScreen(tk.Frame):
     def __init__(
@@ -39,7 +40,7 @@ class ReportsScreen(tk.Frame):
         buttons = [
             ("Inventario de productos", self.inventory_report),
             ("Gestión de compras", self.sales_report),
-            ("Facturas", self.invoices_report),
+            ("Reporte de Ventas", self.sales_report_screen),  # Nuevo botón
             ("Regresar", self.go_back)
         ]
 
@@ -59,8 +60,14 @@ class ReportsScreen(tk.Frame):
     def sales_report(self) -> None:
         print("Generando reporte de compras")
 
-    def invoices_report(self) -> None:
-        print("Generando reporte de facturas")
+    def sales_report_screen(self) -> None:
+        """Abre la pantalla de reporte de ventas"""
+        self.pack_forget()
+        sales_report_screen = SalesReportScreen(
+            self.parent,
+            lambda: self.pack(fill=tk.BOTH, expand=True)
+        )
+        sales_report_screen.pack(fill=tk.BOTH, expand=True)
 
     def go_back(self) -> None:
         self.open_previous_screen_callback()
