@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-from typing import Callable, Any, List, Dict
+from tkinter import ttk
+from typing import Callable, Any
 from datetime import datetime
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -9,6 +9,7 @@ from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.sales_report_model import SalesReport
 from sqlite_cli.models.customer_model import Customer
 from reports.InvoiceViewer import InvoiceViewer
+from utils.session_manager import SessionManager
 
 class SalesReportScreen(tk.Frame):
     def __init__(
@@ -47,17 +48,14 @@ class SalesReportScreen(tk.Frame):
         title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
         # Botón de regreso
-        back_frame = tk.Frame(header_frame, bg="#4a6fa5")
-        back_frame.pack(side=tk.RIGHT, padx=20, pady=5)
-        
         btn_back = CustomButton(
-            back_frame,
+            header_frame,
             text="Regresar",
             command=self.go_back,
             padding=8,
             width=10,
         )
-        btn_back.pack(side=tk.RIGHT)
+        btn_back.pack(side=tk.RIGHT, padx=20, pady=5)
 
         # Frame de filtros
         filters_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
@@ -117,7 +115,7 @@ class SalesReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         self.customer_combobox.pack(side=tk.LEFT, padx=5)
-        self.customer_combobox['values'] = self._get_customers_list()
+        self.load_customers()
 
         # Campo de búsqueda
         search_frame = tk.Frame(filters_frame, bg="#f5f5f5")
@@ -125,7 +123,7 @@ class SalesReportScreen(tk.Frame):
 
         CustomLabel(
             search_frame,
-            text="Buscar:",
+            text="Buscar (ID/Nombre/Cédula):",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
@@ -151,22 +149,24 @@ class SalesReportScreen(tk.Frame):
 
         # Treeview para mostrar las ventas
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
-        tree_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))  # Corregido aquí
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Fecha", "Cliente", "Cédula", "Subtotal", "IVA", "Total"),
+            columns=("ID", "Fecha", "Cliente", "Cédula", "Tipo", "Productos", "Servicios", "Total"),
             show="headings",
-            height=15
+            height=20,
+            style="Custom.Treeview"
         )
 
         columns = [
-            ("ID", 80, tk.CENTER),
+            ("ID", 70, tk.CENTER),
             ("Fecha", 120, tk.CENTER),
-            ("Cliente", 200, tk.W),
-            ("Cédula", 120, tk.CENTER),
-            ("Subtotal", 100, tk.CENTER),
-            ("IVA", 80, tk.CENTER),
+            ("Cliente", 180, tk.W),
+            ("Cédula", 100, tk.CENTER),
+            ("Tipo", 80, tk.CENTER),
+            ("Productos", 80, tk.CENTER),
+            ("Servicios", 80, tk.CENTER),
             ("Total", 100, tk.CENTER)
         ]
 
@@ -182,23 +182,11 @@ class SalesReportScreen(tk.Frame):
         # Bind double click to view invoice
         self.tree.bind("<Double-1>", self.view_invoice)
 
-        # Resumen de ventas
-        summary_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
-        summary_frame.pack(fill=tk.X, pady=(0, 10))  # Corregido aquí
-
-        self.summary_label = CustomLabel(
-            summary_frame,
-            text="Total de ventas: 0 | Subtotal: 0.00 | IVA: 0.00 | Total: 0.00",
-            font=("Arial", 12, "bold"),
-            bg="#f5f5f5"
-        )
-        self.summary_label.pack(side=tk.LEFT)
-
-    # Resto de los métodos permanecen igual...
-    def _get_customers_list(self) -> List[str]:
-        """Obtiene lista de clientes para el combobox"""
-        customers = Customer.all()
-        return [f"{c['first_name']} {c['last_name']} ({c['id_number']})" for c in customers]
+    def load_customers(self):
+        """Carga la lista de clientes en el combobox"""
+        customers = Customer.search_active()
+        customer_list = [f"{c['first_name']} {c['last_name']} ({c['id_number']})" for c in customers]
+        self.customer_combobox['values'] = customer_list
 
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
@@ -223,12 +211,6 @@ class SalesReportScreen(tk.Frame):
             search_term=search_term if search_term else None
         )
 
-        # Obtener resumen
-        summary = SalesReport.get_sales_summary(
-            start_date=start_date,
-            end_date=end_date
-        )
-
         # Actualizar treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -239,18 +221,11 @@ class SalesReportScreen(tk.Frame):
                 sale['issue_date'],
                 sale['customer_name'],
                 sale['customer_id_number'],
-                f"{sale['subtotal']:.2f}",
-                f"{sale['taxes']:.2f}",
-                f"{sale['total']:.2f}"
+                sale['invoice_type'],
+                sale['product_count'],
+                sale['service_count'],
+                f"Bs. {sale['total']:,.2f}"
             ))
-
-        # Actualizar resumen
-        self.summary_label.config(
-            text=f"Total de ventas: {summary['total_sales']} | "
-                 f"Subtotal: {summary['total_subtotal']:.2f} | "
-                 f"IVA: {summary['total_taxes']:.2f} | "
-                 f"Total: {summary['total_amount']:.2f}"
-        )
 
     def view_invoice(self, event) -> None:
         """Muestra el recibo de la venta seleccionada"""
@@ -259,20 +234,32 @@ class SalesReportScreen(tk.Frame):
             return
             
         invoice_id = self.tree.item(selected[0])['values'][0]
-        sale = SalesReport.get_sales_report(invoice_id=invoice_id)[0]
+        invoice_data = SalesReport.get_invoice_details(invoice_id)
+        
+        # Preparar items para el InvoiceViewer
+        items = []
+        for item in invoice_data['items']:
+            items.append({
+                'id': item['product_id'] or item['service_request_id'],
+                'name': item['item_name'],
+                'quantity': item['quantity'],
+                'unit_price': item['unit_price'],
+                'total': item['subtotal'],
+                'is_service': item['item_type'] == 'service'
+            })
         
         # Mostrar el recibo
         InvoiceViewer(
             self,
-            invoice_id=sale['invoice_id'],
-            customer_info=f"{sale['customer_name']} - {sale['customer_id_number']}",
-            items=sale['items'],
-            subtotal=sale['subtotal'],
-            taxes=sale['taxes'],
-            total=sale['total']
+            invoice_id=invoice_data['id'],
+            customer_info=f"{invoice_data['customer_name']} - {invoice_data['customer_id_number']}",
+            items=items,
+            subtotal=invoice_data['subtotal'],
+            taxes=invoice_data['taxes'],
+            total=invoice_data['total']
         )
 
     def go_back(self) -> None:
         """Regresa a la pantalla anterior"""
-        self.parent.state('normal')
+        self.pack_forget()
         self.open_previous_screen_callback()
