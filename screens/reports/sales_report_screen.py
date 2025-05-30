@@ -262,4 +262,5 @@ class SalesReportScreen(tk.Frame):
     def go_back(self) -> None:
         """Regresa a la pantalla anterior"""
         self.pack_forget()
+        self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
