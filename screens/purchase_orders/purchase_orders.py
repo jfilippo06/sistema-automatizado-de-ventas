@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from typing import Any, Callable
+from reports.purchase_order_viewer import PurchaseOrderViewer
 from sqlite_cli.models.purchase_order_model import PurchaseOrder
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.tax_model import Tax
@@ -698,7 +699,7 @@ class PurchaseOrdersScreen(tk.Frame):
                     
                     products.append({
                         "id": product_id,
-                        "name": description,  # Save product name
+                        "name": description,
                         "code": code,
                         "description": description,
                         "quantity": quantity,
@@ -722,7 +723,18 @@ class PurchaseOrdersScreen(tk.Frame):
         )
         
         if success:
-            messagebox.showinfo("Éxito", "Orden de compra creada exitosamente", parent=self)
+            # Mostrar la orden de compra
+            supplier_info = f"{self.supplier_company.get()} - {self.supplier_id.get()}"
+            PurchaseOrderViewer(
+                self,
+                order_number,
+                supplier_info,
+                products,
+                subtotal,
+                iva,
+                total
+            )
+            
             self.clear_form()
             self.order_number_entry.delete(0, tk.END)
             self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
