@@ -99,15 +99,14 @@ class PurchaseOrdersScreen(tk.Frame):
             bg="white"
         ).pack(side=tk.LEFT)
 
-        self.order_number_entry = CustomEntry(
+        # Mostrar el número de orden como texto en lugar de un Entry
+        self.order_number_label = CustomLabel(
             order_num_frame,
+            text=PurchaseOrder.get_next_order_number(),
             font=("Arial", 12, "bold"),
-            width=15,
-            state="readonly"
+            bg="white"
         )
-        self.order_number_entry.pack(side=tk.LEFT, padx=5)
-        self.order_number_entry.delete(0, tk.END)
-        self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
+        self.order_number_label.pack(side=tk.LEFT, padx=5)
 
         # Company info (left)
         company_frame = tk.Frame(doc_header_frame, bg="white")
@@ -195,7 +194,7 @@ class PurchaseOrdersScreen(tk.Frame):
             ("Teléfono:", "supplier_phone", 15, "readonly"),
             ("Email:", "supplier_email", 25, "readonly"),
             ("Dirección:", "supplier_address", 30, "readonly"),
-            ("Fecha Entrega:", "delivery_date", 15, "normal")
+            ("Fecha Entrega*:", "delivery_date", 15, "normal")
         ]
 
         for label, var_name, width, state in fields_row2:
@@ -655,6 +654,9 @@ class PurchaseOrdersScreen(tk.Frame):
             for field in fields:
                 field.config(state="readonly")
             
+            # Cambiar al tab del proveedor
+            self.notebook.select(0)
+            
             window.destroy()
             self.status_bar.config(text=f"Proveedor seleccionado: {supplier.get('company', '')}")
 
@@ -672,11 +674,14 @@ class PurchaseOrdersScreen(tk.Frame):
             messagebox.showwarning("Advertencia", "Por favor agregue al menos un producto", parent=self)
             return
             
-        order_number = self.order_number_entry.get()
+        if not self.delivery_date.get():
+            messagebox.showwarning("Advertencia", "Por favor ingrese la fecha de entrega", parent=self)
+            return
+            
+        order_number = self.order_number_label.cget("text")
         if not order_number:
             order_number = PurchaseOrder.get_next_order_number()
-            self.order_number_entry.delete(0, tk.END)
-            self.order_number_entry.insert(0, order_number)
+            self.order_number_label.config(text=order_number)
         
         supplier_id = self.current_supplier_id
         delivery_date = self.delivery_date.get()
@@ -736,8 +741,7 @@ class PurchaseOrdersScreen(tk.Frame):
             )
             
             self.clear_form()
-            self.order_number_entry.delete(0, tk.END)
-            self.order_number_entry.insert(0, PurchaseOrder.get_next_order_number())
+            self.order_number_label.config(text=PurchaseOrder.get_next_order_number())
         else:
             messagebox.showerror("Error", "No se pudo crear la orden de compra", parent=self)
 
@@ -767,6 +771,9 @@ class PurchaseOrdersScreen(tk.Frame):
         # Clear products table
         for widget in self.products_inner_frame.winfo_children():
             widget.destroy()
+        
+        # Clear delivery date
+        self.delivery_date.delete(0, tk.END)
         
         # Reset totals
         self.lbl_subtotal.config(text="Subtotal: 0.00")
@@ -952,6 +959,9 @@ class PurchaseOrdersScreen(tk.Frame):
         
         self.product_unit_price.delete(0, tk.END)
         self.product_unit_price.insert(0, product[5])
+        
+        # Cambiar al tab de productos
+        self.notebook.select(1)
         
         window.destroy()
         self.status_bar.config(text=f"Producto seleccionado: {product[2]}")

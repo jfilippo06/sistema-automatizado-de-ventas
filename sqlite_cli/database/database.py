@@ -320,7 +320,6 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_number TEXT NOT NULL UNIQUE,
             supplier_id INTEGER NOT NULL,
-            employee_id INTEGER NOT NULL DEFAULT 0,
             issue_date TEXT NOT NULL,
             expected_delivery_date TEXT,
             status_id INTEGER NOT NULL,
@@ -335,7 +334,6 @@ def init_db() -> None:
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
             FOREIGN KEY (status_id) REFERENCES purchase_order_status(id),
-            FOREIGN KEY (employee_id) REFERENCES users(id),
             FOREIGN KEY (created_by) REFERENCES users(id),
             FOREIGN KEY (approved_by) REFERENCES users(id)
         )
