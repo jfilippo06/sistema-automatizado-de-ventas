@@ -74,24 +74,22 @@ class PurchaseOrder:
 
     @staticmethod
     def get_next_order_number() -> str:
-        """Get next purchase order number"""
-        now = datetime.now()
+        """Get next purchase order number in format OC-0001, OC-0002, etc."""
         # Buscar el último número de orden
         last_order = PurchaseOrder._execute_sql(
-            "SELECT order_number FROM purchase_orders WHERE order_number LIKE ? ORDER BY id DESC LIMIT 1",
-            (f"OC-{now.year}{now.month:02d}{now.day:02d}-%",),
+            "SELECT order_number FROM purchase_orders WHERE order_number LIKE 'OC-%' ORDER BY id DESC LIMIT 1",
             fetch=True
         )
         
         if last_order:
             try:
                 last_number = int(last_order[0]['order_number'].split('-')[-1])
-                return f"OC-{now.year}{now.month:02d}{now.day:02d}-{last_number + 1:04d}"
+                return f"OC-{last_number + 1:04d}"
             except (IndexError, ValueError):
                 # Si hay algún error al parsear el último número, empezamos desde 1
-                return f"OC-{now.year}{now.month:02d}{now.day:02d}-0001"
+                return "OC-0001"
         else:
-            return f"OC-{now.year}{now.month:02d}{now.day:02d}-0001"
+            return "OC-0001"
 
     @staticmethod
     def get_suppliers(search_term: str = "") -> List[Dict]:
@@ -112,7 +110,8 @@ class PurchaseOrder:
         subtotal: float,
         iva: float,
         total: float,
-        notes: str = ""
+        notes: str = "",
+        created_by: str = ""
     ) -> bool:
         """Create a new purchase order in the database"""
         try:
@@ -126,11 +125,6 @@ class PurchaseOrder:
             if existing_order:
                 # Si ya existe, generar un nuevo número
                 order_number = PurchaseOrder.get_next_order_number()
-            
-            # Obtener el usuario actual
-            user_id = SessionManager.get_user_id()
-            if not user_id:
-                raise ValueError("Usuario no autenticado")
             
             # Obtener el estado inicial (Borrador)
             status = PurchaseOrderStatus.get_by_name("draft")
@@ -148,7 +142,7 @@ class PurchaseOrder:
                 ''',
                 (
                     order_number, supplier_id, delivery_date,
-                    status['id'], subtotal, iva, total, notes, user_id
+                    status['id'], subtotal, iva, total, notes, created_by
                 )
             )
             

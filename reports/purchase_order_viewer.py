@@ -3,21 +3,20 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
 from sqlite_cli.models.tax_model import Tax
-from utils.session_manager import SessionManager
 
 class PurchaseOrderViewer(tk.Toplevel):
-    def __init__(self, parent, order_id, supplier_info, items, subtotal, taxes, total):
+    def __init__(self, parent, order_number, supplier_info, items, subtotal, taxes, total, delivery_date, created_by):
         super().__init__(parent)
         self.parent = parent
-        self.title(f"Orden de Compra - #{order_id}")
+        self.title(f"Orden de Compra - {order_number}")
         
         # Configurar ventana modal centrada
         self.transient(parent)
         self.grab_set()
         
         # Tamaño fijo de la ventana
-        window_width = 880
-        window_height = 700
+        window_width = 800
+        window_height = 650
         
         # Obtener dimensiones de la pantalla
         screen_width = self.winfo_screenwidth()
@@ -34,11 +33,14 @@ class PurchaseOrderViewer(tk.Toplevel):
         main_frame = tk.Frame(self, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        canvas = tk.Canvas(main_frame)
+        canvas = tk.Canvas(main_frame, bg="white", highlightthickness=0)
         scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, padx=15, pady=15)
+        scrollable_frame = tk.Frame(canvas, bg="white", padx=15, pady=15)
         
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
         
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
@@ -46,121 +48,154 @@ class PurchaseOrderViewer(tk.Toplevel):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Información de la empresa
-        tk.Label(scrollable_frame, text="RN&M Servicios Integrales, C.A", 
-                font=("Arial", 14, "bold")).pack(pady=(0, 5))
-        tk.Label(scrollable_frame, text="RIF: J-40339817-8", 
-                font=("Arial", 12)).pack(pady=(0, 10))
-        tk.Label(scrollable_frame, text="ORDEN DE COMPRA", 
-                font=("Arial", 16, "bold"), fg="#333").pack(pady=(0, 15))
+        # Encabezado de la orden
+        header_frame = tk.Frame(scrollable_frame, bg="white")
+        header_frame.pack(fill="x", pady=(0, 15))
         
-        # Separador
-        ttk.Separator(scrollable_frame).pack(fill="x", padx=10, pady=10)
+        # Logo e información de la empresa (izquierda)
+        company_frame = tk.Frame(header_frame, bg="white")
+        company_frame.pack(side="left", anchor="nw")
         
-        # Información de la orden, proveedor y empleado
-        info_frame = tk.Frame(scrollable_frame, padx=10, pady=10)
-        info_frame.pack(fill="x", pady=(0, 15))
+        tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
+                font=("Arial", 12, "bold"), bg="white").pack(anchor="w")
+        tk.Label(company_frame, text="RIF: J-40339817-8", 
+                font=("Arial", 10), bg="white").pack(anchor="w")
+        tk.Label(company_frame, text="Av. Principal, Edif. Empresarial", 
+                font=("Arial", 10), bg="white").pack(anchor="w")
         
-        # Columna izquierda - Información de la orden
-        left_frame = tk.Frame(info_frame)
-        left_frame.pack(side="left", anchor="w", padx=20)
+        # Número de orden y fecha (derecha)
+        order_frame = tk.Frame(header_frame, bg="white")
+        order_frame.pack(side="right", anchor="ne")
         
-        tk.Label(left_frame, text=f"N° Orden: {order_id}", 
-                font=("Arial", 10)).pack(anchor="w", pady=2)
-        tk.Label(left_frame, text=f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
-                font=("Arial", 10)).pack(anchor="w", pady=2)
-        tk.Label(left_frame, text=f"Estado: Pendiente", 
-                font=("Arial", 10)).pack(anchor="w", pady=2)
+        tk.Label(order_frame, text=f"ORDEN DE COMPRA N°: {order_number}", 
+                font=("Arial", 12, "bold"), bg="white").pack(anchor="e")
+        tk.Label(order_frame, text=f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", 
+                font=("Arial", 10), bg="white").pack(anchor="e")
+        tk.Label(order_frame, text=f"Fecha Entrega: {delivery_date}", 
+                font=("Arial", 10), bg="white").pack(anchor="e")
         
-        # Columna derecha - Información del proveedor y empleado
-        right_frame = tk.Frame(info_frame)
-        right_frame.pack(side="right", anchor="e", padx=20)
+        # Línea divisoria
+        ttk.Separator(scrollable_frame, orient="horizontal").pack(fill="x", pady=10)
         
-        tk.Label(right_frame, text="Proveedor:", 
-                font=("Arial", 10, "bold")).pack(anchor="e", pady=2)
-        tk.Label(right_frame, text=supplier_info, 
-                font=("Arial", 10)).pack(anchor="e", pady=2)
+        # Información del proveedor
+        supplier_frame = tk.Frame(scrollable_frame, bg="white")
+        supplier_frame.pack(fill="x", pady=(0, 15))
         
-        tk.Label(right_frame, text="Creado por:", 
-                font=("Arial", 10, "bold")).pack(anchor="e", pady=(10, 2))
-        tk.Label(right_frame, text=self._get_employee_info(), 
-                font=("Arial", 10)).pack(anchor="e", pady=2)
+        tk.Label(supplier_frame, text="PROVEEDOR:", 
+                font=("Arial", 10, "bold"), bg="white").pack(anchor="w")
+        tk.Label(supplier_frame, text=supplier_info, 
+                font=("Arial", 10), bg="white").pack(anchor="w")
         
         # Tabla de productos
-        table_frame = tk.Frame(scrollable_frame, padx=10, pady=10)
+        table_frame = tk.Frame(scrollable_frame, bg="white")
         table_frame.pack(fill="x", pady=(0, 15))
         
-        columns = ("Código", "Descripción", "Cantidad", "P. Unitario", "Total")
-        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=min(8, len(items)))
+        # Encabezados de la tabla
+        headers = ["Código", "Descripción", "Cantidad", "P. Unitario", "Total"]
+        widths = [100, 300, 80, 120, 120]
         
-        # Configurar columnas
-        tree.heading("Código", text="Código")
-        tree.heading("Descripción", text="Descripción")
-        tree.heading("Cantidad", text="Cantidad")
-        tree.heading("P. Unitario", text="P. Unitario")
-        tree.heading("Total", text="Total")
+        header_frame = tk.Frame(table_frame, bg="#4a6fa5")
+        header_frame.pack(fill="x")
         
-        tree.column("Código", width=100, anchor="center")
-        tree.column("Descripción", width=300, anchor="w")
-        tree.column("Cantidad", width=80, anchor="center")
-        tree.column("P. Unitario", width=120, anchor="e")
-        tree.column("Total", width=120, anchor="e")
+        for header, width in zip(headers, widths):
+            cell = tk.Frame(header_frame, bg="#4a6fa5", height=30)
+            cell.pack_propagate(False)
+            cell.pack(side="left", padx=1)
+            tk.Label(cell, text=header, fg="white", bg="#4a6fa5", 
+                   font=("Arial", 10, "bold")).pack(expand=True, fill="both")
+            cell.config(width=width)
         
-        # Insertar datos
+        # Cuerpo de la tabla
         for item in items:
-            tree.insert("", "end", values=(
+            row_frame = tk.Frame(table_frame, bg="white", height=30)
+            row_frame.pack_propagate(False)
+            row_frame.pack(fill="x", pady=1)
+            
+            values = [
                 item['code'],
                 item['description'],
-                item['quantity'],
-                f"{item['unit_price']:.2f}",
-                f"{item['total']:.2f}"
-            ))
-        
-        tree.pack(fill="x")
+                str(item['quantity']),
+                f"{item['unit_price']:,.2f}",
+                f"{item['total']:,.2f}"
+            ]
+            
+            for value, width in zip(values, widths):
+                cell = tk.Frame(row_frame, bg="white", height=30, bd=1, relief="solid")
+                cell.pack_propagate(False)
+                cell.pack(side="left", padx=1)
+                tk.Label(cell, text=value, bg="white", 
+                       font=("Arial", 10)).pack(expand=True, fill="both")
+                cell.config(width=width)
         
         # Totales
-        totals_frame = tk.Frame(scrollable_frame, padx=10, pady=15)
-        totals_frame.pack(fill="x", pady=(10, 20))
+        totals_frame = tk.Frame(scrollable_frame, bg="white")
+        totals_frame.pack(fill="x", pady=(15, 20))
         
         iva_tax = Tax.get_by_name("IVA")
-        if iva_tax and iva_tax.get('status_name') == 'active':
-            tk.Label(totals_frame, text=f"Subtotal: {subtotal:.2f}",
-                    font=("Arial", 10, "bold")).pack(side="right", padx=15)
-            tk.Label(totals_frame, text=f"IVA ({iva_tax['value']}%): {taxes:.2f}",
-                    font=("Arial", 10, "bold")).pack(side="right", padx=15)
         
-        tk.Label(totals_frame, text=f"TOTAL: {total:.2f}",
-                font=("Arial", 12, "bold")).pack(side="right", padx=15)
+        # Subtotal y IVA (si aplica)
+        if iva_tax and iva_tax.get('status_name') == 'active':
+            subtotal_frame = tk.Frame(totals_frame, bg="white")
+            subtotal_frame.pack(anchor="e", pady=2)
+            tk.Label(subtotal_frame, text="Subtotal:", 
+                    font=("Arial", 10), bg="white").pack(side="left", padx=5)
+            tk.Label(subtotal_frame, text=f"{subtotal:,.2f}", 
+                    font=("Arial", 10), bg="white").pack(side="left")
+            
+            iva_frame = tk.Frame(totals_frame, bg="white")
+            iva_frame.pack(anchor="e", pady=2)
+            tk.Label(iva_frame, text=f"IVA ({iva_tax['value']}%):", 
+                    font=("Arial", 10), bg="white").pack(side="left", padx=5)
+            tk.Label(iva_frame, text=f"{taxes:,.2f}", 
+                    font=("Arial", 10), bg="white").pack(side="left")
+        
+        # Total
+        total_frame = tk.Frame(totals_frame, bg="white")
+        total_frame.pack(anchor="e", pady=(10, 0))
+        tk.Label(total_frame, text="TOTAL:", 
+                font=("Arial", 12, "bold"), bg="white").pack(side="left", padx=5)
+        tk.Label(total_frame, text=f"{total:,.2f}", 
+                font=("Arial", 12, "bold"), bg="white").pack(side="left")
+        
+        # Información del creador
+        creator_frame = tk.Frame(scrollable_frame, bg="white")
+        creator_frame.pack(fill="x", pady=(20, 0))
+        
+        tk.Label(creator_frame, text=f"Creado por: {created_by}", 
+                font=("Arial", 9), bg="white").pack(anchor="w")
+        
+        # Línea divisoria
+        ttk.Separator(scrollable_frame, orient="horizontal").pack(fill="x", pady=10)
+        
+        # Notas
+        notes_frame = tk.Frame(scrollable_frame, bg="white")
+        notes_frame.pack(fill="x", pady=(5, 15))
+        
+        tk.Label(notes_frame, text="Notas:", 
+                font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
+        tk.Label(notes_frame, text="Esta orden de compra es generada automáticamente por el sistema.", 
+                font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
         
         # Botones
-        btn_frame = tk.Frame(scrollable_frame, padx=10, pady=20)
-        btn_frame.pack(fill="x")
+        btn_frame = tk.Frame(scrollable_frame, bg="white")
+        btn_frame.pack(fill="x", pady=10)
+        
+        tk.Button(
+            btn_frame,
+            text="Imprimir",
+            command=self.print_order,
+            font=("Arial", 10),
+            width=12
+        ).pack(side="left", padx=5)
         
         tk.Button(
             btn_frame,
             text="Cerrar",
             command=self.destroy,
             font=("Arial", 10),
-            width=15
+            width=12
         ).pack(side="right", padx=5)
 
-    def _get_employee_info(self) -> str:
-        """Obtiene la información del empleado desde SessionManager"""
-        current_user = SessionManager.get_current_user()
-        
-        if not current_user:
-            return "No disponible"
-        
-        if 'first_name' in current_user and 'last_name' in current_user:
-            full_name = f"{current_user['first_name']} {current_user['last_name']}"
-            if current_user.get('username'):
-                return f"{full_name} ({current_user['username']})"
-            return full_name
-        
-        if 'username' in current_user:
-            return current_user['username']
-        
-        if 'id' in current_user:
-            return f"Empleado ID: {current_user['id']}"
-        
-        return "No disponible"
+    def print_order(self):
+        """Placeholder for print functionality"""
+        messagebox.showinfo("Imprimir", "La funcionalidad de impresión será implementada próximamente.", parent=self)

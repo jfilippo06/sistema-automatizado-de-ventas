@@ -716,6 +716,11 @@ class PurchaseOrdersScreen(tk.Frame):
         iva = float(self.lbl_iva.cget("text").split(":")[1].strip().replace(",", "")) if self.iva_tax and self.iva_tax.get('status_name') == 'active' else 0.0
         total = float(self.lbl_total.cget("text").split(":")[1].strip().replace(",", ""))
         
+        # Get current user info
+        from utils.session_manager import SessionManager
+        current_user = SessionManager.get_current_user()
+        created_by = f"{current_user['first_name']} {current_user['last_name']}" if current_user else "Sistema"
+        
         success = PurchaseOrder.create_order(
             order_number=order_number,
             supplier_id=supplier_id,
@@ -724,7 +729,8 @@ class PurchaseOrdersScreen(tk.Frame):
             subtotal=subtotal,
             iva=iva,
             total=total,
-            notes="Orden creada desde la interfaz gráfica"
+            notes="Orden creada desde la interfaz gráfica",
+            created_by=created_by
         )
         
         if success:
@@ -737,7 +743,9 @@ class PurchaseOrdersScreen(tk.Frame):
                 products,
                 subtotal,
                 iva,
-                total
+                total,
+                delivery_date,
+                created_by
             )
             
             self.clear_form()
