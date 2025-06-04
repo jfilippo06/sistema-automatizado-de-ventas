@@ -3,6 +3,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from typing import Any, Callable
 from screens.reports.sales_report_screen import SalesReportScreen
+from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
 
 class ReportsScreen(tk.Frame):
     def __init__(
@@ -17,7 +18,7 @@ class ReportsScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("500x370")
+        self.parent.geometry("500x400")  # Increased height for new button
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
@@ -39,8 +40,8 @@ class ReportsScreen(tk.Frame):
 
         buttons = [
             ("Inventario de productos", self.inventory_report),
-            ("Gestión de compras", self.sales_report),
-            ("Reporte de Ventas", self.sales_report_screen),  # Nuevo botón
+            ("Ordenes de Compra", self.purchase_order_report_screen),
+            ("Ventas", self.sales_report_screen),
             ("Regresar", self.go_back)
         ]
 
@@ -57,8 +58,14 @@ class ReportsScreen(tk.Frame):
     def inventory_report(self) -> None:
         print("Generando reporte de inventario")
 
-    def sales_report(self) -> None:
-        print("Generando reporte de compras")
+    def purchase_order_report_screen(self) -> None:
+        """Abre la pantalla de reporte de órdenes de compra"""
+        self.pack_forget()
+        purchase_order_report_screen = PurchaseOrderReportScreen(
+            self.parent,
+            lambda: self.pack(fill=tk.BOTH, expand=True)
+        )
+        purchase_order_report_screen.pack(fill=tk.BOTH, expand=True)
 
     def sales_report_screen(self) -> None:
         """Abre la pantalla de reporte de ventas"""

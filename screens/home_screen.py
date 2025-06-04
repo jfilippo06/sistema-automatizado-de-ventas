@@ -20,7 +20,8 @@ class HomeScreen(tk.Frame):
         open_billing_callback: Callable[[], None],
         open_reports_callback: Callable[[], None],
         open_catalog_callback: Callable[[], None],
-        open_purchase_orders_callback: Callable[[], None]
+        open_purchase_orders_callback: Callable[[], None],
+        open_purchase_order_report_callback: Callable[[], None]
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -37,6 +38,7 @@ class HomeScreen(tk.Frame):
         self.open_reports_callback = open_reports_callback
         self.open_catalog_callback = open_catalog_callback
         self.open_purchase_orders_callback = open_purchase_orders_callback
+        self.open_purchase_order_report_callback = open_purchase_order_report_callback
         
         self.configure(bg="#f0f0f0")
         self.configure_ui()

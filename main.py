@@ -18,7 +18,8 @@ from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
-from screens.reports.sales_report_screen import SalesReportScreen  # Nueva importación
+from screens.reports.sales_report_screen import SalesReportScreen
+from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
 from screens.catalog.catalog_screen import CatalogScreen
 from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen
 from utils.session_manager import SessionManager
@@ -98,9 +99,13 @@ def main() -> None:
         home_screen.pack_forget()
         reports_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_sales_report() -> None:  # Nueva función para reporte de ventas
+    def open_sales_report() -> None:
         home_screen.pack_forget()
         sales_report_screen.pack(fill=tk.BOTH, expand=True)
+
+    def open_purchase_order_report() -> None:
+        home_screen.pack_forget()
+        purchase_order_report_screen.pack(fill=tk.BOTH, expand=True)
 
     def open_catalog() -> None:
         home_screen.pack_forget()
@@ -132,7 +137,8 @@ def main() -> None:
         open_billing,
         open_reports,
         open_catalog,
-        open_purchase_orders
+        open_purchase_orders,
+        open_purchase_order_report
     )
     
     inventory_screen = Inventory(app, lambda: open_home_from_current(inventory_screen))
@@ -148,14 +154,15 @@ def main() -> None:
     recovery_screen = RecoveryScreen(
         app, 
         lambda: open_home_from_current(recovery_screen), 
-        lambda: None,  # Placeholder para callbacks de recovery
+        lambda: None,
         lambda: None,
         lambda: None,
         lambda: None
     )
     billing_screen = BillingScreen(app, lambda: open_home_from_current(billing_screen))
     reports_screen = ReportsScreen(app, lambda: open_home_from_current(reports_screen))
-    sales_report_screen = SalesReportScreen(app, lambda: open_home_from_current(sales_report_screen))  # Nueva pantalla
+    sales_report_screen = SalesReportScreen(app, lambda: open_home_from_current(sales_report_screen))
+    purchase_order_report_screen = PurchaseOrderReportScreen(app, lambda: open_home_from_current(purchase_order_report_screen))
     catalog_screen = CatalogScreen(app, lambda: open_home_from_current(catalog_screen))
     purchase_orders_screen = PurchaseOrdersScreen(app, lambda: open_home_from_current(purchase_orders_screen))
 
@@ -175,7 +182,8 @@ def main() -> None:
         recovery_screen,
         billing_screen,
         reports_screen,
-        sales_report_screen,  # Nueva pantalla
+        sales_report_screen,
+        purchase_order_report_screen,
         catalog_screen,
         purchase_orders_screen
     ]
