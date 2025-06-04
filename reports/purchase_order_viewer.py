@@ -14,8 +14,8 @@ class PurchaseOrderViewer(tk.Toplevel):
         self.transient(parent)
         self.grab_set()
         
-        # Tamaño fijo de la ventana
-        window_width = 800
+        # Tamaño fijo de la ventana (aumentado a 900px de ancho)
+        window_width = 950
         window_height = 650
         
         # Obtener dimensiones de la pantalla
@@ -92,7 +92,7 @@ class PurchaseOrderViewer(tk.Toplevel):
         
         # Encabezados de la tabla
         headers = ["Código", "Descripción", "Cantidad", "P. Unitario", "Total"]
-        widths = [100, 300, 80, 120, 120]
+        widths = [120, 400, 80, 120, 120]  # Ajustado para el nuevo ancho
         
         header_frame = tk.Frame(table_frame, bg="#4a6fa5")
         header_frame.pack(fill="x")
@@ -175,27 +175,3 @@ class PurchaseOrderViewer(tk.Toplevel):
                 font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
         tk.Label(notes_frame, text="Esta orden de compra es generada automáticamente por el sistema.", 
                 font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
-        
-        # Botones
-        btn_frame = tk.Frame(scrollable_frame, bg="white")
-        btn_frame.pack(fill="x", pady=10)
-        
-        tk.Button(
-            btn_frame,
-            text="Imprimir",
-            command=self.print_order,
-            font=("Arial", 10),
-            width=12
-        ).pack(side="left", padx=5)
-        
-        tk.Button(
-            btn_frame,
-            text="Cerrar",
-            command=self.destroy,
-            font=("Arial", 10),
-            width=12
-        ).pack(side="right", padx=5)
-
-    def print_order(self):
-        """Placeholder for print functionality"""
-        messagebox.showinfo("Imprimir", "La funcionalidad de impresión será implementada próximamente.", parent=self)
