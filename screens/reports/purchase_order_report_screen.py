@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from typing import Callable, Any
 from datetime import datetime
 from widgets.custom_button import CustomButton
@@ -23,7 +23,6 @@ class PurchaseOrderReportScreen(tk.Frame):
         self.start_date_var = tk.StringVar()
         self.end_date_var = tk.StringVar()
         self.supplier_var = tk.StringVar()
-        self.status_var = tk.StringVar()
         self.configure(bg="#f5f5f5")
         self.configure_ui()
         self.refresh_data()
@@ -97,6 +96,10 @@ class PurchaseOrderReportScreen(tk.Frame):
         end_date_entry.pack(side=tk.LEFT, padx=5)
         end_date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
 
+        # Bind date changes to refresh
+        self.start_date_var.trace_add("write", lambda *args: self.refresh_data())
+        self.end_date_var.trace_add("write", lambda *args: self.refresh_data())
+
         # Supplier filter
         supplier_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         supplier_frame.pack(side=tk.LEFT, padx=20)
@@ -116,26 +119,9 @@ class PurchaseOrderReportScreen(tk.Frame):
         )
         self.supplier_combobox.pack(side=tk.LEFT, padx=5)
         self.load_suppliers()
-
-        # Status filter
-        status_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        status_frame.pack(side=tk.LEFT, padx=20)
-
-        CustomLabel(
-            status_frame,
-            text="Estado:",
-            font=("Arial", 10),
-            bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-
-        self.status_combobox = CustomCombobox(
-            status_frame,
-            textvariable=self.status_var,
-            width=20,
-            font=("Arial", 10)
-        )
-        self.status_combobox.pack(side=tk.LEFT, padx=5)
-        self.load_statuses()
+        
+        # Bind supplier changes to refresh
+        self.supplier_var.trace_add("write", lambda *args: self.refresh_data())
 
         # Search field
         search_frame = tk.Frame(filters_frame, bg="#f5f5f5")
@@ -155,17 +141,9 @@ class PurchaseOrderReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
-        search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
-
-        # Filter button
-        btn_search = CustomButton(
-            filters_frame,
-            text="Filtrar",
-            command=self.refresh_data,
-            padding=6,
-            width=10
-        )
-        btn_search.pack(side=tk.RIGHT, padx=5)
+        
+        # Bind search changes to refresh
+        self.search_var.trace_add("write", lambda *args: self.refresh_data())
 
         # Treeview to show orders
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
@@ -210,41 +188,29 @@ class PurchaseOrderReportScreen(tk.Frame):
         supplier_list = [f"{s['company']} ({s['id_number']})" for s in suppliers]
         self.supplier_combobox['values'] = supplier_list
 
-    def load_statuses(self):
-        """Load order statuses into combobox"""
-        statuses = PurchaseOrderReport.get_order_statuses()
-        status_list = [s['name'] for s in statuses]
-        self.status_combobox['values'] = ['Todos'] + status_list
-        self.status_combobox.current(0)
-
     def refresh_data(self) -> None:
         """Refresh report data based on filters"""
         start_date = self.start_date_var.get()
         end_date = self.end_date_var.get()
         supplier = self.supplier_var.get()
-        status = self.status_var.get()
         search_term = self.search_var.get()
 
         # Get supplier ID if selected
         supplier_id = None
         if supplier:
-            id_number = supplier.split("(")[-1].rstrip(")")
-            supplier_data = Supplier.get_by_id_number(id_number)
-            if supplier_data:
-                supplier_id = supplier_data['id']
-
-        # Get status ID if selected
-        status_id = None
-        if status and status != "Todos":
-            statuses = PurchaseOrderReport.get_order_statuses()
-            status_id = next((s['id'] for s in statuses if s['name'] == status), None)
+            try:
+                id_number = supplier.split("(")[-1].rstrip(")")
+                supplier_data = Supplier.get_by_id_number(id_number)
+                if supplier_data:
+                    supplier_id = supplier_data['id']
+            except:
+                pass
 
         # Get purchase orders report
         orders = PurchaseOrderReport.get_purchase_orders_report(
             start_date=start_date,
             end_date=end_date,
             supplier_id=supplier_id,
-            status_id=status_id,
             search_term=search_term if search_term else None
         )
 
