@@ -9,8 +9,7 @@ class PurchaseOrderReport:
         end_date: Optional[str] = None,
         supplier_id: Optional[int] = None,
         order_id: Optional[int] = None,
-        search_term: Optional[str] = None,
-        status_id: Optional[int] = None
+        search_term: Optional[str] = None
     ) -> List[Dict]:
         """
         Get a complete report of purchase orders with their details.
@@ -20,7 +19,6 @@ class PurchaseOrderReport:
         :param supplier_id: Supplier ID to filter
         :param order_id: Specific order ID
         :param search_term: Term to search in order number, supplier name or ID
-        :param status_id: Status ID to filter
         :return: List of dictionaries with complete purchase order data
         """
         conn = get_db_connection()
@@ -43,12 +41,10 @@ class PurchaseOrderReport:
                 s.id_number as supplier_id_number,
                 s.phone as supplier_phone,
                 s.email as supplier_email,
-                pos.name as status_name,
                 u.username as created_by,
                 a.username as approved_by
             FROM purchase_orders po
             JOIN suppliers s ON po.supplier_id = s.id
-            JOIN purchase_order_status pos ON po.status_id = pos.id
             JOIN users u ON po.created_by = u.id
             LEFT JOIN users a ON po.approved_by = a.id
             WHERE 1=1
@@ -71,10 +67,6 @@ class PurchaseOrderReport:
         if order_id:
             order_query += " AND po.id = ?"
             params.append(order_id)
-        
-        if status_id:
-            order_query += " AND po.status_id = ?"
-            params.append(status_id)
         
         if search_term:
             order_query += '''
@@ -148,12 +140,10 @@ class PurchaseOrderReport:
                 s.id_number as supplier_id_number,
                 s.phone as supplier_phone,
                 s.email as supplier_email,
-                pos.name as status_name,
                 u.username as created_by,
                 a.username as approved_by
             FROM purchase_orders po
             JOIN suppliers s ON po.supplier_id = s.id
-            JOIN purchase_order_status pos ON po.status_id = pos.id
             JOIN users u ON po.created_by = u.id
             LEFT JOIN users a ON po.approved_by = a.id
             WHERE po.id = ?
@@ -220,20 +210,6 @@ class PurchaseOrderReport:
         cursor.execute(query, tuple(params))
         summary = dict(cursor.fetchone())
         
-        # Get orders by status
-        cursor.execute('''
-            SELECT 
-                pos.name as status_name,
-                COUNT(*) as count,
-                SUM(po.total) as total
-            FROM purchase_orders po
-            JOIN purchase_order_status pos ON po.status_id = pos.id
-            WHERE DATE(po.issue_date) BETWEEN ? AND ?
-            GROUP BY pos.name
-        ''', (start_date or '2000-01-01', end_date or '2100-01-01'))
-        
-        summary['by_status'] = [dict(row) for row in cursor.fetchall()]
-        
         # Get top suppliers
         cursor.execute('''
             SELECT 
@@ -270,15 +246,3 @@ class PurchaseOrderReport:
         
         conn.close()
         return summary
-
-    @staticmethod
-    def get_order_statuses() -> List[Dict]:
-        """Get all purchase order statuses"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('SELECT id, name FROM purchase_order_status ORDER BY id')
-        statuses = [dict(row) for row in cursor.fetchall()]
-        
-        conn.close()
-        return statuses

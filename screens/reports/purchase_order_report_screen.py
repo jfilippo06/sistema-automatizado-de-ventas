@@ -151,7 +151,7 @@ class PurchaseOrderReportScreen(tk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "N° Orden", "Fecha", "Proveedor", "Productos", "Subtotal", "IVA", "Total", "Estado", "Entrega"),
+            columns=("ID", "N° Orden", "Fecha", "Proveedor", "Productos", "Subtotal", "IVA", "Total", "Entrega"),
             show="headings",
             height=20,
             style="Custom.Treeview"
@@ -166,7 +166,6 @@ class PurchaseOrderReportScreen(tk.Frame):
             ("Subtotal", 100, tk.CENTER),
             ("IVA", 80, tk.CENTER),
             ("Total", 100, tk.CENTER),
-            ("Estado", 100, tk.CENTER),
             ("Entrega", 100, tk.CENTER)
         ]
 
@@ -206,7 +205,7 @@ class PurchaseOrderReportScreen(tk.Frame):
             except:
                 pass
 
-        # Get purchase orders report
+        # Get purchase orders report - now getting all orders by default
         orders = PurchaseOrderReport.get_purchase_orders_report(
             start_date=start_date,
             end_date=end_date,
@@ -228,7 +227,6 @@ class PurchaseOrderReportScreen(tk.Frame):
                 f"Bs. {order['subtotal']:,.2f}",
                 f"Bs. {order['taxes']:,.2f}",
                 f"Bs. {order['total']:,.2f}",
-                order['status_name'],
                 order['expected_delivery_date']
             ))
 

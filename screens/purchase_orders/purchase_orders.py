@@ -718,8 +718,8 @@ class PurchaseOrdersScreen(tk.Frame):
         
         # Get current user info
         from utils.session_manager import SessionManager
-        current_user = SessionManager.get_current_user()
-        created_by = f"{current_user['first_name']} {current_user['last_name']}" if current_user else "Sistema"
+        current_user = SessionManager.get_user_id()
+        created_by = current_user
         
         success = PurchaseOrder.create_order(
             order_number=order_number,
