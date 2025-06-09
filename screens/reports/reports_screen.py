@@ -4,6 +4,7 @@ from widgets.custom_label import CustomLabel
 from typing import Any, Callable
 from screens.reports.sales_report_screen import SalesReportScreen
 from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
+from screens.reports.inventory_report_screen import InventoryReportScreen
 
 class ReportsScreen(tk.Frame):
     def __init__(
@@ -18,7 +19,7 @@ class ReportsScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("500x400")  # Increased height for new button
+        self.parent.geometry("500x400")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
@@ -56,7 +57,13 @@ class ReportsScreen(tk.Frame):
             btn.pack(pady=5, ipady=10, ipadx=10)
 
     def inventory_report(self) -> None:
-        print("Generando reporte de inventario")
+        """Abre la pantalla de reporte de inventario"""
+        self.pack_forget()
+        inventory_report_screen = InventoryReportScreen(
+            self.parent,
+            lambda: self.pack(fill=tk.BOTH, expand=True)
+        )
+        inventory_report_screen.pack(fill=tk.BOTH, expand=True)
 
     def purchase_order_report_screen(self) -> None:
         """Abre la pantalla de reporte de órdenes de compra"""

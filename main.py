@@ -22,6 +22,7 @@ from screens.reports.sales_report_screen import SalesReportScreen
 from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
 from screens.catalog.catalog_screen import CatalogScreen
 from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen
+from screens.reports.inventory_report_screen import InventoryReportScreen
 from utils.session_manager import SessionManager
 
 def main() -> None:
@@ -162,13 +163,17 @@ def main() -> None:
     lambda: [recovery_screen.pack_forget(), recovery_inventory_screen.pack(fill=tk.BOTH, expand=True)],
     lambda: [recovery_screen.pack_forget(), recovery_service_requests_screen.pack(fill=tk.BOTH, expand=True)],
     lambda: [recovery_screen.pack_forget(), recovery_services_screen.pack(fill=tk.BOTH, expand=True)]
-)
+    )
     billing_screen = BillingScreen(app, lambda: open_home_from_current(billing_screen))
     reports_screen = ReportsScreen(app, lambda: open_home_from_current(reports_screen))
     sales_report_screen = SalesReportScreen(app, lambda: open_home_from_current(sales_report_screen))
     purchase_order_report_screen = PurchaseOrderReportScreen(app, lambda: open_home_from_current(purchase_order_report_screen))
     catalog_screen = CatalogScreen(app, lambda: open_home_from_current(catalog_screen))
     purchase_orders_screen = PurchaseOrdersScreen(app, lambda: open_home_from_current(purchase_orders_screen))
+    inventory_report_screen = InventoryReportScreen(
+    app,
+    lambda: [inventory_report_screen.pack_forget(), reports_screen.pack(fill=tk.BOTH, expand=True)]
+    )
 
     all_screens = [
         login_screen,
@@ -189,7 +194,8 @@ def main() -> None:
         sales_report_screen,
         purchase_order_report_screen,
         catalog_screen,
-        purchase_orders_screen
+        purchase_orders_screen,
+        inventory_report_screen
     ]
 
     check_auth_and_show_home()
