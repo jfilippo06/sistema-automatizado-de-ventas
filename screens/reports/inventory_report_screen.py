@@ -1,8 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import Callable, Any
+from datetime import datetime
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
-from typing import Any, Callable
+from widgets.custom_entry import CustomEntry
+from widgets.custom_combobox import CustomCombobox
+from utils.session_manager import SessionManager
 
 class InventoryReportScreen(tk.Frame):
     def __init__(
@@ -13,129 +17,186 @@ class InventoryReportScreen(tk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
-        self.configure(bg="#f0f0f0")
+        self.search_var = tk.StringVar()
+        self.category_var = tk.StringVar()
+        self.stock_status_var = tk.StringVar()
+        self.configure(bg="#f5f5f5")
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("900x600")
-        self.parent.resizable(False, False)
+        self.parent.state('zoomed')
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, bg="#f0f0f0")
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-
-        title = CustomLabel(
-            main_frame,
+        # Header
+        header_frame = tk.Frame(self, bg="#4a6fa5")
+        header_frame.pack(side=tk.TOP, fill=tk.X)
+        
+        title_label = CustomLabel(
+            header_frame,
             text="Reporte de Inventario",
             font=("Arial", 20, "bold"),
-            fg="#333",
-            bg="#f0f0f0"
+            fg="white",
+            bg="#4a6fa5"
         )
-        title.pack(pady=(0, 20))
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Frame para controles de filtrado
-        filter_frame = tk.Frame(main_frame, bg="#f0f0f0")
-        filter_frame.pack(fill=tk.X, pady=(0, 10))
-
-        # Filtros
-        tk.Label(filter_frame, text="Filtrar por:", bg="#f0f0f0").pack(side=tk.LEFT, padx=5)
-        
-        self.category_var = tk.StringVar()
-        categories = ["Todos", "Electrónicos", "Ropa", "Alimentos", "Herramientas"]
-        tk.OptionMenu(filter_frame, self.category_var, *categories).pack(side=tk.LEFT, padx=5)
-        
-        self.stock_var = tk.StringVar()
-        stock_options = ["Todos", "En stock", "Bajo stock", "Agotado"]
-        tk.OptionMenu(filter_frame, self.stock_var, *stock_options).pack(side=tk.LEFT, padx=5)
-        
-        CustomButton(
-            filter_frame,
-            text="Aplicar Filtros",
-            command=self.apply_filters,
-            padding=5
-        ).pack(side=tk.LEFT, padx=5)
-
-        # Treeview para mostrar el reporte
-        self.tree_frame = tk.Frame(main_frame)
-        self.tree_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.tree = ttk.Treeview(
-            self.tree_frame,
-            columns=("id", "name", "category", "price", "stock", "min_stock"),
-            show="headings"
-        )
-        
-        self.tree.heading("id", text="ID")
-        self.tree.heading("name", text="Nombre")
-        self.tree.heading("category", text="Categoría")
-        self.tree.heading("price", text="Precio")
-        self.tree.heading("stock", text="Stock")
-        self.tree.heading("min_stock", text="Stock Mínimo")
-
-        self.tree.column("id", width=50, anchor="center")
-        self.tree.column("name", width=150)
-        self.tree.column("category", width=120)
-        self.tree.column("price", width=80, anchor="e")
-        self.tree.column("stock", width=80, anchor="center")
-        self.tree.column("min_stock", width=80, anchor="center")
-
-        scrollbar = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
-        self.tree.pack(fill="both", expand=True)
-
-        # Botones
-        button_frame = tk.Frame(main_frame, bg="#f0f0f0")
-        button_frame.pack(pady=(20, 0))
-
-        CustomButton(
-            button_frame,
-            text="Exportar a Excel",
-            command=self.export_to_excel,
-            padding=10
-        ).pack(side="left", padx=10)
-
-        CustomButton(
-            button_frame,
-            text="Imprimir",
-            command=self.print_report,
-            padding=10
-        ).pack(side="left", padx=10)
-
-        CustomButton(
-            button_frame,
+        # Botón de regreso
+        btn_back = CustomButton(
+            header_frame,
             text="Regresar",
             command=self.go_back,
-            padding=10
-        ).pack(side="right", padx=10)
+            padding=8,
+            width=10,
+        )
+        btn_back.pack(side=tk.RIGHT, padx=20, pady=5)
 
-        # Cargar datos de ejemplo
+        # Frame de filtros
+        filters_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
+        filters_frame.pack(fill=tk.X)
+
+        # Filtro por categoría
+        category_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        category_frame.pack(side=tk.LEFT, padx=5)
+
+        CustomLabel(
+            category_frame,
+            text="Categoría:",
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+
+        self.category_combobox = CustomCombobox(
+            category_frame,
+            textvariable=self.category_var,
+            width=20,
+            font=("Arial", 10)
+        )
+        self.category_combobox.pack(side=tk.LEFT, padx=5)
+        self.category_combobox['values'] = ["Todas", "Electrónicos", "Ropa", "Alimentos", "Herramientas"]
+        self.category_combobox.current(0)
+
+        # Filtro por estado de stock
+        stock_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        stock_frame.pack(side=tk.LEFT, padx=20)
+
+        CustomLabel(
+            stock_frame,
+            text="Estado de stock:",
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+
+        self.stock_combobox = CustomCombobox(
+            stock_frame,
+            textvariable=self.stock_status_var,
+            width=15,
+            font=("Arial", 10)
+        )
+        self.stock_combobox.pack(side=tk.LEFT, padx=5)
+        self.stock_combobox['values'] = ["Todos", "En stock", "Bajo stock", "Agotado"]
+        self.stock_combobox.current(0)
+
+        # Campo de búsqueda
+        search_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        search_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        CustomLabel(
+            search_frame,
+            text="Buscar (ID/Nombre/Código):",
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+
+        search_entry = CustomEntry(
+            search_frame,
+            textvariable=self.search_var,
+            width=30,
+            font=("Arial", 10)
+        )
+        search_entry.pack(side=tk.LEFT, padx=5)
+        search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
+
+        # Botón de búsqueda
+        btn_search = CustomButton(
+            filters_frame,
+            text="Filtrar",
+            command=self.refresh_data,
+            padding=6,
+            width=10
+        )
+        btn_search.pack(side=tk.RIGHT, padx=5)
+
+        # Botón de exportar
+        btn_export = CustomButton(
+            filters_frame,
+            text="Exportar",
+            command=self.export_report,
+            padding=6,
+            width=10
+        )
+        btn_export.pack(side=tk.RIGHT, padx=5)
+
+        # Treeview para mostrar el inventario
+        tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+        self.tree = ttk.Treeview(
+            tree_frame,
+            columns=("ID", "Código", "Nombre", "Categoría", "Precio", "Stock", "Stock Mínimo", "Estado"),
+            show="headings",
+            height=20,
+            style="Custom.Treeview"
+        )
+
+        columns = [
+            ("ID", 70, tk.CENTER),
+            ("Código", 100, tk.CENTER),
+            ("Nombre", 200, tk.W),
+            ("Categoría", 120, tk.W),
+            ("Precio", 100, tk.CENTER),
+            ("Stock", 80, tk.CENTER),
+            ("Stock Mínimo", 100, tk.CENTER),
+            ("Estado", 100, tk.CENTER)
+        ]
+
+        for col, width, anchor in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=width, anchor=anchor)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        # Cargar datos de ejemplo (solo para diseño)
         self.load_sample_data()
 
     def load_sample_data(self):
-        # Datos de ejemplo - en una aplicación real esto vendría de la base de datos
+        """Carga datos de ejemplo para el diseño"""
         sample_data = [
-            (1, "Laptop HP", "Electrónicos", 1200.00, 15, 5),
-            (2, "Mouse inalámbrico", "Electrónicos", 25.99, 42, 10),
-            (3, "Camisa manga larga", "Ropa", 35.50, 8, 5),
-            (4, "Arroz 1kg", "Alimentos", 2.99, 120, 20),
-            (5, "Destornillador", "Herramientas", 8.75, 3, 5)
+            (1, "PROD-001", "Laptop HP EliteBook", "Electrónicos", "1,200.00", 15, 5, "En stock"),
+            (2, "PROD-002", "Mouse inalámbrico", "Electrónicos", "25.99", 42, 10, "En stock"),
+            (3, "PROD-003", "Camisa manga larga", "Ropa", "35.50", 8, 5, "Bajo stock"),
+            (4, "PROD-004", "Arroz 1kg", "Alimentos", "2.99", 120, 20, "En stock"),
+            (5, "PROD-005", "Destornillador", "Herramientas", "8.75", 3, 5, "Agotado")
         ]
 
         for item in sample_data:
-            self.tree.insert("", "end", values=item)
+            self.tree.insert("", tk.END, values=item)
 
-    def apply_filters(self):
-        # Aquí implementarías la lógica de filtrado
-        print(f"Filtrando por categoría: {self.category_var.get()}")
-        print(f"Filtrando por stock: {self.stock_var.get()}")
+    def refresh_data(self) -> None:
+        """Actualiza los datos del reporte según los filtros"""
+        # Función vacía como solicitaste
+        pass
 
-    def export_to_excel(self):
-        print("Exportando a Excel...")
-
-    def print_report(self):
-        print("Imprimiendo reporte...")
+    def export_report(self) -> None:
+        """Exporta el reporte a un archivo"""
+        # Función vacía como solicitaste
+        pass
 
     def go_back(self) -> None:
+        """Regresa a la pantalla anterior"""
+        self.pack_forget()
+        self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
