@@ -151,14 +151,18 @@ def main() -> None:
     currency_screen = CurrencyManagementScreen(app, lambda: open_home_from_current(currency_screen))
     taxes_screen = TaxesManagementScreen(app, lambda: open_home_from_current(taxes_screen))
     maintenance_screen = MaintenanceScreen(app, lambda: open_home_from_current(maintenance_screen))
+    recovery_suppliers_screen = RecoverySuppliers(app, lambda: [recovery_suppliers_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
+    recovery_inventory_screen = RecoveryInventory(app, lambda: [recovery_inventory_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
+    recovery_service_requests_screen = RecoveryServiceRequests(app, lambda: [recovery_service_requests_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
+    recovery_services_screen = RecoveryServices(app, lambda: [recovery_services_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
     recovery_screen = RecoveryScreen(
-        app, 
-        lambda: open_home_from_current(recovery_screen), 
-        lambda: None,
-        lambda: None,
-        lambda: None,
-        lambda: None
-    )
+    app, 
+    lambda: open_home_from_current(recovery_screen),
+    lambda: [recovery_screen.pack_forget(), recovery_suppliers_screen.pack(fill=tk.BOTH, expand=True)],
+    lambda: [recovery_screen.pack_forget(), recovery_inventory_screen.pack(fill=tk.BOTH, expand=True)],
+    lambda: [recovery_screen.pack_forget(), recovery_service_requests_screen.pack(fill=tk.BOTH, expand=True)],
+    lambda: [recovery_screen.pack_forget(), recovery_services_screen.pack(fill=tk.BOTH, expand=True)]
+)
     billing_screen = BillingScreen(app, lambda: open_home_from_current(billing_screen))
     reports_screen = ReportsScreen(app, lambda: open_home_from_current(reports_screen))
     sales_report_screen = SalesReportScreen(app, lambda: open_home_from_current(sales_report_screen))
