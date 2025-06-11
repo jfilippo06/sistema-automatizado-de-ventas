@@ -1,12 +1,15 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Callable, Any
 from datetime import datetime
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from sqlite_cli.models.inventory_report_model import InventoryReport
 from utils.session_manager import SessionManager
+from reports.inventory_movement_report import InventoryMovementReportScreen
+from reports.full_inventory_report import FullInventoryReportScreen
 
 class InventoryReportScreen(tk.Frame):
     def __init__(
@@ -18,14 +21,14 @@ class InventoryReportScreen(tk.Frame):
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
         self.search_var = tk.StringVar()
-        self.category_var = tk.StringVar()
-        self.stock_status_var = tk.StringVar()
         self.configure(bg="#f5f5f5")
+        self.selected_item_id = None
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
         self.parent.state('zoomed')
         super().pack(fill=tk.BOTH, expand=True)
+        self.refresh_data()
 
     def configure_ui(self) -> None:
         # Header
@@ -55,55 +58,13 @@ class InventoryReportScreen(tk.Frame):
         filters_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
         filters_frame.pack(fill=tk.X)
 
-        # Filtro por categoría
-        category_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        category_frame.pack(side=tk.LEFT, padx=5)
-
-        CustomLabel(
-            category_frame,
-            text="Categoría:",
-            font=("Arial", 10),
-            bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-
-        self.category_combobox = CustomCombobox(
-            category_frame,
-            textvariable=self.category_var,
-            width=20,
-            font=("Arial", 10)
-        )
-        self.category_combobox.pack(side=tk.LEFT, padx=5)
-        self.category_combobox['values'] = ["Todas", "Electrónicos", "Ropa", "Alimentos", "Herramientas"]
-        self.category_combobox.current(0)
-
-        # Filtro por estado de stock
-        stock_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        stock_frame.pack(side=tk.LEFT, padx=20)
-
-        CustomLabel(
-            stock_frame,
-            text="Estado de stock:",
-            font=("Arial", 10),
-            bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-
-        self.stock_combobox = CustomCombobox(
-            stock_frame,
-            textvariable=self.stock_status_var,
-            width=15,
-            font=("Arial", 10)
-        )
-        self.stock_combobox.pack(side=tk.LEFT, padx=5)
-        self.stock_combobox['values'] = ["Todos", "En stock", "Bajo stock", "Agotado"]
-        self.stock_combobox.current(0)
-
         # Campo de búsqueda
         search_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        search_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        search_frame.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
         CustomLabel(
             search_frame,
-            text="Buscar (ID/Nombre/Código):",
+            text="Buscar (Código/Nombre/Descripción):",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
@@ -111,31 +72,32 @@ class InventoryReportScreen(tk.Frame):
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
-            width=30,
+            width=40,
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
         search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
 
-        # Botón de búsqueda
-        btn_search = CustomButton(
+        # Botón de reporte completo
+        btn_full_report = CustomButton(
             filters_frame,
-            text="Filtrar",
-            command=self.refresh_data,
+            text="Reporte Completo",
+            command=self.open_full_report,
             padding=6,
-            width=10
+            width=15
         )
-        btn_search.pack(side=tk.RIGHT, padx=5)
+        btn_full_report.pack(side=tk.RIGHT, padx=5)
 
-        # Botón de exportar
-        btn_export = CustomButton(
+        # Botón de reporte de movimientos
+        btn_movements = CustomButton(
             filters_frame,
-            text="Exportar",
-            command=self.export_report,
+            text="Historial del Producto",
+            command=self.open_movement_report,
             padding=6,
-            width=10
+            width=20,
         )
-        btn_export.pack(side=tk.RIGHT, padx=5)
+        btn_movements.pack(side=tk.RIGHT, padx=5)
+        self.btn_movements = btn_movements
 
         # Treeview para mostrar el inventario
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
@@ -143,20 +105,26 @@ class InventoryReportScreen(tk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Código", "Nombre", "Categoría", "Precio", "Stock", "Stock Mínimo", "Estado"),
+            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Disponible", 
+                    "Mínimo", "Máximo", "Costo", "Precio", "Proveedor", "Vencimiento", "Estado"),
             show="headings",
             height=20,
             style="Custom.Treeview"
         )
 
         columns = [
-            ("ID", 70, tk.CENTER),
+            ("ID", 50, tk.CENTER),
             ("Código", 100, tk.CENTER),
-            ("Nombre", 200, tk.W),
-            ("Categoría", 120, tk.W),
-            ("Precio", 100, tk.CENTER),
-            ("Stock", 80, tk.CENTER),
-            ("Stock Mínimo", 100, tk.CENTER),
+            ("Producto", 150, tk.W),
+            ("Descripción", 200, tk.W),
+            ("Almacén", 70, tk.CENTER),
+            ("Disponible", 80, tk.CENTER),
+            ("Mínimo", 70, tk.CENTER),
+            ("Máximo", 70, tk.CENTER),
+            ("Costo", 90, tk.CENTER),
+            ("Precio", 90, tk.CENTER),
+            ("Proveedor", 150, tk.W),
+            ("Vencimiento", 100, tk.CENTER),
             ("Estado", 100, tk.CENTER)
         ]
 
@@ -169,31 +137,60 @@ class InventoryReportScreen(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Cargar datos de ejemplo (solo para diseño)
-        self.load_sample_data()
+        # Bind selection event
+        self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
+        self.tree.bind("<Double-1>", self.on_double_click)
 
-    def load_sample_data(self):
-        """Carga datos de ejemplo para el diseño"""
-        sample_data = [
-            (1, "PROD-001", "Laptop HP EliteBook", "Electrónicos", "1,200.00", 15, 5, "En stock"),
-            (2, "PROD-002", "Mouse inalámbrico", "Electrónicos", "25.99", 42, 10, "En stock"),
-            (3, "PROD-003", "Camisa manga larga", "Ropa", "35.50", 8, 5, "Bajo stock"),
-            (4, "PROD-004", "Arroz 1kg", "Alimentos", "2.99", 120, 20, "En stock"),
-            (5, "PROD-005", "Destornillador", "Herramientas", "8.75", 3, 5, "Agotado")
-        ]
+    def on_item_selected(self, event):
+        selected = self.tree.selection()
+        if selected:
+            self.selected_item_id = self.tree.item(selected[0])['values'][0]
+            self.btn_movements.config(state=tk.NORMAL)
+        else:
+            self.selected_item_id = None
+            self.btn_movements.config(state=tk.DISABLED)
 
-        for item in sample_data:
-            self.tree.insert("", tk.END, values=item)
+    def on_double_click(self, event):
+        if self.selected_item_id:
+            self.open_movement_report()
 
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
-        # Función vacía como solicitaste
-        pass
+        search_term = self.search_var.get()
+        
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+            
+        items = InventoryReport.get_inventory_report(search_term=search_term if search_term else None)
+        
+        for item in items:
+            expiration_date = item['expiration_date'] if item['expiration_date'] else ""
+            self.tree.insert("", tk.END, values=(
+                item['id'],
+                item['code'],
+                item['product'],
+                item['description'],
+                item['quantity'],
+                item['stock'],
+                item['min_stock'],
+                item['max_stock'],
+                f"{item['cost']:.2f}",
+                f"{item['price']:.2f}",
+                item['supplier_company'] if item['supplier_company'] else "",
+                expiration_date,
+                item['status']
+            ))
 
-    def export_report(self) -> None:
-        """Exporta el reporte a un archivo"""
-        # Función vacía como solicitaste
-        pass
+    def open_full_report(self) -> None:
+        """Abre la pantalla de reporte completo"""
+        FullInventoryReportScreen(self.parent, self.search_var.get())
+
+    def open_movement_report(self) -> None:
+        """Abre la pantalla de reporte de movimientos para el producto seleccionado"""
+        if self.selected_item_id:
+            InventoryMovementReportScreen(self.parent, self.selected_item_id)
+        else:
+            messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
 
     def go_back(self) -> None:
         """Regresa a la pantalla anterior"""
