@@ -4,7 +4,7 @@ from widgets.custom_label import CustomLabel
 from typing import Any, Callable
 from screens.reports.sales_report_screen import SalesReportScreen
 from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
-from screens.reports.inventory_report_screen import InventoryReportScreen
+from screens.reports.inventory.inventory_report_screen import InventoryReportScreen
 
 class ReportsScreen(tk.Frame):
     def __init__(
@@ -19,7 +19,7 @@ class ReportsScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("500x400")
+        self.parent.geometry("500x370")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 

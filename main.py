@@ -22,7 +22,7 @@ from screens.reports.sales_report_screen import SalesReportScreen
 from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
 from screens.catalog.catalog_screen import CatalogScreen
 from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen
-from screens.reports.inventory_report_screen import InventoryReportScreen
+from screens.reports.inventory.inventory_report_screen import InventoryReportScreen
 from utils.session_manager import SessionManager
 
 def main() -> None:

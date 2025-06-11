@@ -8,8 +8,8 @@ from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.inventory_report_model import InventoryReport
 from utils.session_manager import SessionManager
-from reports.inventory_movement_report import InventoryMovementReportScreen
-from reports.full_inventory_report import FullInventoryReportScreen
+from screens.reports.inventory.inventory_movement_report import InventoryMovementReportScreen
+from screens.reports.inventory.full_inventory_report import FullInventoryReportScreen
 
 class InventoryReportScreen(tk.Frame):
     def __init__(
@@ -37,7 +37,7 @@ class InventoryReportScreen(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Reporte de Inventario",
+            text="Reporte de productos",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"
