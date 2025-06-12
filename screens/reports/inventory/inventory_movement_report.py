@@ -1,4 +1,3 @@
-# screens/reports/inventory_movement_report.py
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
@@ -8,6 +7,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from reports.inventory_movement_viewer import InventoryMovementViewer
 
 class InventoryMovementReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, inventory_id: int):
@@ -102,6 +102,26 @@ class InventoryMovementReportScreen(tk.Toplevel):
         movement_combobox.pack(side=tk.LEFT, padx=5)
         movement_combobox.current(0)
         
+        # Botón de regresar
+        btn_back = CustomButton(
+            row1_frame,
+            text="Regresar",
+            command=self.destroy,
+            padding=6,
+            width=10
+        )
+        btn_back.pack(side=tk.RIGHT, padx=5)
+        
+        # Botón de generar reporte
+        btn_report = CustomButton(
+            row1_frame,
+            text="Generar Reporte",
+            command=self.generate_report,
+            padding=6,
+            width=15
+        )
+        btn_report.pack(side=tk.RIGHT, padx=5)
+        
         # Botón de filtrar
         btn_filter = CustomButton(
             row1_frame,
@@ -165,6 +185,7 @@ class InventoryMovementReportScreen(tk.Toplevel):
             self.product_label.config(
                 text=f"Producto: {product['product']} ({product['code']}) - {product['description']}"
             )
+            self.product_info = product
 
     def refresh_data(self):
         """Actualiza los datos según los filtros"""
@@ -199,3 +220,26 @@ class InventoryMovementReportScreen(tk.Toplevel):
             ))
         
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")
+        self.current_movements = movements  # Store movements for report generation
+
+    def generate_report(self):
+        """Genera el reporte visual de movimientos"""
+        if hasattr(self, 'current_movements') and self.current_movements:
+            report_title = f"Historial de Movimientos - {self.product_info['product']}"
+            filters = self._get_current_filters()
+            InventoryMovementViewer(self, report_title, self.product_info, self.current_movements, filters)
+        else:
+            messagebox.showwarning("Advertencia", "No hay datos para generar el reporte", parent=self)
+
+    def _get_current_filters(self):
+        """Obtiene los filtros actuales aplicados"""
+        filters = []
+        
+        if self.start_date_var.get():
+            filters.append(f"Desde: {self.start_date_var.get()}")
+        if self.end_date_var.get():
+            filters.append(f"Hasta: {self.end_date_var.get()}")
+        if self.movement_type_var.get() != "Todos":
+            filters.append(f"Tipo: {self.movement_type_var.get()}")
+            
+        return ", ".join(filters) if filters else "Sin filtros aplicados"

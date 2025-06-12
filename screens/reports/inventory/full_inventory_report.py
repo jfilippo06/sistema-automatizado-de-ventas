@@ -7,6 +7,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from reports.inventory_report_viewer import InventoryReportViewer
 
 class FullInventoryReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, initial_search: Optional[str] = None):
@@ -150,25 +151,25 @@ class FullInventoryReportScreen(tk.Toplevel):
             font=("Arial", 10)
         ).pack(side=tk.LEFT)
         
-        # Botón de filtrar
-        btn_filter = CustomButton(
+        # Botón de regresar
+        btn_back = CustomButton(
             row3_frame,
-            text="Filtrar",
-            command=self.refresh_data,
+            text="Regresar",
+            command=self.destroy,
             padding=6,
             width=10
         )
-        btn_filter.pack(side=tk.RIGHT, padx=5)
+        btn_back.pack(side=tk.RIGHT, padx=5)
         
-        # Botón de exportar
-        btn_export = CustomButton(
+        # Botón de generar reporte
+        btn_report = CustomButton(
             row3_frame,
-            text="Exportar a PDF",
-            command=self.export_to_pdf,
+            text="Generar Reporte",
+            command=self.generate_report,
             padding=6,
             width=15
         )
-        btn_export.pack(side=tk.RIGHT, padx=5)
+        btn_report.pack(side=tk.RIGHT, padx=5)
         
         # Treeview
         tree_frame = tk.Frame(main_frame, bg="#f5f5f5")
@@ -260,7 +261,34 @@ class FullInventoryReportScreen(tk.Toplevel):
             ))
         
         self.count_label.config(text=f"{len(items)} productos encontrados")
+        self.current_items = items  # Store items for report generation
 
-    def export_to_pdf(self):
-        """Exporta el reporte a PDF"""
-        messagebox.showinfo("Exportar", "Funcionalidad de exportación a PDF en desarrollo", parent=self)
+    def generate_report(self):
+        """Genera el reporte visual de inventario"""
+        if hasattr(self, 'current_items') and self.current_items:
+            report_title = "Reporte Completo de Inventario"
+            filters = self._get_current_filters()
+            InventoryReportViewer(self, report_title, self.current_items, filters)
+        else:
+            messagebox.showwarning("Advertencia", "No hay datos para generar el reporte", parent=self)
+
+    def _get_current_filters(self):
+        """Obtiene los filtros actuales aplicados"""
+        filters = []
+        
+        if self.search_var.get():
+            filters.append(f"Búsqueda: {self.search_var.get()}")
+        if self.supplier_var.get():
+            filters.append(f"Proveedor: {self.supplier_var.get()}")
+        if self.min_stock_var.get():
+            filters.append(f"Existencias mín: {self.min_stock_var.get()}")
+        if self.max_stock_var.get():
+            filters.append(f"Existencias máx: {self.max_stock_var.get()}")
+        if self.min_quantity_var.get():
+            filters.append(f"Almacén mín: {self.min_quantity_var.get()}")
+        if self.max_quantity_var.get():
+            filters.append(f"Almacén máx: {self.max_quantity_var.get()}")
+        if self.expired_only_var.get():
+            filters.append("Solo productos vencidos")
+            
+        return ", ".join(filters) if filters else "Sin filtros aplicados"
