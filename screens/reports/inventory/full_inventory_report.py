@@ -1,4 +1,3 @@
-# screens/reports/full_inventory_report.py
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
@@ -17,7 +16,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         self.configure(bg="#f5f5f5")
         
         # Configurar tamaño y posición
-        self.geometry("900x700")
+        self.geometry("1200x800")
         self.resizable(True, True)
         
         # Variables
@@ -59,6 +58,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
+        search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
         
         CustomLabel(
             row1_frame,
@@ -81,7 +81,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         
         CustomLabel(
             row2_frame,
-            text="Stock Mín:",
+            text="Existencias Mín:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
@@ -96,7 +96,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         
         CustomLabel(
             row2_frame,
-            text="Stock Máx:",
+            text="Existencias Máx:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
@@ -177,10 +177,11 @@ class FullInventoryReportScreen(tk.Toplevel):
         
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Disponible", 
-                    "Mínimo", "Máximo", "Costo", "Precio", "Proveedor", "Vencimiento", "Estado"),
+            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Existencias", 
+                    "Stock mínimo", "Stock máximo", "Precio compra", "Precio venta", 
+                    "Proveedor", "Vencimiento", "Estado"),
             show="headings",
-            height=15
+            height=20
         )
         
         columns = [
@@ -189,11 +190,11 @@ class FullInventoryReportScreen(tk.Toplevel):
             ("Producto", 150, tk.W),
             ("Descripción", 200, tk.W),
             ("Almacén", 70, tk.CENTER),
-            ("Disponible", 80, tk.CENTER),
-            ("Mínimo", 70, tk.CENTER),
-            ("Máximo", 70, tk.CENTER),
-            ("Costo", 80, tk.CENTER),
-            ("Precio", 80, tk.CENTER),
+            ("Existencias", 80, tk.CENTER),
+            ("Stock mínimo", 80, tk.CENTER),
+            ("Stock máximo", 80, tk.CENTER),
+            ("Precio compra", 90, tk.CENTER),
+            ("Precio venta", 90, tk.CENTER),
             ("Proveedor", 150, tk.W),
             ("Vencimiento", 100, tk.CENTER),
             ("Estado", 100, tk.CENTER)
@@ -224,7 +225,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             
         # Obtener valores de los filtros
         search_term = self.search_var.get() if self.search_var.get() else None
-        supplier_id = int(self.supplier_var.get()) if self.supplier_var.get().isdigit() else None
+        supplier_id = self.supplier_var.get() if self.supplier_var.get() else None
         min_stock = int(self.min_stock_var.get()) if self.min_stock_var.get().isdigit() else None
         max_stock = int(self.max_stock_var.get()) if self.max_stock_var.get().isdigit() else None
         min_quantity = int(self.min_quantity_var.get()) if self.min_quantity_var.get().isdigit() else None
@@ -263,5 +264,4 @@ class FullInventoryReportScreen(tk.Toplevel):
 
     def export_to_pdf(self):
         """Exporta el reporte a PDF"""
-        # Implementar lógica de exportación a PDF aquí
         messagebox.showinfo("Exportar", "Funcionalidad de exportación a PDF en desarrollo", parent=self)

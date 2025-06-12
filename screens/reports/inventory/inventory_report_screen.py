@@ -84,7 +84,7 @@ class InventoryReportScreen(tk.Frame):
             text="Reporte Completo",
             command=self.open_full_report,
             padding=6,
-            width=15
+            width=20
         )
         btn_full_report.pack(side=tk.RIGHT, padx=5)
 
@@ -94,7 +94,7 @@ class InventoryReportScreen(tk.Frame):
             text="Historial del Producto",
             command=self.open_movement_report,
             padding=6,
-            width=20,
+            width=20
         )
         btn_movements.pack(side=tk.RIGHT, padx=5)
         self.btn_movements = btn_movements
@@ -105,8 +105,9 @@ class InventoryReportScreen(tk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Disponible", 
-                    "Mínimo", "Máximo", "Costo", "Precio", "Proveedor", "Vencimiento", "Estado"),
+            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Existencias", 
+                    "Stock mínimo", "Stock máximo", "Precio compra", "Precio venta", 
+                    "Proveedor", "Vencimiento", "Estado"),
             show="headings",
             height=20,
             style="Custom.Treeview"
@@ -118,11 +119,11 @@ class InventoryReportScreen(tk.Frame):
             ("Producto", 150, tk.W),
             ("Descripción", 200, tk.W),
             ("Almacén", 70, tk.CENTER),
-            ("Disponible", 80, tk.CENTER),
-            ("Mínimo", 70, tk.CENTER),
-            ("Máximo", 70, tk.CENTER),
-            ("Costo", 90, tk.CENTER),
-            ("Precio", 90, tk.CENTER),
+            ("Existencias", 80, tk.CENTER),
+            ("Stock mínimo", 70, tk.CENTER),
+            ("Stock máximo", 70, tk.CENTER),
+            ("Precio compra", 90, tk.CENTER),
+            ("Precio venta", 90, tk.CENTER),
             ("Proveedor", 150, tk.W),
             ("Vencimiento", 100, tk.CENTER),
             ("Estado", 100, tk.CENTER)
@@ -139,20 +140,11 @@ class InventoryReportScreen(tk.Frame):
 
         # Bind selection event
         self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
-        self.tree.bind("<Double-1>", self.on_double_click)
 
     def on_item_selected(self, event):
         selected = self.tree.selection()
         if selected:
             self.selected_item_id = self.tree.item(selected[0])['values'][0]
-            self.btn_movements.config(state=tk.NORMAL)
-        else:
-            self.selected_item_id = None
-            self.btn_movements.config(state=tk.DISABLED)
-
-    def on_double_click(self, event):
-        if self.selected_item_id:
-            self.open_movement_report()
 
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
