@@ -15,9 +15,8 @@ class FullInventoryReportScreen(tk.Toplevel):
         self.parent = parent
         self.configure(bg="#f5f5f5")
         
-        # Configurar tamaño y posición
-        self.geometry("1200x800")
-        self.resizable(True, True)
+        self.resizable(False, False)
+        self.state('zoomed')
         
         # Variables
         self.search_var = tk.StringVar(value=initial_search if initial_search else "")
@@ -177,7 +176,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Existencias", 
+            columns=("ID", "Código", "Producto", "Descripción", "Cantidad", "Existencias", 
                     "Stock mínimo", "Stock máximo", "Precio compra", "Precio venta", 
                     "Proveedor", "Vencimiento", "Estado"),
             show="headings",
@@ -189,7 +188,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             ("Código", 80, tk.CENTER),
             ("Producto", 150, tk.W),
             ("Descripción", 200, tk.W),
-            ("Almacén", 70, tk.CENTER),
+            ("Cantidad", 70, tk.CENTER),
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
             ("Stock máximo", 80, tk.CENTER),

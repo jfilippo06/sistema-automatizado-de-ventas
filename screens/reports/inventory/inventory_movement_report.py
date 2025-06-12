@@ -17,9 +17,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.inventory_id = inventory_id
         self.configure(bg="#f5f5f5")
         
-        # Configurar tamaño y posición
-        self.geometry("1000x700")
-        self.resizable(True, True)
+        self.resizable(False, False)
+        self.state('zoomed')
         
         # Variables
         self.start_date_var = tk.StringVar()
@@ -119,8 +118,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
         
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("Fecha", "Tipo", "Cambio Almacén", "Cambio Disponible", 
-                    "Anterior Almacén", "Nuevo Almacén", "Anterior Disp.", "Nuevo Disp.", 
+            columns=("Fecha", "Tipo", "Cambio Stock", "Cambio Stock", 
+                    "Anterior Stock", "Nuevo Stock", "Anterior Disp.", "Nuevo Disp.", 
                     "Usuario", "Referencia", "Notas"),
             show="headings",
             height=15
@@ -129,10 +128,10 @@ class InventoryMovementReportScreen(tk.Toplevel):
         columns = [
             ("Fecha", 120, tk.CENTER),
             ("Tipo", 120, tk.CENTER),
-            ("Cambio Almacén", 100, tk.CENTER),
-            ("Cambio Disponible", 100, tk.CENTER),
-            ("Anterior Almacén", 100, tk.CENTER),
-            ("Nuevo Almacén", 100, tk.CENTER),
+            ("Cambio Stock", 100, tk.CENTER),
+            ("Cambio Stock", 100, tk.CENTER),
+            ("Anterior Stock", 100, tk.CENTER),
+            ("Nuevo Stock", 100, tk.CENTER),
             ("Anterior Disp.", 100, tk.CENTER),
             ("Nuevo Disp.", 100, tk.CENTER),
             ("Usuario", 100, tk.CENTER),

@@ -105,7 +105,7 @@ class InventoryReportScreen(tk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Código", "Producto", "Descripción", "Almacén", "Existencias", 
+            columns=("ID", "Código", "Producto", "Descripción", "Cantidad", "Existencias", 
                     "Stock mínimo", "Stock máximo", "Precio compra", "Precio venta", 
                     "Proveedor", "Vencimiento", "Estado"),
             show="headings",
@@ -118,7 +118,7 @@ class InventoryReportScreen(tk.Frame):
             ("Código", 100, tk.CENTER),
             ("Producto", 150, tk.W),
             ("Descripción", 200, tk.W),
-            ("Almacén", 70, tk.CENTER),
+            ("Cantidad", 70, tk.CENTER),
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 70, tk.CENTER),
             ("Stock máximo", 70, tk.CENTER),
