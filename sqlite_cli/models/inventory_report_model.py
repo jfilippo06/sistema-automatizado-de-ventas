@@ -1,4 +1,3 @@
-# models/inventory_report_model.py
 from sqlite_cli.database.database import get_db_connection
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -16,15 +15,6 @@ class InventoryReport:
     ) -> List[Dict]:
         """
         Obtiene un reporte completo del inventario con filtros opcionales.
-        
-        :param search_term: Término para buscar en código, nombre o descripción
-        :param supplier_id: ID del proveedor para filtrar
-        :param min_stock: Stock mínimo para filtrar
-        :param max_stock: Stock máximo para filtrar
-        :param min_quantity: Cantidad mínima en almacén para filtrar
-        :param max_quantity: Cantidad máxima en almacén para filtrar
-        :param expired_only: Mostrar solo productos con fecha de vencimiento pasada
-        :return: Lista de diccionarios con los datos del inventario
         """
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -91,7 +81,14 @@ class InventoryReport:
         query += " ORDER BY i.product ASC"
         
         cursor.execute(query, tuple(params))
-        items = [dict(row) for row in cursor.fetchall()]
+        items = []
+        for row in cursor.fetchall():
+            item = dict(row)
+            # Reemplazar None por "None" en los campos relevantes
+            for key in ['code', 'product', 'description', 'supplier_company', 'expiration_date']:
+                if item[key] is None:
+                    item[key] = "None"
+            items.append(item)
         conn.close()
         return items
 
@@ -105,13 +102,6 @@ class InventoryReport:
     ) -> List[Dict]:
         """
         Obtiene un reporte de movimientos de inventario con filtros opcionales.
-        
-        :param inventory_id: ID del producto para filtrar
-        :param start_date: Fecha de inicio en formato YYYY-MM-DD
-        :param end_date: Fecha de fin en formato YYYY-MM-DD
-        :param movement_type: Tipo de movimiento para filtrar
-        :param user_id: ID del usuario que realizó el movimiento
-        :return: Lista de diccionarios con los movimientos
         """
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -170,6 +160,13 @@ class InventoryReport:
         query += " ORDER BY im.created_at DESC"
         
         cursor.execute(query, tuple(params))
-        movements = [dict(row) for row in cursor.fetchall()]
+        movements = []
+        for row in cursor.fetchall():
+            movement = dict(row)
+            # Reemplazar None por "None" en los campos relevantes
+            for key in ['notes', 'reference_type', 'reference_id']:
+                if movement[key] is None:
+                    movement[key] = "None"
+            movements.append(movement)
         conn.close()
         return movements

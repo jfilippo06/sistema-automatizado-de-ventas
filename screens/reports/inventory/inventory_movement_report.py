@@ -182,8 +182,11 @@ class InventoryMovementReportScreen(tk.Toplevel):
         from sqlite_cli.models.inventory_model import InventoryItem
         product = InventoryItem.get_by_id(self.inventory_id)
         if product:
+            product_name = product['product'] if product['product'] != "None" else "None"
+            product_code = product['code'] if product['code'] != "None" else "None"
+            product_desc = product['description'] if product['description'] != "None" else "None"
             self.product_label.config(
-                text=f"Producto: {product['product']} ({product['code']}) - {product['description']}"
+                text=f"Producto: {product_name} ({product_code}) - {product_desc}"
             )
             self.product_info = product
 
@@ -205,6 +208,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
         )
         
         for movement in movements:
+            notes = movement['notes'] if movement['notes'] != "None" else "None"
+            reference = f"{movement['reference_type']} #{movement['reference_id']}" if movement['reference_type'] != "None" else "None"
             self.tree.insert("", tk.END, values=(
                 movement['created_at'],
                 movement['movement_type'],
@@ -215,8 +220,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
                 movement['previous_stock'],
                 movement['new_stock'],
                 movement['user'],
-                f"{movement['reference_type']} #{movement['reference_id']}" if movement['reference_type'] else "",
-                movement['notes']
+                reference,
+                notes
             ))
         
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")

@@ -243,19 +243,20 @@ class FullInventoryReportScreen(tk.Toplevel):
         )
         
         for item in items:
-            expiration_date = item['expiration_date'] if item['expiration_date'] else ""
+            expiration_date = item['expiration_date'] if item['expiration_date'] != "None" else "None"
+            supplier = item['supplier_company'] if item['supplier_company'] != "None" else "None"
             self.tree.insert("", tk.END, values=(
                 item['id'],
-                item['code'],
-                item['product'],
-                item['description'],
+                item['code'] if item['code'] != "None" else "None",
+                item['product'] if item['product'] != "None" else "None",
+                item['description'] if item['description'] != "None" else "None",
                 item['quantity'],
                 item['stock'],
                 item['min_stock'],
                 item['max_stock'],
                 f"{item['cost']:.2f}",
                 f"{item['price']:.2f}",
-                item['supplier_company'] if item['supplier_company'] else "",
+                supplier,
                 expiration_date,
                 item['status']
             ))
