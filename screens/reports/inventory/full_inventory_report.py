@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
-from datetime import datetime
 from sqlite_cli.models.inventory_report_model import InventoryReport
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from widgets.custom_combobox import CustomCombobox
 from reports.inventory_report_viewer import InventoryReportViewer
 
 class FullInventoryReportScreen(tk.Toplevel):
@@ -21,12 +19,11 @@ class FullInventoryReportScreen(tk.Toplevel):
         
         # Variables
         self.search_var = tk.StringVar(value=initial_search if initial_search else "")
-        self.supplier_var = tk.StringVar()
+        self.quantity_var = tk.StringVar()
+        self.existencia_var = tk.StringVar()
         self.min_stock_var = tk.StringVar()
         self.max_stock_var = tk.StringVar()
-        self.min_quantity_var = tk.StringVar()
-        self.max_quantity_var = tk.StringVar()
-        self.expired_only_var = tk.BooleanVar(value=False)
+        self.supplier_var = tk.StringVar()
         
         self.configure_ui()
         self.refresh_data()
@@ -36,15 +33,14 @@ class FullInventoryReportScreen(tk.Toplevel):
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Frame de filtros (3 filas como antes)
+        # Frame de filtros (3 filas exactas)
         filters_frame = tk.Frame(main_frame, bg="#f5f5f5", pady=10)
         filters_frame.pack(fill=tk.X)
         
-        # Fila 1: Búsqueda y botón Filtrar
+        # Fila 1: Búsqueda de producto + botón Filtrar
         row1_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row1_frame.pack(fill=tk.X, pady=5)
         
-        # Búsqueda de producto
         CustomLabel(
             row1_frame,
             text="Buscar Producto:",
@@ -55,12 +51,11 @@ class FullInventoryReportScreen(tk.Toplevel):
         search_entry = CustomEntry(
             row1_frame,
             textvariable=self.search_var,
-            width=40,
+            width=30,
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
         
-        # Botón de filtrar
         btn_filter = CustomButton(
             row1_frame,
             text="Filtrar",
@@ -70,9 +65,25 @@ class FullInventoryReportScreen(tk.Toplevel):
         )
         btn_filter.pack(side=tk.LEFT, padx=5)
         
-        # Fila 2: Filtros de existencias y almacén
+        # Fila 2: Cantidad y Existencias
         row2_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row2_frame.pack(fill=tk.X, pady=5)
+        
+        # Cantidad
+        CustomLabel(
+            row2_frame,
+            text="Cantidad:",
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+        
+        CustomEntry(
+            row2_frame,
+            textvariable=self.quantity_var,
+            width=10,
+            font=("Arial", 10),
+            justify=tk.CENTER
+        ).pack(side=tk.LEFT, padx=5)
         
         # Existencias
         CustomLabel(
@@ -80,115 +91,87 @@ class FullInventoryReportScreen(tk.Toplevel):
             text="Existencias:",
             font=("Arial", 10),
             bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-        
-        CustomEntry(
-            row2_frame,
-            textvariable=self.min_stock_var,
-            width=8,
-            font=("Arial", 10),
-            justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=2)
-        
-        CustomLabel(
-            row2_frame,
-            text="a",
-            font=("Arial", 10),
-            bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-        
-        CustomEntry(
-            row2_frame,
-            textvariable=self.max_stock_var,
-            width=8,
-            font=("Arial", 10),
-            justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=5)
-        
-        # Almacén
-        CustomLabel(
-            row2_frame,
-            text="Almacén:",
-            font=("Arial", 10),
-            bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
         CustomEntry(
             row2_frame,
-            textvariable=self.min_quantity_var,
-            width=8,
+            textvariable=self.existencia_var,
+            width=10,
             font=("Arial", 10),
             justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=2)
+        ).pack(side=tk.LEFT, padx=5)
         
+        # Fila 3: Stock mínimo, Stock máximo, Proveedor y botones
+        row3_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        row3_frame.pack(fill=tk.X, pady=5)
+        
+        # Stock mínimo
         CustomLabel(
-            row2_frame,
-            text="a",
+            row3_frame,
+            text="Stock Mín:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
         
         CustomEntry(
-            row2_frame,
-            textvariable=self.max_quantity_var,
-            width=8,
+            row3_frame,
+            textvariable=self.min_stock_var,
+            width=10,
+            font=("Arial", 10),
+            justify=tk.CENTER
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Stock máximo
+        CustomLabel(
+            row3_frame,
+            text="Stock Máx:",
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT, padx=(5, 0))
+        
+        CustomEntry(
+            row3_frame,
+            textvariable=self.max_stock_var,
+            width=10,
             font=("Arial", 10),
             justify=tk.CENTER
         ).pack(side=tk.LEFT, padx=5)
         
         # Proveedor
         CustomLabel(
-            row2_frame,
+            row3_frame,
             text="Proveedor:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
         CustomEntry(
-            row2_frame,
-            textvariable=self.supplier_var,
-            width=20,
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT)
-        
-        # Fila 3: Checkbox y botones de acción
-        row3_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        row3_frame.pack(fill=tk.X, pady=5)
-        
-        # Checkbox de vencidos
-        tk.Checkbutton(
             row3_frame,
-            text="Solo productos vencidos",
-            variable=self.expired_only_var,
-            bg="#f5f5f5",
+            textvariable=self.supplier_var,
+            width=15,
             font=("Arial", 10)
-        ).pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT, padx=5)
         
-        # Botones de acción a la derecha
-        action_frame = tk.Frame(row3_frame, bg="#f5f5f5")
-        action_frame.pack(side=tk.RIGHT)
-        
-        # Botón de generar reporte
+        # Botones de acción en la misma fila 3
         btn_report = CustomButton(
-            action_frame,
+            row3_frame,
             text="Generar Reporte",
             command=self.generate_report,
             padding=6,
             width=15
         )
-        btn_report.pack(side=tk.LEFT, padx=5)
+        btn_report.pack(side=tk.RIGHT, padx=5)
         
-        # Botón de regresar
         btn_back = CustomButton(
-            action_frame,
+            row3_frame,
             text="Regresar",
             command=self.destroy,
             padding=6,
             width=10
         )
-        btn_back.pack(side=tk.LEFT)
+        btn_back.pack(side=tk.RIGHT)
         
-        # Contenedor para el Treeview con scrollbars
+        # Treeview con scrollbars
         tree_container = tk.Frame(main_frame, bg="#f5f5f5")
         tree_container.pack(fill=tk.BOTH, expand=True)
         
@@ -199,22 +182,18 @@ class FullInventoryReportScreen(tk.Toplevel):
         yscrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL)
         yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Treeview
+        # Treeview (sin estado)
         self.tree = ttk.Treeview(
             tree_container,
-            columns=("ID", "Código", "Producto", "Descripción", "Cantidad", "Existencias", 
-                    "Stock mínimo", "Stock máximo", "Precio compra", "Precio venta", 
-                    "Proveedor", "Vencimiento", "Estado"),
+            columns=("ID", "Código", "Producto", "Descripción", "Cantidad", 
+                    "Existencias", "Stock mínimo", "Stock máximo", 
+                    "Precio compra", "Precio venta", "Proveedor", "Vencimiento"),
             show="headings",
             height=20,
             xscrollcommand=xscrollbar.set,
             yscrollcommand=yscrollbar.set
         )
         self.tree.pack(fill=tk.BOTH, expand=True)
-        
-        # Configurar scrollbars
-        xscrollbar.config(command=self.tree.xview)
-        yscrollbar.config(command=self.tree.yview)
         
         # Configurar columnas
         columns = [
@@ -228,9 +207,8 @@ class FullInventoryReportScreen(tk.Toplevel):
             ("Stock máximo", 80, tk.CENTER),
             ("Precio compra", 90, tk.CENTER),
             ("Precio venta", 90, tk.CENTER),
-            ("Proveedor", 150, tk.W),
-            ("Vencimiento", 100, tk.CENTER),
-            ("Estado", 100, tk.CENTER)
+            ("Proveedor", 120, tk.W),
+            ("Vencimiento", 100, tk.CENTER)
         ]
         
         for col, width, anchor in columns:
@@ -247,91 +225,56 @@ class FullInventoryReportScreen(tk.Toplevel):
         self.count_label.pack(side=tk.BOTTOM, fill=tk.X, pady=(5, 0))
 
     def apply_filters(self):
-        """Aplica los filtros y actualiza la tabla solo si hay coincidencias"""
-        # Obtener valores de los filtros
-        search_term = self.search_var.get() if self.search_var.get() else None
-        supplier_id = self.supplier_var.get() if self.supplier_var.get() else None
+        """Aplica los filtros"""
+        search_term = self.search_var.get() or None
+        quantity = int(self.quantity_var.get()) if self.quantity_var.get().isdigit() else None
         min_stock = int(self.min_stock_var.get()) if self.min_stock_var.get().isdigit() else None
         max_stock = int(self.max_stock_var.get()) if self.max_stock_var.get().isdigit() else None
-        min_quantity = int(self.min_quantity_var.get()) if self.min_quantity_var.get().isdigit() else None
-        max_quantity = int(self.max_quantity_var.get()) if self.max_quantity_var.get().isdigit() else None
-        expired_only = self.expired_only_var.get()
+        supplier = self.supplier_var.get() or None
         
         items = InventoryReport.get_inventory_report(
             search_term=search_term,
-            supplier_id=supplier_id,
+            supplier_id=supplier,
+            min_quantity=quantity,
+            max_quantity=quantity,
             min_stock=min_stock,
-            max_stock=max_stock,
-            min_quantity=min_quantity,
-            max_quantity=max_quantity,
-            expired_only=expired_only
+            max_stock=max_stock
         )
         
-        if items:  # Solo actualizar si hay resultados
+        if items:
             self.update_table(items)
         else:
-            messagebox.showinfo("Información", "No se encontraron productos con los criterios de búsqueda", parent=self)
+            messagebox.showinfo("Información", "No se encontraron coincidencias", parent=self)
 
     def refresh_data(self):
-        """Carga todos los datos inicialmente"""
+        """Carga todos los datos iniciales"""
         items = InventoryReport.get_inventory_report()
         self.update_table(items)
 
     def update_table(self, items):
-        """Actualiza la tabla con los items proporcionados"""
-        # Limpiar tabla
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-            
-        # Llenar con nuevos datos
+        """Actualiza la tabla"""
+        self.tree.delete(*self.tree.get_children())
         for item in items:
-            expiration_date = item['expiration_date'] if item['expiration_date'] != "None" else "None"
-            supplier = item['supplier_company'] if item['supplier_company'] != "None" else "None"
             self.tree.insert("", tk.END, values=(
                 item['id'],
-                item['code'] if item['code'] != "None" else "None",
-                item['product'] if item['product'] != "None" else "None",
-                item['description'] if item['description'] != "None" else "None",
+                item['code'],
+                item['product'],
+                item['description'],
                 item['quantity'],
                 item['stock'],
                 item['min_stock'],
                 item['max_stock'],
                 f"{item['cost']:.2f}",
                 f"{item['price']:.2f}",
-                supplier,
-                expiration_date,
-                item['status']
+                item.get('supplier_company', ''),
+                item.get('expiration_date', '')
             ))
-        
         self.count_label.config(text=f"{len(items)} productos encontrados")
-        self.current_items = items  # Store items for report generation
+        self.current_items = items
 
     def generate_report(self):
-        """Genera el reporte visual de inventario"""
+        """Genera el reporte"""
         if hasattr(self, 'current_items') and self.current_items:
-            report_title = "Reporte Completo de Inventario"
-            filters = self._get_current_filters()
-            InventoryReportViewer(self, report_title, self.current_items, filters)
+            InventoryReportViewer(self, "Reporte de Inventario", self.current_items, "")
         else:
-            messagebox.showwarning("Advertencia", "No hay datos para generar el reporte", parent=self)
-
-    def _get_current_filters(self):
-        """Obtiene los filtros actuales aplicados"""
-        filters = []
-        
-        if self.search_var.get():
-            filters.append(f"Producto: {self.search_var.get()}")
-        if self.supplier_var.get():
-            filters.append(f"Proveedor: {self.supplier_var.get()}")
-        if self.min_stock_var.get():
-            filters.append(f"Existencias mín: {self.min_stock_var.get()}")
-        if self.max_stock_var.get():
-            filters.append(f"Existencias máx: {self.max_stock_var.get()}")
-        if self.min_quantity_var.get():
-            filters.append(f"Almacén mín: {self.min_quantity_var.get()}")
-        if self.max_quantity_var.get():
-            filters.append(f"Almacén máx: {self.max_quantity_var.get()}")
-        if self.expired_only_var.get():
-            filters.append("Solo productos vencidos")
-            
-        return ", ".join(filters) if filters else "Sin filtros aplicados"
+            messagebox.showwarning("Advertencia", "No hay datos para generar reporte", parent=self)
