@@ -260,6 +260,7 @@ class AdjustInventory(tk.Toplevel):
                 stock=new_stock,
                 min_stock=item['min_stock'],
                 max_stock=item['max_stock'],
+                cost=item['cost'],
                 price=item['price'],
                 supplier_id=item.get('supplier_id'),
                 expiration_date=item.get('expiration_date'),
