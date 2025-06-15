@@ -75,12 +75,11 @@ class InventoryReportViewer(tk.Toplevel):
         header_frame.pack(fill="x")
         
         for header, width in zip(headers, widths):
-            cell = tk.Frame(header_frame, bg="#4a6fa5", height=30)
+            cell = tk.Frame(header_frame, bg="#4a6fa5", height=30, width=width)
             cell.pack_propagate(False)
             cell.pack(side="left", padx=1)
             tk.Label(cell, text=header, fg="white", bg="#4a6fa5", 
-                   font=("Arial", 10, "bold")).pack(expand=True, fill="both")
-            cell.config(width=width)
+                   font=("Arial", 10, "bold"), anchor="center").pack(expand=True, fill="both")
         
         # Cuerpo de la tabla (sin Estado)
         for item in items:
@@ -103,12 +102,11 @@ class InventoryReportViewer(tk.Toplevel):
             ]
             
             for value, width in zip(values, widths):
-                cell = tk.Frame(row_frame, bg="white", height=30, bd=1, relief="solid")
+                cell = tk.Frame(row_frame, bg="white", height=30, width=width, bd=1, relief="solid")
                 cell.pack_propagate(False)
                 cell.pack(side="left", padx=1)
                 tk.Label(cell, text=value, bg="white", 
-                       font=("Arial", 9)).pack(expand=True, fill="both")
-                cell.config(width=width)
+                       font=("Arial", 9), anchor="w").pack(expand=True, fill="both")
         
         # Totales y resumen
         summary_frame = tk.Frame(scrollable_frame, bg="white")
@@ -124,6 +122,19 @@ class InventoryReportViewer(tk.Toplevel):
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
         tk.Label(summary_frame, text=f"Total Existencias: {total_stock}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
+        
+        # Botón de regresar
+        btn_frame = tk.Frame(scrollable_frame, bg="white")
+        btn_frame.pack(fill="x", pady=(10, 0))
+        
+        tk.Button(
+            btn_frame, 
+            text="Regresar", 
+            command=self.destroy,
+            font=("Arial", 10),
+            padx=20,
+            pady=5
+        ).pack(side="right")
         
         # Información del generador
         creator_frame = tk.Frame(scrollable_frame, bg="white")

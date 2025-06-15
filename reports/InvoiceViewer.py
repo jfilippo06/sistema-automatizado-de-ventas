@@ -19,8 +19,8 @@ class InvoiceViewer(tk.Toplevel):
         self.grab_set()
         
         # Tamaño fijo de la ventana
-        window_width = 700
-        window_height = 700
+        window_width = 750  # Aumentado para acomodar el margen
+        window_height = 750
         
         # Obtener dimensiones de la pantalla
         screen_width = self.winfo_screenwidth()
@@ -33,13 +33,17 @@ class InvoiceViewer(tk.Toplevel):
         self.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.resizable(False, False)
         
-        # Frame principal con scroll y márgenes
-        main_frame = tk.Frame(self, padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Frame principal con margen gris
+        outer_frame = tk.Frame(self, bg="#f0f0f0", padx=10, pady=10)
+        outer_frame.pack(fill=tk.BOTH, expand=True)
         
-        canvas = tk.Canvas(main_frame)
+        # Frame interno blanco que contendrá todo el contenido
+        main_frame = tk.Frame(outer_frame, bg="white", padx=5, pady=5)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)  # Margen gris visible
+        
+        canvas = tk.Canvas(main_frame, bg="white", highlightthickness=0)
         scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, padx=15, pady=15)
+        scrollable_frame = tk.Frame(canvas, bg="white", padx=15, pady=15)
         
         scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         
@@ -49,97 +53,145 @@ class InvoiceViewer(tk.Toplevel):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Información de la empresa
-        tk.Label(scrollable_frame, text="RN&M Servicios Integrales, C.A", 
-                font=("Arial", 14, "bold")).pack(pady=(0, 5))
-        tk.Label(scrollable_frame, text="RIF: J-40339817-8", 
-                font=("Arial", 12)).pack(pady=(0, 10))
-        tk.Label(scrollable_frame, text="RECIBO", 
-                font=("Arial", 16, "bold"), fg="#333").pack(pady=(0, 15))
+        # Encabezado
+        header_frame = tk.Frame(scrollable_frame, bg="white")
+        header_frame.pack(fill="x", pady=(0, 15))
         
-        # Separador
-        ttk.Separator(scrollable_frame).pack(fill="x", padx=10, pady=10)
+        # Información de la empresa (izquierda)
+        company_frame = tk.Frame(header_frame, bg="white")
+        company_frame.pack(side="left", anchor="nw")
         
-        # Información de recibo, cliente y empleado
-        info_frame = tk.Frame(scrollable_frame, padx=10, pady=10)
-        info_frame.pack(fill="x", pady=(0, 15))
+        tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
+                font=("Arial", 12, "bold"), bg="white").pack(anchor="w")
+        tk.Label(company_frame, text="RIF: J-40339817-8", 
+                font=("Arial", 10), bg="white").pack(anchor="w")
         
-        # Columna izquierda - Información de recibo
-        left_frame = tk.Frame(info_frame)
-        left_frame.pack(side="left", anchor="w", padx=20)
+        # Número de recibo y fecha (derecha)
+        invoice_frame = tk.Frame(header_frame, bg="white")
+        invoice_frame.pack(side="right", anchor="ne")
         
-        tk.Label(left_frame, text=f"N° Recibo: {invoice_id}", 
-                font=("Arial", 10)).pack(anchor="w", pady=2)
-        tk.Label(left_frame, text=f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
-                font=("Arial", 10)).pack(anchor="w", pady=2)
+        tk.Label(invoice_frame, text=f"RECIBO N°: {invoice_id}", 
+                font=("Arial", 12, "bold"), bg="white").pack(anchor="e")
+        tk.Label(invoice_frame, text=f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+                font=("Arial", 10), bg="white").pack(anchor="e")
         
-        # Columna derecha - Información del cliente y empleado
-        right_frame = tk.Frame(info_frame)
-        right_frame.pack(side="right", anchor="e", padx=20)
+        # Línea divisoria
+        ttk.Separator(scrollable_frame, orient="horizontal").pack(fill="x", pady=10)
         
-        tk.Label(right_frame, text="Cliente:", 
-                font=("Arial", 10, "bold")).pack(anchor="e", pady=2)
-        tk.Label(right_frame, text=customer_info, 
-                font=("Arial", 10)).pack(anchor="e", pady=2)
+        # Información del cliente
+        customer_frame = tk.Frame(scrollable_frame, bg="white")
+        customer_frame.pack(fill="x", pady=(0, 15))
         
-        tk.Label(right_frame, text="Atendido por:", 
-                font=("Arial", 10, "bold")).pack(anchor="e", pady=(10, 2))
-        tk.Label(right_frame, text=self._get_employee_info(), 
-                font=("Arial", 10)).pack(anchor="e", pady=2)
+        tk.Label(customer_frame, text="CLIENTE:", 
+                font=("Arial", 10, "bold"), bg="white").pack(anchor="w")
+        tk.Label(customer_frame, text=customer_info, 
+                font=("Arial", 10), bg="white").pack(anchor="w")
         
         # Tabla de productos/servicios
-        table_frame = tk.Frame(scrollable_frame, padx=10, pady=10)
+        table_frame = tk.Frame(scrollable_frame, bg="white")
         table_frame.pack(fill="x", pady=(0, 15))
         
-        columns = ("Tipo", "Descripción", "Cantidad", "P. Unitario", "Total")
-        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=min(8, len(items)))
+        # Encabezados de la tabla
+        headers = ["Tipo", "Descripción", "Cantidad", "P. Unitario", "Total"]
+        widths = [80, 300, 70, 90, 90]
         
-        # Configurar columnas
-        tree.heading("Tipo", text="Tipo")
-        tree.heading("Descripción", text="Descripción")
-        tree.heading("Cantidad", text="Cantidad")
-        tree.heading("P. Unitario", text="P. Unitario")
-        tree.heading("Total", text="Total")
+        header_frame = tk.Frame(table_frame, bg="#4a6fa5")
+        header_frame.pack(fill="x")
         
-        tree.column("Tipo", width=80, anchor="center")
-        tree.column("Descripción", width=220, anchor="w")
-        tree.column("Cantidad", width=70, anchor="center")
-        tree.column("P. Unitario", width=90, anchor="e")
-        tree.column("Total", width=90, anchor="e")
+        for header, width in zip(headers, widths):
+            cell = tk.Frame(header_frame, bg="#4a6fa5", height=30, width=width)
+            cell.pack_propagate(False)
+            cell.pack(side="left", padx=1)
+            tk.Label(cell, text=header, fg="white", bg="#4a6fa5", 
+                   font=("Arial", 10, "bold"), anchor="center").pack(expand=True, fill="both")
         
-        # Insertar datos
+        # Cuerpo de la tabla
         for item in items:
+            row_frame = tk.Frame(table_frame, bg="white", height=30)
+            row_frame.pack_propagate(False)
+            row_frame.pack(fill="x", pady=1)
+            
             item_type = "Servicio" if item.get('is_service', False) else "Producto"
-            tree.insert("", "end", values=(
+            values = [
                 item_type,
                 item['name'],
-                item['quantity'],
+                str(item['quantity']),
                 f"{item['unit_price']:.2f}",
                 f"{item['total']:.2f}"
-            ))
-        
-        tree.pack(fill="x")
+            ]
+            
+            for value, width in zip(values, widths):
+                cell = tk.Frame(row_frame, bg="white", height=30, width=width, bd=1, relief="solid")
+                cell.pack_propagate(False)
+                cell.pack(side="left", padx=1)
+                tk.Label(cell, text=value, bg="white", 
+                       font=("Arial", 10), anchor="w").pack(expand=True, fill="both")
         
         # Totales
-        totals_frame = tk.Frame(scrollable_frame, padx=10, pady=15)
-        totals_frame.pack(fill="x", pady=(10, 20))
+        totals_frame = tk.Frame(scrollable_frame, bg="white")
+        totals_frame.pack(fill="x", pady=(15, 20))
         
         iva_tax = Tax.get_by_name("IVA")
         if iva_tax and iva_tax.get('status_name') == 'active':
-            tk.Label(totals_frame, text=f"Subtotal: {subtotal:.2f}",
-                    font=("Arial", 10, "bold")).pack(side="right", padx=15)
-            tk.Label(totals_frame, text=f"IVA ({iva_tax['value']}%): {taxes:.2f}",
-                    font=("Arial", 10, "bold")).pack(side="right", padx=15)
+            subtotal_frame = tk.Frame(totals_frame, bg="white")
+            subtotal_frame.pack(anchor="e", pady=2)
+            tk.Label(subtotal_frame, text="Subtotal:", 
+                    font=("Arial", 10, "bold"), bg="white").pack(side="left", padx=5)
+            tk.Label(subtotal_frame, text=f"{subtotal:.2f}", 
+                    font=("Arial", 10, "bold"), bg="white").pack(side="left")
+            
+            iva_frame = tk.Frame(totals_frame, bg="white")
+            iva_frame.pack(anchor="e", pady=2)
+            tk.Label(iva_frame, text=f"IVA ({iva_tax['value']}%):", 
+                    font=("Arial", 10, "bold"), bg="white").pack(side="left", padx=5)
+            tk.Label(iva_frame, text=f"{taxes:.2f}", 
+                    font=("Arial", 10, "bold"), bg="white").pack(side="left")
         
-        tk.Label(totals_frame, text=f"TOTAL: {total:.2f}",
-                font=("Arial", 12, "bold")).pack(side="right", padx=15)
+        # Total
+        total_frame = tk.Frame(totals_frame, bg="white")
+        total_frame.pack(anchor="e", pady=(10, 0))
+        tk.Label(total_frame, text="TOTAL:", 
+                font=("Arial", 12, "bold"), bg="white").pack(side="left", padx=5)
+        tk.Label(total_frame, text=f"{total:.2f}", 
+                font=("Arial", 12, "bold"), bg="white").pack(side="left")
         
-        # Nota sobre servicios
+        # Botón de regresar
+        btn_frame = tk.Frame(scrollable_frame, bg="white")
+        btn_frame.pack(fill="x", pady=(10, 0))
+        
+        tk.Button(
+            btn_frame, 
+            text="Regresar", 
+            command=self.destroy,
+            font=("Arial", 10),
+            padx=20,
+            pady=5,
+            bg="#f0f0f0",
+            relief=tk.GROOVE
+        ).pack(side="right")
+        
+        # Información del empleado
+        employee_frame = tk.Frame(scrollable_frame, bg="white")
+        employee_frame.pack(fill="x", pady=(20, 0))
+        
+        tk.Label(employee_frame, text=f"Atendido por: {self._get_employee_info()}", 
+                font=("Arial", 9), bg="white").pack(anchor="w")
+        
+        # Línea divisoria
+        ttk.Separator(scrollable_frame, orient="horizontal").pack(fill="x", pady=10)
+        
+        # Notas
+        notes_frame = tk.Frame(scrollable_frame, bg="white")
+        notes_frame.pack(fill="x", pady=(5, 15))
+        
+        tk.Label(notes_frame, text="Notas:", 
+                font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
+        tk.Label(notes_frame, text="Este recibo es generado automáticamente por el sistema.", 
+                font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
+        
         if any(item.get('is_service', False) for item in items):
-            note_frame = tk.Frame(scrollable_frame, padx=15, pady=10)
-            note_frame.pack(fill="x", pady=(10, 20))
-            tk.Label(note_frame, text="Nota: Los servicios solicitados serán atendidos según lo acordado.",
-                   font=("Arial", 9), fg="#666").pack(side="left")
+            tk.Label(notes_frame, text="Nota: Los servicios solicitados serán atendidos según lo acordado.",
+                   font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
 
     def _get_employee_info(self) -> str:
         """Obtiene la información del empleado desde SessionManager"""
@@ -148,18 +200,15 @@ class InvoiceViewer(tk.Toplevel):
         if not current_user:
             return "No disponible"
         
-        # Intentamos obtener el nombre completo (si existe en el modelo de usuario)
         if 'first_name' in current_user and 'last_name' in current_user:
             full_name = f"{current_user['first_name']} {current_user['last_name']}"
             if current_user.get('username'):
                 return f"{full_name} ({current_user['username']})"
             return full_name
         
-        # Si no hay nombre completo, usamos el username
         if 'username' in current_user:
             return current_user['username']
         
-        # Como último recurso, mostramos el ID
         if 'id' in current_user:
             return f"Empleado ID: {current_user['id']}"
         
