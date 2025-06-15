@@ -6,6 +6,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from reports.inventory_report_viewer import InventoryReportViewer
+from reports.generate_pdf.pdf_generator import PDFGenerator
 
 class FullInventoryReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, initial_search: Optional[str] = None):
@@ -153,6 +154,15 @@ class FullInventoryReportScreen(tk.Toplevel):
         ).pack(side=tk.LEFT, padx=5)
         
         # Botones de acción en la misma fila 3
+        btn_pdf = CustomButton(
+            row3_frame,
+            text="Generar PDF",
+            command=self.generate_pdf,
+            padding=6,
+            width=15,
+        )
+        btn_pdf.pack(side=tk.RIGHT, padx=5)
+        
         btn_report = CustomButton(
             row3_frame,
             text="Generar Reporte",
@@ -273,8 +283,20 @@ class FullInventoryReportScreen(tk.Toplevel):
         self.current_items = items
 
     def generate_report(self):
-        """Genera el reporte"""
+        """Genera el reporte visual"""
         if hasattr(self, 'current_items') and self.current_items:
             InventoryReportViewer(self, "Reporte de Inventario", self.current_items, "")
         else:
             messagebox.showwarning("Advertencia", "No hay datos para generar reporte", parent=self)
+
+    def generate_pdf(self):
+        """Genera el reporte en PDF"""
+        if hasattr(self, 'current_items') and self.current_items:
+            PDFGenerator.generate_inventory_report(
+                parent=self,
+                title="Reporte de Inventario",
+                items=self.current_items,
+                filters=""
+            )
+        else:
+            messagebox.showwarning("Advertencia", "No hay datos para generar PDF", parent=self)

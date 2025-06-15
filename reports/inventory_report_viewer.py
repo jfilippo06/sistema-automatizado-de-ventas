@@ -2,12 +2,16 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
 from utils.session_manager import SessionManager
+from reports.generate_pdf.pdf_generator import PDFGenerator
 
 class InventoryReportViewer(tk.Toplevel):
     def __init__(self, parent, title, items, filters):
         super().__init__(parent)
         self.title(f"Reporte de Inventario - {datetime.now().strftime('%Y-%m-%d')}")
         self.parent = parent
+        self.items = items
+        self.report_title = title
+        self.filters = filters
         
         # Configurar ventana modal centrada
         self.transient(parent)
@@ -16,6 +20,9 @@ class InventoryReportViewer(tk.Toplevel):
         self.resizable(False, False)
         self.state('zoomed')
         
+        self.configure_ui()
+
+    def configure_ui(self):
         # Frame principal con scroll y márgenes
         main_frame = tk.Frame(self, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -52,11 +59,11 @@ class InventoryReportViewer(tk.Toplevel):
         title_frame = tk.Frame(header_frame, bg="white")
         title_frame.pack(side="right", anchor="ne")
         
-        tk.Label(title_frame, text=title, 
+        tk.Label(title_frame, text=self.report_title, 
                 font=("Arial", 14, "bold"), bg="white").pack(anchor="e")
         tk.Label(title_frame, text=f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
                 font=("Arial", 10), bg="white").pack(anchor="e")
-        tk.Label(title_frame, text=f"Filtros: {filters}", 
+        tk.Label(title_frame, text=f"Filtros: {self.filters}", 
                 font=("Arial", 9), bg="white").pack(anchor="e")
         
         # Línea divisoria
@@ -82,12 +89,11 @@ class InventoryReportViewer(tk.Toplevel):
                    font=("Arial", 10, "bold"), anchor="center").pack(expand=True, fill="both")
         
         # Cuerpo de la tabla (sin Estado)
-        for item in items:
+        for item in self.items:
             row_frame = tk.Frame(table_frame, bg="white", height=30)
             row_frame.pack_propagate(False)
             row_frame.pack(fill="x", pady=1)
             
-            expiration_date = item['expiration_date'] if item['expiration_date'] else ""
             values = [
                 item['code'],
                 item['product'],
@@ -98,7 +104,7 @@ class InventoryReportViewer(tk.Toplevel):
                 str(item['max_stock']),
                 f"{item['cost']:.2f}",
                 f"{item['price']:.2f}",
-                item['supplier_company'] if item['supplier_company'] else ""
+                item.get('supplier_company', '')
             ]
             
             for value, width in zip(values, widths):
@@ -112,9 +118,9 @@ class InventoryReportViewer(tk.Toplevel):
         summary_frame = tk.Frame(scrollable_frame, bg="white")
         summary_frame.pack(fill="x", pady=(15, 20))
         
-        total_items = len(items)
-        total_quantity = sum(item['quantity'] for item in items)
-        total_stock = sum(item['stock'] for item in items)
+        total_items = len(self.items)
+        total_quantity = sum(item['quantity'] for item in self.items)
+        total_stock = sum(item['stock'] for item in self.items)
         
         tk.Label(summary_frame, text=f"Total Productos: {total_items}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
@@ -123,10 +129,23 @@ class InventoryReportViewer(tk.Toplevel):
         tk.Label(summary_frame, text=f"Total Existencias: {total_stock}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
         
-        # Botón de regresar
+        # Botones de regresar y generar PDF
         btn_frame = tk.Frame(scrollable_frame, bg="white")
         btn_frame.pack(fill="x", pady=(10, 0))
         
+        # Botón de PDF
+        tk.Button(
+            btn_frame, 
+            text="Generar PDF", 
+            command=self.generate_pdf,
+            font=("Arial", 10),
+            padx=20,
+            pady=5,
+            bg="#4a6fa5",
+            fg="white"
+        ).pack(side="right", padx=10)
+        
+        # Botón de regresar
         tk.Button(
             btn_frame, 
             text="Regresar", 
@@ -163,3 +182,12 @@ class InventoryReportViewer(tk.Toplevel):
                 font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
         tk.Label(notes_frame, text="Este reporte fue generado automáticamente por el sistema.", 
                 font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
+
+    def generate_pdf(self):
+        """Genera el reporte en PDF usando la clase PDFGenerator"""
+        PDFGenerator.generate_inventory_report(
+            parent=self,
+            title=self.report_title,
+            items=self.items,
+            filters=self.filters
+        )
