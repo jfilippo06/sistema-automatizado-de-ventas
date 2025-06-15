@@ -66,10 +66,10 @@ class InventoryReportViewer(tk.Toplevel):
         table_frame = tk.Frame(scrollable_frame, bg="white")
         table_frame.pack(fill="x", pady=(0, 15))
         
-        # Encabezados de la tabla
+        # Encabezados de la tabla (sin Estado)
         headers = ["Código", "Producto", "Descripción", "Cantidad", "Existencias", 
-                  "Stock Mín", "Stock Máx", "P. Compra", "P. Venta", "Proveedor", "Estado"]
-        widths = [80, 150, 200, 70, 80, 80, 80, 90, 90, 150, 100]
+                  "Stock Mín", "Stock Máx", "P. Compra", "P. Venta", "Proveedor"]
+        widths = [80, 150, 300, 70, 80, 80, 80, 90, 90, 150]  # Descripción aumentada a 300
         
         header_frame = tk.Frame(table_frame, bg="#4a6fa5")
         header_frame.pack(fill="x")
@@ -82,7 +82,7 @@ class InventoryReportViewer(tk.Toplevel):
                    font=("Arial", 10, "bold")).pack(expand=True, fill="both")
             cell.config(width=width)
         
-        # Cuerpo de la tabla
+        # Cuerpo de la tabla (sin Estado)
         for item in items:
             row_frame = tk.Frame(table_frame, bg="white", height=30)
             row_frame.pack_propagate(False)
@@ -99,8 +99,7 @@ class InventoryReportViewer(tk.Toplevel):
                 str(item['max_stock']),
                 f"{item['cost']:.2f}",
                 f"{item['price']:.2f}",
-                item['supplier_company'] if item['supplier_company'] else "",
-                item['status']
+                item['supplier_company'] if item['supplier_company'] else ""
             ]
             
             for value, width in zip(values, widths):

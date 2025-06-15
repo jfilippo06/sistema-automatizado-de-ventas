@@ -107,7 +107,7 @@ class InventoryReportScreen(tk.Frame):
             tree_frame,
             columns=("ID", "Código", "Producto", "Descripción", "Cantidad", "Existencias", 
                     "Stock mínimo", "Stock máximo", "Precio compra", "Precio venta", 
-                    "Proveedor", "Vencimiento", "Estado"),
+                    "Proveedor", "Vencimiento"),
             show="headings",
             height=20,
             style="Custom.Treeview"
@@ -117,16 +117,15 @@ class InventoryReportScreen(tk.Frame):
             ("ID", 50, tk.CENTER),
             ("Código", 100, tk.CENTER),
             ("Producto", 150, tk.W),
-            ("Descripción", 200, tk.W),
+            ("Descripción", 300, tk.W),  # Aumentado de 200 a 300
             ("Cantidad", 70, tk.CENTER),
             ("Existencias", 80, tk.CENTER),
-            ("Stock mínimo", 70, tk.CENTER),
-            ("Stock máximo", 70, tk.CENTER),
+            ("Stock mínimo", 80, tk.CENTER),
+            ("Stock máximo", 80, tk.CENTER),
             ("Precio compra", 90, tk.CENTER),
             ("Precio venta", 90, tk.CENTER),
             ("Proveedor", 150, tk.W),
-            ("Vencimiento", 100, tk.CENTER),
-            ("Estado", 100, tk.CENTER)
+            ("Vencimiento", 100, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -170,8 +169,7 @@ class InventoryReportScreen(tk.Frame):
                 f"{item['cost']:.2f}",
                 f"{item['price']:.2f}",
                 supplier,
-                expiration_date,
-                item['status']
+                expiration_date
             ))
 
     def open_full_report(self) -> None:
