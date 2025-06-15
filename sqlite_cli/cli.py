@@ -15,7 +15,6 @@ from seeds.currency_seeds import seed_currencies
 from seeds.tax_seeds import seed_taxes
 from seeds.invoice_status_seeds import seed_invoice_status
 from seeds.movement_type_seeds import seed_movement_types
-from seeds.inventory_movement_seeds import seed_initial_inventory_movements
 from seeds.invoice_type_seeds import seed_invoice_types
 from seeds.purchase_order_status_seed import seed_purchase_order_statuses
 
@@ -50,7 +49,6 @@ def main() -> None:
         
         # Semillas de relaciones
         seed_service_requests()
-        seed_initial_inventory_movements()  # Nueva semilla
         
         # Semillas de configuración adicional
         seed_currencies()
@@ -81,7 +79,6 @@ def main() -> None:
         
         # Semillas de relaciones
         seed_service_requests()
-        seed_initial_inventory_movements()  # Nueva semilla
         
         # Semillas de configuración adicional
         seed_currencies()
