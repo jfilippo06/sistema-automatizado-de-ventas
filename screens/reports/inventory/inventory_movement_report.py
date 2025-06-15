@@ -17,7 +17,7 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.inventory_id = inventory_id
         self.configure(bg="#f5f5f5")
         
-        self.resizable(False, False)
+        self.resizable(True, True)  # Permitir redimensionamiento
         self.state('zoomed')
         
         # Variables
@@ -54,6 +54,7 @@ class InventoryMovementReportScreen(tk.Toplevel):
         row1_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row1_frame.pack(fill=tk.X, pady=5)
         
+        # Filtros de fecha
         CustomLabel(
             row1_frame,
             text="Desde:",
@@ -84,9 +85,10 @@ class InventoryMovementReportScreen(tk.Toplevel):
         )
         end_date_entry.pack(side=tk.LEFT, padx=5)
         
+        # Filtro de tipo de movimiento
         CustomLabel(
             row1_frame,
-            text="Tipo de Movimiento:",
+            text="Tipo:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
@@ -102,27 +104,7 @@ class InventoryMovementReportScreen(tk.Toplevel):
         movement_combobox.pack(side=tk.LEFT, padx=5)
         movement_combobox.current(0)
         
-        # Botón de regresar
-        btn_back = CustomButton(
-            row1_frame,
-            text="Regresar",
-            command=self.destroy,
-            padding=6,
-            width=10
-        )
-        btn_back.pack(side=tk.RIGHT, padx=5)
-        
-        # Botón de generar reporte
-        btn_report = CustomButton(
-            row1_frame,
-            text="Generar Reporte",
-            command=self.generate_report,
-            padding=6,
-            width=15
-        )
-        btn_report.pack(side=tk.RIGHT, padx=5)
-        
-        # Botón de filtrar
+        # Botones de acción
         btn_filter = CustomButton(
             row1_frame,
             text="Filtrar",
@@ -132,41 +114,71 @@ class InventoryMovementReportScreen(tk.Toplevel):
         )
         btn_filter.pack(side=tk.RIGHT, padx=5)
         
-        # Treeview
-        tree_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        tree_frame.pack(fill=tk.BOTH, expand=True)
+        btn_report = CustomButton(
+            row1_frame,
+            text="Generar reporte",
+            command=self.generate_report,
+            padding=6,
+            width=20
+        )
+        btn_report.pack(side=tk.RIGHT, padx=5)
         
+        btn_back = CustomButton(
+            row1_frame,
+            text="Regresar",
+            command=self.destroy,
+            padding=6,
+            width=10
+        )
+        btn_back.pack(side=tk.RIGHT)
+        
+        # Contenedor para Treeview con scrollbars
+        tree_container = tk.Frame(main_frame, bg="#f5f5f5")
+        tree_container.pack(fill=tk.BOTH, expand=True)
+        
+        # Scrollbars
+        xscrollbar = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL)
+        xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        yscrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL)
+        yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Treeview con columnas ajustadas
         self.tree = ttk.Treeview(
-            tree_frame,
-            columns=("Fecha", "Tipo", "Cambio Stock", "Cambio Stock", 
-                    "Anterior Stock", "Nuevo Stock", "Anterior Disp.", "Nuevo Disp.", 
+            tree_container,
+            columns=("Fecha", "Tipo", "Cambio Cantidad", "Cambio Stock", 
+                    "Anterior Cantidad", "Nuevo Cantidad", "Anterior Stock", "Nuevo Stock",
                     "Usuario", "Referencia", "Notas"),
             show="headings",
-            height=15
+            height=15,
+            xscrollcommand=xscrollbar.set,
+            yscrollcommand=yscrollbar.set
         )
         
+        # Configurar columnas
         columns = [
             ("Fecha", 120, tk.CENTER),
             ("Tipo", 120, tk.CENTER),
-            ("Cambio Stock", 100, tk.CENTER),
-            ("Cambio Stock", 100, tk.CENTER),
+            ("Cambio Cantidad", 100, tk.CENTER),
+            ("Cambio Stock", 100, tk.CENTER), 
+            ("Anterior Cantidad", 100, tk.CENTER),
+            ("Nuevo Cantidad", 100, tk.CENTER),
             ("Anterior Stock", 100, tk.CENTER),
             ("Nuevo Stock", 100, tk.CENTER),
-            ("Anterior Disp.", 100, tk.CENTER),
-            ("Nuevo Disp.", 100, tk.CENTER),
             ("Usuario", 100, tk.CENTER),
-            ("Referencia", 100, tk.CENTER),
+            ("Referencia", 120, tk.CENTER),
             ("Notas", 200, tk.W)
         ]
         
         for col, width, anchor in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
-            
-        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
         self.tree.pack(fill=tk.BOTH, expand=True)
+        
+        # Configurar scrollbars
+        xscrollbar.config(command=self.tree.xview)
+        yscrollbar.config(command=self.tree.yview)
         
         # Contador de resultados
         self.count_label = CustomLabel(
@@ -225,7 +237,7 @@ class InventoryMovementReportScreen(tk.Toplevel):
             ))
         
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")
-        self.current_movements = movements  # Store movements for report generation
+        self.current_movements = movements
 
     def generate_report(self):
         """Genera el reporte visual de movimientos"""

@@ -120,7 +120,7 @@ class InventoryReportViewer(tk.Toplevel):
         
         tk.Label(summary_frame, text=f"Total Productos: {total_items}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
-        tk.Label(summary_frame, text=f"Total en Almacén: {total_quantity}", 
+        tk.Label(summary_frame, text=f"Total en Cantidad: {total_quantity}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
         tk.Label(summary_frame, text=f"Total Existencias: {total_stock}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
