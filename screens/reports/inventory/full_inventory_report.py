@@ -6,7 +6,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from reports.inventory_report_viewer import InventoryReportViewer
-from reports.generate_pdf.pdf_generator import PDFGenerator
+from reports.generate_pdf.invetory_report_pdf import InventoryReportPDF
 
 class FullInventoryReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, initial_search: Optional[str] = None):
@@ -292,7 +292,7 @@ class FullInventoryReportScreen(tk.Toplevel):
     def generate_pdf(self):
         """Genera el reporte en PDF"""
         if hasattr(self, 'current_items') and self.current_items:
-            PDFGenerator.generate_inventory_report(
+            InventoryReportPDF.generate_inventory_report(
                 parent=self,
                 title="Reporte de Inventario",
                 items=self.current_items,

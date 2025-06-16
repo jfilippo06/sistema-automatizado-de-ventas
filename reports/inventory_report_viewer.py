@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
 from utils.session_manager import SessionManager
-from reports.generate_pdf.pdf_generator import PDFGenerator
+from reports.generate_pdf.invetory_report_pdf import InventoryReportPDF
 
 class InventoryReportViewer(tk.Toplevel):
     def __init__(self, parent, title, items, filters):
@@ -185,7 +185,7 @@ class InventoryReportViewer(tk.Toplevel):
 
     def generate_pdf(self):
         """Genera el reporte en PDF usando la clase PDFGenerator"""
-        PDFGenerator.generate_inventory_report(
+        InventoryReportPDF.generate_inventory_report(
             parent=self,
             title=self.report_title,
             items=self.items,
