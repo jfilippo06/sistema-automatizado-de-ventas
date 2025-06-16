@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
 from utils.session_manager import SessionManager
-from reports.generate_pdf.invetory_report_pdf import InventoryReportPDF
+from utils.pdf_generator import PDFGenerator
 
 class InventoryReportViewer(tk.Toplevel):
     def __init__(self, parent, title, items, filters):
@@ -74,7 +74,7 @@ class InventoryReportViewer(tk.Toplevel):
         table_frame.pack(fill="x", pady=(0, 15))
         
         # Encabezados de la tabla (sin Estado)
-        headers = ["Código", "Producto", "Descripción", "Cantidad", "Existencias", 
+        headers = ["Código", "Producto", "Descripción", "Cantidad", "Stock", 
                   "Stock Mín", "Stock Máx", "P. Compra", "P. Venta", "Proveedor"]
         widths = [80, 150, 300, 70, 80, 80, 80, 90, 90, 150]  # Descripción aumentada a 300
         
@@ -126,7 +126,7 @@ class InventoryReportViewer(tk.Toplevel):
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
         tk.Label(summary_frame, text=f"Total en Cantidad: {total_quantity}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
-        tk.Label(summary_frame, text=f"Total Existencias: {total_stock}", 
+        tk.Label(summary_frame, text=f"Total Stock: {total_stock}", 
                 font=("Arial", 10), bg="white").pack(side="left", padx=20)
         
         # Botones de regresar y generar PDF
@@ -185,7 +185,7 @@ class InventoryReportViewer(tk.Toplevel):
 
     def generate_pdf(self):
         """Genera el reporte en PDF usando la clase PDFGenerator"""
-        InventoryReportPDF.generate_inventory_report(
+        PDFGenerator.generate_inventory_report(
             parent=self,
             title=self.report_title,
             items=self.items,

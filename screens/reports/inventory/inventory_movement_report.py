@@ -8,6 +8,7 @@ from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
 from reports.inventory_movement_viewer import InventoryMovementViewer
+from utils.pdf_generator import PDFGenerator
 
 class InventoryMovementReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, inventory_id: int):
@@ -17,19 +18,20 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.inventory_id = inventory_id
         self.configure(bg="#f5f5f5")
         
-        self.resizable(True, True)  # Permitir redimensionamiento
+        self.resizable(True, True)
         self.state('zoomed')
         
         # Variables
         self.start_date_var = tk.StringVar()
         self.end_date_var = tk.StringVar()
-        self.movement_type_var = tk.StringVar()
+        self.movement_type_var = tk.StringVar(value="Todos")
         
         self.configure_ui()
         self.load_product_info()
         self.refresh_data()
 
     def configure_ui(self):
+        """Configura la interfaz de usuario"""
         # Frame principal
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -66,7 +68,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             row1_frame,
             textvariable=self.start_date_var,
             width=12,
-            font=("Arial", 10)
+            font=("Arial", 10),
+            placeholder="DD/MM/AAAA"
         )
         start_date_entry.pack(side=tk.LEFT, padx=5)
         
@@ -81,7 +84,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             row1_frame,
             textvariable=self.end_date_var,
             width=12,
-            font=("Arial", 10)
+            font=("Arial", 10),
+            placeholder="DD/MM/AAAA"
         )
         end_date_entry.pack(side=tk.LEFT, padx=5)
         
@@ -105,6 +109,15 @@ class InventoryMovementReportScreen(tk.Toplevel):
         movement_combobox.current(0)
         
         # Botones de acción
+        btn_pdf = CustomButton(
+            row1_frame,
+            text="Generar PDF",
+            command=self.generate_pdf,
+            padding=6,
+            width=15,
+        )
+        btn_pdf.pack(side=tk.RIGHT, padx=5)
+        
         btn_filter = CustomButton(
             row1_frame,
             text="Filtrar",
@@ -116,10 +129,10 @@ class InventoryMovementReportScreen(tk.Toplevel):
         
         btn_report = CustomButton(
             row1_frame,
-            text="Generar reporte",
+            text="Ver Reporte",
             command=self.generate_report,
             padding=6,
-            width=20
+            width=15
         )
         btn_report.pack(side=tk.RIGHT, padx=5)
         
@@ -200,7 +213,12 @@ class InventoryMovementReportScreen(tk.Toplevel):
             self.product_label.config(
                 text=f"Producto: {product_name} ({product_code}) - {product_desc}"
             )
-            self.product_info = product
+            self.product_info = {
+                'product': product_name,
+                'code': product_code,
+                'description': product_desc,
+                'id': product['id']
+            }
 
     def refresh_data(self):
         """Actualiza los datos según los filtros"""
@@ -208,8 +226,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             self.tree.delete(item)
             
         # Obtener valores de los filtros
-        start_date = self.start_date_var.get() if self.start_date_var.get() else None
-        end_date = self.end_date_var.get() if self.end_date_var.get() else None
+        start_date = self._parse_date(self.start_date_var.get())
+        end_date = self._parse_date(self.end_date_var.get())
         movement_type = self.movement_type_var.get() if self.movement_type_var.get() != "Todos" else None
         
         movements = InventoryReport.get_inventory_movements_report(
@@ -239,6 +257,17 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")
         self.current_movements = movements
 
+    def _parse_date(self, date_str):
+        """Intenta parsear la fecha del formato DD/MM/AAAA"""
+        if not date_str:
+            return None
+            
+        try:
+            day, month, year = map(int, date_str.split('/'))
+            return f"{year}-{month:02d}-{day:02d}"
+        except (ValueError, AttributeError):
+            return None
+
     def generate_report(self):
         """Genera el reporte visual de movimientos"""
         if hasattr(self, 'current_movements') and self.current_movements:
@@ -247,6 +276,21 @@ class InventoryMovementReportScreen(tk.Toplevel):
             InventoryMovementViewer(self, report_title, self.product_info, self.current_movements, filters)
         else:
             messagebox.showwarning("Advertencia", "No hay datos para generar el reporte", parent=self)
+
+    def generate_pdf(self):
+        """Genera directamente un PDF con los movimientos"""
+        if hasattr(self, 'current_movements') and self.current_movements:
+            report_title = f"Historial de Movimientos - {self.product_info['product']}"
+            filters = self._get_current_filters()
+            PDFGenerator.generate_movement_report(
+                parent=self,
+                title=report_title,
+                product_info=self.product_info,
+                movements=self.current_movements,
+                filters=filters
+            )
+        else:
+            messagebox.showwarning("Advertencia", "No hay datos para generar PDF", parent=self)
 
     def _get_current_filters(self):
         """Obtiene los filtros actuales aplicados"""

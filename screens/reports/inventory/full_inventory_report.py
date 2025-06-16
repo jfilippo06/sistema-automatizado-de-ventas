@@ -6,7 +6,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from reports.inventory_report_viewer import InventoryReportViewer
-from reports.generate_pdf.invetory_report_pdf import InventoryReportPDF
+from utils.pdf_generator import PDFGenerator
 
 class FullInventoryReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, initial_search: Optional[str] = None):
@@ -89,7 +89,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         # Existencias
         CustomLabel(
             row2_frame,
-            text="Existencias:",
+            text="Stock:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
@@ -165,7 +165,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         
         btn_report = CustomButton(
             row3_frame,
-            text="Generar Reporte",
+            text="Ver Reporte",
             command=self.generate_report,
             padding=6,
             width=15
@@ -196,7 +196,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         self.tree = ttk.Treeview(
             tree_container,
             columns=("ID", "Código", "Producto", "Descripción", "Cantidad", 
-                    "Existencias", "Stock mínimo", "Stock máximo", 
+                    "Stock", "Stock mínimo", "Stock máximo", 
                     "Precio compra", "Precio venta", "Proveedor", "Vencimiento"),
             show="headings",
             height=20,
@@ -212,7 +212,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             ("Producto", 150, tk.W),
             ("Descripción", 200, tk.W),
             ("Cantidad", 70, tk.CENTER),
-            ("Existencias", 80, tk.CENTER),
+            ("Stock", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
             ("Stock máximo", 80, tk.CENTER),
             ("Precio compra", 90, tk.CENTER),
@@ -292,7 +292,7 @@ class FullInventoryReportScreen(tk.Toplevel):
     def generate_pdf(self):
         """Genera el reporte en PDF"""
         if hasattr(self, 'current_items') and self.current_items:
-            InventoryReportPDF.generate_inventory_report(
+            PDFGenerator.generate_inventory_report(
                 parent=self,
                 title="Reporte de Inventario",
                 items=self.current_items,
