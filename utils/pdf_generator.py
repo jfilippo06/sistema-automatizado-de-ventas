@@ -9,7 +9,7 @@ from tkinter import Toplevel
 from typing import List, Dict
 from sqlite_cli.models.tax_model import Tax
 from utils.session_manager import SessionManager
-
+from reportlab.platypus.flowables import HRFlowable
 class PDFGenerator:
     @staticmethod
     def generate_inventory_report(
@@ -361,10 +361,10 @@ class PDFGenerator:
         delivery_date: str,
         created_by: str,
         company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
-        company_rif: str = "RIF: J-40339817-8"
+        company_rif: str = "RIF: J-40339817-8",
+        company_address: str = "Av. Principal, Edif. Empresarial"
     ) -> None:
-        """Genera una orden de compra en PDF en orientación vertical"""
-        # Mostrar diálogo para guardar el archivo
+        """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer"""
         from tkinter import filedialog
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
@@ -374,7 +374,7 @@ class PDFGenerator:
             parent=parent
         )
         
-        if not file_path:  # El usuario canceló
+        if not file_path:
             return
         
         try:
@@ -393,59 +393,64 @@ class PDFGenerator:
             style_title = styles["Title"]
             style_normal = styles["Normal"]
             style_heading = styles["Heading2"]
+            style_bold = styles["Normal"]
+            style_bold.fontName = "Helvetica-Bold"
+            style_italic = styles["Normal"]
+            style_italic.fontName = "Helvetica-Oblique"
             
             # Contenido del PDF
             elements = []
             
-            # Encabezado
-            header_table = Table([
-                [Paragraph(company_name, style_title), ""],
-                [Paragraph(company_rif, style_normal), Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", style_normal)],
-                ["", Paragraph(f"ORDEN DE COMPRA N°: {order_number}", style_heading)],
-                ["", Paragraph(f"Fecha Entrega: {delivery_date}", style_normal)]
-            ], colWidths=[3*inch, 3*inch])
+            # Encabezado - Empresa a la izquierda, orden a la derecha
+            header_data = [
+                [
+                    Paragraph(f"<b>{company_name}</b><br/>{company_rif}<br/>{company_address}", style_normal),
+                    "",
+                    Paragraph(f"<b>ORDEN DE COMPRA N°:</b> {order_number}<br/>"
+                            f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}<br/>"
+                            f"<b>Fecha Entrega:</b> {delivery_date}", 
+                            style_normal)
+                ]
+            ]
             
+            header_table = Table(header_data, colWidths=[3*inch, 1*inch, 3*inch])
             header_table.setStyle(TableStyle([
-                ('SPAN', (0,0), (0,1)),  # Combinar celdas para company info
-                ('SPAN', (1,2), (1,2)),  # Título centrado
-                ('ALIGN', (1,2), (1,2), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                ('ALIGN', (0,0), (0,0), 'LEFT'),
+                ('ALIGN', (2,0), (2,0), 'RIGHT'),
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 10),
             ]))
             
             elements.append(header_table)
-            elements.append(Spacer(1, 24))
+            elements.append(Spacer(1, 12))
+            
+            # Línea divisoria
+            elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
+            elements.append(Spacer(1, 12))
             
             # Información del proveedor
-            elements.append(Paragraph("<b>PROVEEDOR:</b>", style_normal))
+            elements.append(Paragraph("<b>PROVEEDOR:</b>", style_bold))
             elements.append(Paragraph(supplier_info, style_normal))
             elements.append(Spacer(1, 12))
             
             # Tabla de productos
             headers = ["Código", "Descripción", "Cantidad", "P. Unitario", "Total"]
+            col_widths = [1.2*inch, 4.0*inch, 0.8*inch, 1.2*inch, 1.2*inch]
             
             # Preparar datos para la tabla
-            data = [headers]
+            table_data = [headers]
             for item in items:
                 row = [
-                    item['code'],
-                    item['description'],
-                    str(item['quantity']),
-                    f"{item['unit_price']:,.2f}",
-                    f"{item['total']:,.2f}"
+                    Paragraph(item['code'], style_normal),
+                    Paragraph(item['description'], style_normal),
+                    Paragraph(str(item['quantity']), style_normal),
+                    Paragraph(f"{item['unit_price']:,.2f}", style_normal),
+                    Paragraph(f"{item['total']:,.2f}", style_normal)
                 ]
-                data.append(row)
-            
-            # Anchos de columna
-            col_widths = [
-                1.0*inch,  # Código
-                2.5*inch,  # Descripción
-                0.7*inch,  # Cantidad
-                1.0*inch,  # P. Unitario
-                1.0*inch   # Total
-            ]
+                table_data.append(row)
             
             # Crear tabla principal
-            table = Table(data, colWidths=col_widths, repeatRows=1)
+            table = Table(table_data, colWidths=col_widths, repeatRows=1)
             
             # Estilo de la tabla
             table.setStyle(TableStyle([
@@ -454,8 +459,8 @@ class PDFGenerator:
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('ALIGN', (2, 1), (4, -1), 'RIGHT'),  # Alinear números a la derecha
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.white),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
@@ -469,16 +474,42 @@ class PDFGenerator:
             iva_tax = Tax.get_by_name("IVA")
             
             if iva_tax and iva_tax.get('status_name') == 'active':
-                elements.append(Paragraph(f"<b>Subtotal:</b> {subtotal:,.2f}", style_normal))
-                elements.append(Paragraph(f"<b>IVA ({iva_tax['value']}%):</b> {taxes:,.2f}", style_normal))
+                total_data = [
+                    ["Subtotal:", f"{subtotal:,.2f}"],
+                    [f"IVA ({iva_tax['value']}%):", f"{taxes:,.2f}"]
+                ]
+                
+                total_table = Table(total_data, colWidths=[1.5*inch, 1.5*inch])
+                total_table.setStyle(TableStyle([
+                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('LEFTPADDING', (0, 0), (0, -1), 10),
+                    ('RIGHTPADDING', (0, 0), (0, -1), 5),
+                ]))
+                
+                elements.append(total_table)
             
-            elements.append(Paragraph(f"<b>TOTAL:</b> {total:,.2f}", style_heading))
+            # Total general
+            total_data = [
+                [f"<b>TOTAL:</b>", f"<b>{total:,.2f}</b>"]
+            ]
+            
+            total_table = Table(total_data, colWidths=[1.5*inch, 1.5*inch])
+            total_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                ('FONTSIZE', (0, 0), (-1, -1), 12),
+                ('LEFTPADDING', (0, 0), (0, -1), 10),
+                ('RIGHTPADDING', (0, 0), (0, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            
+            elements.append(total_table)
+            
+            # Botón de regresar (simulado)
             elements.append(Spacer(1, 12))
-            
-            # Información del creador
+            elements.append(Paragraph("<i>Esta orden de compra es generada automáticamente por el sistema.</i>", style_italic))
+            elements.append(Spacer(1, 12))
             elements.append(Paragraph(f"<b>Creado por:</b> {created_by}", style_normal))
-            elements.append(Spacer(1, 6))
-            elements.append(Paragraph("<i>Esta orden de compra es generada automáticamente por el sistema.</i>", style_normal))
             
             # Generar el PDF
             doc.build(elements)
