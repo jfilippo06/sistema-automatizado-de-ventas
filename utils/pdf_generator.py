@@ -366,6 +366,10 @@ class PDFGenerator:
     ) -> None:
         """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer"""
         from tkinter import filedialog
+        from reportlab.platypus.flowables import HRFlowable
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.enums import TA_RIGHT
+        
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -378,7 +382,7 @@ class PDFGenerator:
             return
         
         try:
-            # Crear el documento PDF en orientación vertical
+            # Configuración del documento
             doc = SimpleDocTemplate(
                 file_path,
                 pagesize=letter,
@@ -388,133 +392,143 @@ class PDFGenerator:
                 bottomMargin=40
             )
             
-            # Estilos
+            # Estilos personalizados
             styles = getSampleStyleSheet()
             style_title = styles["Title"]
             style_normal = styles["Normal"]
-            style_heading = styles["Heading2"]
-            style_bold = styles["Normal"]
-            style_bold.fontName = "Helvetica-Bold"
-            style_italic = styles["Normal"]
-            style_italic.fontName = "Helvetica-Oblique"
             
-            # Contenido del PDF
+            # Estilo para texto en negrita
+            style_bold = ParagraphStyle(
+                name='Bold',
+                parent=style_normal,
+                fontName='Helvetica-Bold'
+            )
+            
+            # Estilo para el total
+            style_total = ParagraphStyle(
+                name='Total',
+                parent=style_normal,
+                fontSize=12,
+                fontName='Helvetica-Bold',
+                alignment=TA_RIGHT,
+                spaceAfter=12
+            )
+            
             elements = []
             
-            # Encabezado - Empresa a la izquierda, orden a la derecha
+            # Encabezado (empresa a la izquierda, orden a la derecha)
             header_data = [
                 [
                     Paragraph(f"<b>{company_name}</b><br/>{company_rif}<br/>{company_address}", style_normal),
                     "",
-                    Paragraph(f"<b>ORDEN DE COMPRA N°:</b> {order_number}<br/>"
-                            f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}<br/>"
-                            f"<b>Fecha Entrega:</b> {delivery_date}", 
-                            style_normal)
+                    Paragraph(
+                        f"<b>ORDEN DE COMPRA N°:</b> {order_number}<br/>"
+                        f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}<br/>"
+                        f"<b>Fecha Entrega:</b> {delivery_date}",
+                        style_normal
+                    )
                 ]
             ]
             
-            header_table = Table(header_data, colWidths=[3*inch, 1*inch, 3*inch])
+            header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
             header_table.setStyle(TableStyle([
-                ('ALIGN', (0,0), (0,0), 'LEFT'),
-                ('ALIGN', (2,0), (2,0), 'RIGHT'),
                 ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 12),
             ]))
             
             elements.append(header_table)
-            elements.append(Spacer(1, 12))
-            
-            # Línea divisoria
             elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
             elements.append(Spacer(1, 12))
             
             # Información del proveedor
             elements.append(Paragraph("<b>PROVEEDOR:</b>", style_bold))
             elements.append(Paragraph(supplier_info, style_normal))
-            elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 15))
             
             # Tabla de productos
             headers = ["Código", "Descripción", "Cantidad", "P. Unitario", "Total"]
             col_widths = [1.2*inch, 4.0*inch, 0.8*inch, 1.2*inch, 1.2*inch]
             
-            # Preparar datos para la tabla
             table_data = [headers]
             for item in items:
                 row = [
-                    Paragraph(item['code'], style_normal),
-                    Paragraph(item['description'], style_normal),
-                    Paragraph(str(item['quantity']), style_normal),
-                    Paragraph(f"{item['unit_price']:,.2f}", style_normal),
-                    Paragraph(f"{item['total']:,.2f}", style_normal)
+                    item['code'],
+                    item['description'],
+                    str(item['quantity']),
+                    f"{item['unit_price']:,.2f}",
+                    f"{item['total']:,.2f}"
                 ]
                 table_data.append(row)
             
-            # Crear tabla principal
-            table = Table(table_data, colWidths=col_widths, repeatRows=1)
-            
-            # Estilo de la tabla
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4a6fa5")),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('ALIGN', (2, 1), (4, -1), 'RIGHT'),  # Alinear números a la derecha
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            items_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+            items_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#4a6fa5")),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+                ('ALIGN', (2,1), (-1,-1), 'RIGHT'),  # Alinear números a la derecha
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), 10),
+                ('FONTSIZE', (0,1), (-1,-1), 9),
+                ('BOTTOMPADDING', (0,0), (-1,0), 6),
+                ('BACKGROUND', (0,1), (-1,-1), colors.white),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ]))
             
-            elements.append(table)
-            elements.append(Spacer(1, 12))
+            elements.append(items_table)
+            elements.append(Spacer(1, 15))
             
-            # Totales
+            # Sección de totales
             iva_tax = Tax.get_by_name("IVA")
             
             if iva_tax and iva_tax.get('status_name') == 'active':
-                total_data = [
-                    ["Subtotal:", f"{subtotal:,.2f}"],
-                    [f"IVA ({iva_tax['value']}%):", f"{taxes:,.2f}"]
-                ]
+                subtotal_table = Table([
+                    ["Subtotal:", f"{subtotal:,.2f}"]
+                ], colWidths=[1.5*inch, 1.5*inch])
                 
-                total_table = Table(total_data, colWidths=[1.5*inch, 1.5*inch])
-                total_table.setStyle(TableStyle([
-                    ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('LEFTPADDING', (0, 0), (0, -1), 10),
-                    ('RIGHTPADDING', (0, 0), (0, -1), 5),
+                subtotal_table.setStyle(TableStyle([
+                    ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
                 ]))
                 
-                elements.append(total_table)
+                elements.append(subtotal_table)
+                
+                iva_table = Table([
+                    [f"IVA ({iva_tax['value']}%):", f"{taxes:,.2f}"]
+                ], colWidths=[1.5*inch, 1.5*inch])
+                
+                iva_table.setStyle(TableStyle([
+                    ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
+                ]))
+                
+                elements.append(iva_table)
             
-            # Total general
-            total_data = [
-                [f"<b>TOTAL:</b>", f"<b>{total:,.2f}</b>"]
-            ]
+            # TOTAL con formato especial
+            total_table = Table([
+                ["", ""],  # Espacio en blanco para alineación
+                [
+                    Paragraph("<b>TOTAL:</b>", style_total),
+                    Paragraph(f"<b>{total:,.2f}</b>", style_total)
+                ]
+            ], colWidths=[3.5*inch, 2*inch])
             
-            total_table = Table(total_data, colWidths=[1.5*inch, 1.5*inch])
             total_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-                ('FONTSIZE', (0, 0), (-1, -1), 12),
-                ('LEFTPADDING', (0, 0), (0, -1), 10),
-                ('RIGHTPADDING', (0, 0), (0, -1), 5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ]))
             
             elements.append(total_table)
+            elements.append(Spacer(1, 20))
             
-            # Botón de regresar (simulado)
-            elements.append(Spacer(1, 12))
-            elements.append(Paragraph("<i>Esta orden de compra es generada automáticamente por el sistema.</i>", style_italic))
-            elements.append(Spacer(1, 12))
+            # Notas y creador
+            elements.append(Paragraph("<i>Esta orden de compra es generada automáticamente por el sistema.</i>", style_normal))
+            elements.append(Spacer(1, 8))
             elements.append(Paragraph(f"<b>Creado por:</b> {created_by}", style_normal))
             
-            # Generar el PDF
+            # Generar PDF
             doc.build(elements)
             
-            # Mostrar mensaje de éxito
             messagebox.showinfo(
                 "Éxito",
                 f"La orden se ha generado correctamente en:\n{file_path}",
