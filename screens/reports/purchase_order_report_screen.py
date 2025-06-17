@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Callable, Any
 from datetime import datetime
 from widgets.custom_button import CustomButton
@@ -9,6 +9,7 @@ from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.purchase_order_report_model import PurchaseOrderReport
 from sqlite_cli.models.supplier_model import Supplier
 from reports.purchase_order_viewer import PurchaseOrderViewer
+from utils.pdf_generator import PDFGenerator
 
 class PurchaseOrderReportScreen(tk.Frame):
     def __init__(
@@ -102,7 +103,7 @@ class PurchaseOrderReportScreen(tk.Frame):
 
         # Supplier filter
         supplier_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        supplier_frame.pack(side=tk.LEFT, padx=20)
+        supplier_frame.pack(side=tk.LEFT, padx=15)
 
         CustomLabel(
             supplier_frame,
@@ -123,8 +124,12 @@ class PurchaseOrderReportScreen(tk.Frame):
         # Bind supplier changes to refresh
         self.supplier_var.trace_add("write", lambda *args: self.refresh_data())
 
+        # Search field and buttons frame
+        search_btn_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        search_btn_frame.pack(side=tk.RIGHT, padx=5, fill=tk.X, expand=True)
+
         # Search field
-        search_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        search_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
         search_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         CustomLabel(
@@ -144,6 +149,30 @@ class PurchaseOrderReportScreen(tk.Frame):
         
         # Bind search changes to refresh
         self.search_var.trace_add("write", lambda *args: self.refresh_data())
+
+        # Action buttons frame
+        btn_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
+        btn_frame.pack(side=tk.RIGHT, padx=5)
+
+        # View button
+        btn_view = CustomButton(
+            btn_frame,
+            text="Ver Orden",
+            command=self.view_order,
+            padding=8,
+            width=12,
+        )
+        btn_view.pack(side=tk.LEFT, padx=5)
+
+        # PDF button
+        btn_pdf = CustomButton(
+            btn_frame,
+            text="Generar PDF",
+            command=self.generate_pdf,
+            padding=8,
+            width=20,
+        )
+        btn_pdf.pack(side=tk.LEFT, padx=5)
 
         # Treeview to show orders
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
@@ -177,9 +206,6 @@ class PurchaseOrderReportScreen(tk.Frame):
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
-
-        # Bind double click to view order
-        self.tree.bind("<Double-1>", self.view_order)
 
     def load_suppliers(self):
         """Load suppliers list into combobox"""
@@ -230,10 +256,11 @@ class PurchaseOrderReportScreen(tk.Frame):
                 order['expected_delivery_date']
             ))
 
-    def view_order(self, event) -> None:
+    def view_order(self) -> None:
         """View the selected purchase order"""
         selected = self.tree.selection()
         if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una orden", parent=self)
             return
             
         order_id = self.tree.item(selected[0])['values'][0]
@@ -253,6 +280,40 @@ class PurchaseOrderReportScreen(tk.Frame):
         # Show the order
         PurchaseOrderViewer(
             self,
+            order_number=order_data['order_number'],
+            supplier_info=f"{order_data['supplier_company']} - {order_data['supplier_id_number']}",
+            items=items,
+            subtotal=order_data['subtotal'],
+            taxes=order_data['taxes'],
+            total=order_data['total'],
+            delivery_date=order_data['expected_delivery_date'],
+            created_by=order_data['created_by']
+        )
+
+    def generate_pdf(self) -> None:
+        """Generate PDF for selected order"""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una orden", parent=self)
+            return
+            
+        order_id = self.tree.item(selected[0])['values'][0]
+        order_data = PurchaseOrderReport.get_order_details(order_id)
+        
+        # Prepare items for PDF
+        items = []
+        for item in order_data['items']:
+            items.append({
+                'code': item.get('product_code', ''),
+                'description': item.get('product_name', item['product_name']),
+                'quantity': item['quantity'],
+                'unit_price': item['unit_price'],
+                'total': item['subtotal']
+            })
+        
+        # Generate PDF
+        PDFGenerator.generate_purchase_order(
+            parent=self,
             order_number=order_data['order_number'],
             supplier_info=f"{order_data['supplier_company']} - {order_data['supplier_id_number']}",
             items=items,

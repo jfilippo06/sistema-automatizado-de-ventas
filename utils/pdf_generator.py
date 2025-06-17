@@ -7,6 +7,7 @@ from datetime import datetime
 import tkinter.messagebox as messagebox
 from tkinter import Toplevel
 from typing import List, Dict
+from sqlite_cli.models.tax_model import Tax
 from utils.session_manager import SessionManager
 
 class PDFGenerator:
@@ -338,6 +339,154 @@ class PDFGenerator:
             messagebox.showinfo(
                 "Éxito",
                 f"Reporte generado en:\n{file_path}",
+                parent=parent
+            )
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"No se pudo generar el PDF:\n{str(e)}",
+                parent=parent
+            )
+    
+    @staticmethod
+    def generate_purchase_order(
+        parent: Toplevel,
+        order_number: str,
+        supplier_info: str,
+        items: List[Dict],
+        subtotal: float,
+        taxes: float,
+        total: float,
+        delivery_date: str,
+        created_by: str,
+        company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
+        company_rif: str = "RIF: J-40339817-8"
+    ) -> None:
+        """Genera una orden de compra en PDF en orientación vertical"""
+        # Mostrar diálogo para guardar el archivo
+        from tkinter import filedialog
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("Archivos PDF", "*.pdf")],
+            title="Guardar orden como",
+            initialfile=f"Orden_Compra_{order_number}.pdf",
+            parent=parent
+        )
+        
+        if not file_path:  # El usuario canceló
+            return
+        
+        try:
+            # Crear el documento PDF en orientación vertical
+            doc = SimpleDocTemplate(
+                file_path,
+                pagesize=letter,
+                rightMargin=20,
+                leftMargin=20,
+                topMargin=40,
+                bottomMargin=40
+            )
+            
+            # Estilos
+            styles = getSampleStyleSheet()
+            style_title = styles["Title"]
+            style_normal = styles["Normal"]
+            style_heading = styles["Heading2"]
+            
+            # Contenido del PDF
+            elements = []
+            
+            # Encabezado
+            header_table = Table([
+                [Paragraph(company_name, style_title), ""],
+                [Paragraph(company_rif, style_normal), Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", style_normal)],
+                ["", Paragraph(f"ORDEN DE COMPRA N°: {order_number}", style_heading)],
+                ["", Paragraph(f"Fecha Entrega: {delivery_date}", style_normal)]
+            ], colWidths=[3*inch, 3*inch])
+            
+            header_table.setStyle(TableStyle([
+                ('SPAN', (0,0), (0,1)),  # Combinar celdas para company info
+                ('SPAN', (1,2), (1,2)),  # Título centrado
+                ('ALIGN', (1,2), (1,2), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            
+            elements.append(header_table)
+            elements.append(Spacer(1, 24))
+            
+            # Información del proveedor
+            elements.append(Paragraph("<b>PROVEEDOR:</b>", style_normal))
+            elements.append(Paragraph(supplier_info, style_normal))
+            elements.append(Spacer(1, 12))
+            
+            # Tabla de productos
+            headers = ["Código", "Descripción", "Cantidad", "P. Unitario", "Total"]
+            
+            # Preparar datos para la tabla
+            data = [headers]
+            for item in items:
+                row = [
+                    item['code'],
+                    item['description'],
+                    str(item['quantity']),
+                    f"{item['unit_price']:,.2f}",
+                    f"{item['total']:,.2f}"
+                ]
+                data.append(row)
+            
+            # Anchos de columna
+            col_widths = [
+                1.0*inch,  # Código
+                2.5*inch,  # Descripción
+                0.7*inch,  # Cantidad
+                1.0*inch,  # P. Unitario
+                1.0*inch   # Total
+            ]
+            
+            # Crear tabla principal
+            table = Table(data, colWidths=col_widths, repeatRows=1)
+            
+            # Estilo de la tabla
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4a6fa5")),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (2, 1), (4, -1), 'RIGHT'),  # Alinear números a la derecha
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            
+            elements.append(table)
+            elements.append(Spacer(1, 12))
+            
+            # Totales
+            iva_tax = Tax.get_by_name("IVA")
+            
+            if iva_tax and iva_tax.get('status_name') == 'active':
+                elements.append(Paragraph(f"<b>Subtotal:</b> {subtotal:,.2f}", style_normal))
+                elements.append(Paragraph(f"<b>IVA ({iva_tax['value']}%):</b> {taxes:,.2f}", style_normal))
+            
+            elements.append(Paragraph(f"<b>TOTAL:</b> {total:,.2f}", style_heading))
+            elements.append(Spacer(1, 12))
+            
+            # Información del creador
+            elements.append(Paragraph(f"<b>Creado por:</b> {created_by}", style_normal))
+            elements.append(Spacer(1, 6))
+            elements.append(Paragraph("<i>Esta orden de compra es generada automáticamente por el sistema.</i>", style_normal))
+            
+            # Generar el PDF
+            doc.build(elements)
+            
+            # Mostrar mensaje de éxito
+            messagebox.showinfo(
+                "Éxito",
+                f"La orden se ha generado correctamente en:\n{file_path}",
                 parent=parent
             )
             

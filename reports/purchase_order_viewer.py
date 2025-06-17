@@ -1,13 +1,23 @@
 from tkinter import messagebox
 from datetime import datetime
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from sqlite_cli.models.tax_model import Tax
+from utils.pdf_generator import PDFGenerator
 
 class PurchaseOrderViewer(tk.Toplevel):
     def __init__(self, parent, order_number, supplier_info, items, subtotal, taxes, total, delivery_date, created_by):
         super().__init__(parent)
         self.parent = parent
+        self.order_number = order_number
+        self.supplier_info = supplier_info
+        self.items = items
+        self.subtotal = subtotal
+        self.taxes = taxes
+        self.total = total
+        self.delivery_date = delivery_date
+        self.created_by = created_by
+        
         self.title(f"Orden de Compra - {order_number}")
         
         # Configurar ventana modal centrada
@@ -155,10 +165,23 @@ class PurchaseOrderViewer(tk.Toplevel):
         tk.Label(total_frame, text=f"{total:,.2f}", 
                 font=("Arial", 12, "bold"), bg="white").pack(side="left")
         
-        # Botón de regresar
+        # Botones
         btn_frame = tk.Frame(scrollable_frame, bg="white")
         btn_frame.pack(fill="x", pady=(10, 0))
         
+        # Botón de PDF
+        tk.Button(
+            btn_frame, 
+            text="Generar PDF", 
+            command=self.generate_pdf,
+            font=("Arial", 10),
+            padx=20,
+            pady=5,
+            bg="#4a6fa5",
+            fg="white"
+        ).pack(side="right", padx=10)
+        
+        # Botón de regresar
         tk.Button(
             btn_frame, 
             text="Regresar", 
@@ -186,3 +209,17 @@ class PurchaseOrderViewer(tk.Toplevel):
                 font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
         tk.Label(notes_frame, text="Esta orden de compra es generada automáticamente por el sistema.", 
                 font=("Arial", 9, "italic"), bg="white").pack(anchor="w")
+
+    def generate_pdf(self):
+        """Genera la orden de compra en PDF"""
+        PDFGenerator.generate_purchase_order(
+            parent=self,
+            order_number=self.order_number,
+            supplier_info=self.supplier_info,
+            items=self.items,
+            subtotal=self.subtotal,
+            taxes=self.taxes,
+            total=self.total,
+            delivery_date=self.delivery_date,
+            created_by=self.created_by
+        )
