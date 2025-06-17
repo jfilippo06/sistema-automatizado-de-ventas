@@ -7,11 +7,19 @@ import os
 from sqlite_cli.models.tax_model import Tax
 from widgets.custom_button import CustomButton
 from utils.session_manager import SessionManager
+from utils.pdf_generator import PDFGenerator
 
 class InvoiceViewer(tk.Toplevel):
     def __init__(self, parent, invoice_id, customer_info, items, subtotal, taxes, total):
         super().__init__(parent)
         self.parent = parent
+        self.invoice_id = invoice_id
+        self.customer_info = customer_info
+        self.items = items
+        self.subtotal = subtotal
+        self.taxes = taxes
+        self.total = total
+        
         self.title(f"Recibo Digital - #{invoice_id}")
         
         # Configurar ventana modal centrada
@@ -19,7 +27,7 @@ class InvoiceViewer(tk.Toplevel):
         self.grab_set()
         
         # Tamaño fijo de la ventana
-        window_width = 750  # Aumentado para acomodar el margen
+        window_width = 750
         window_height = 750
         
         # Obtener dimensiones de la pantalla
@@ -39,7 +47,7 @@ class InvoiceViewer(tk.Toplevel):
         
         # Frame interno blanco que contendrá todo el contenido
         main_frame = tk.Frame(outer_frame, bg="white", padx=5, pady=5)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)  # Margen gris visible
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         canvas = tk.Canvas(main_frame, bg="white", highlightthickness=0)
         scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
@@ -155,10 +163,23 @@ class InvoiceViewer(tk.Toplevel):
         tk.Label(total_frame, text=f"{total:.2f}", 
                 font=("Arial", 12, "bold"), bg="white").pack(side="left")
         
-        # Botón de regresar
+        # Botones
         btn_frame = tk.Frame(scrollable_frame, bg="white")
         btn_frame.pack(fill="x", pady=(10, 0))
         
+        # Botón de PDF
+        tk.Button(
+            btn_frame, 
+            text="Generar PDF", 
+            command=self.generate_pdf,
+            font=("Arial", 10),
+            padx=20,
+            pady=5,
+            bg="#4a6fa5",
+            fg="white"
+        ).pack(side="right", padx=10)
+        
+        # Botón de regresar
         tk.Button(
             btn_frame, 
             text="Regresar", 
@@ -213,3 +234,16 @@ class InvoiceViewer(tk.Toplevel):
             return f"Empleado ID: {current_user['id']}"
         
         return "No disponible"
+
+    def generate_pdf(self):
+        """Genera el recibo en PDF"""
+        PDFGenerator.generate_invoice(
+            parent=self,
+            invoice_id=self.invoice_id,
+            customer_info=self.customer_info,
+            items=self.items,
+            subtotal=self.subtotal,
+            taxes=self.taxes,
+            total=self.total,
+            employee_info=self._get_employee_info()
+        )

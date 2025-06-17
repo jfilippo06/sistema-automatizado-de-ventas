@@ -541,3 +541,212 @@ class PDFGenerator:
                 f"No se pudo generar el PDF:\n{str(e)}",
                 parent=parent
             )
+
+    @staticmethod
+    def generate_invoice(
+        parent: Toplevel,
+        invoice_id: str,
+        customer_info: str,
+        items: List[Dict],
+        subtotal: float,
+        taxes: float,
+        total: float,
+        employee_info: str,
+        company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
+        company_rif: str = "RIF: J-40339817-8"
+    ) -> None:
+        """Genera un recibo en PDF idéntico a InvoiceViewer"""
+        from tkinter import filedialog
+        from reportlab.platypus.flowables import HRFlowable
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.lib.enums import TA_RIGHT, TA_LEFT
+        
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("Archivos PDF", "*.pdf")],
+            title="Guardar recibo como",
+            initialfile=f"Recibo_{invoice_id}.pdf",
+            parent=parent
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            # Configuración del documento
+            doc = SimpleDocTemplate(
+                file_path,
+                pagesize=letter,
+                rightMargin=20,
+                leftMargin=20,
+                topMargin=40,
+                bottomMargin=40
+            )
+            
+            # Estilos personalizados
+            styles = getSampleStyleSheet()
+            style_normal = styles["Normal"]
+            
+            style_bold = ParagraphStyle(
+                name='Bold',
+                parent=style_normal,
+                fontName='Helvetica-Bold'
+            )
+            
+            style_title = ParagraphStyle(
+                name='Title',
+                parent=style_normal,
+                fontName='Helvetica-Bold',
+                fontSize=12,
+                spaceAfter=6
+            )
+            
+            style_total = ParagraphStyle(
+                name='Total',
+                parent=style_normal,
+                fontSize=12,
+                fontName='Helvetica-Bold',
+                alignment=TA_RIGHT,
+                spaceAfter=12
+            )
+            
+            style_italic = ParagraphStyle(
+                name='Italic',
+                parent=style_normal,
+                fontName='Helvetica-Oblique',
+                fontSize=9
+            )
+            
+            elements = []
+            
+            # Encabezado
+            header_data = [
+                [
+                    Paragraph(f"<b>{company_name}</b><br/>{company_rif}", style_normal),
+                    "",
+                    Paragraph(
+                        f"<b>RECIBO N°:</b> {invoice_id}<br/>"
+                        f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                        style_normal
+                    )
+                ]
+            ]
+            
+            header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+            header_table.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+            ]))
+            
+            elements.append(header_table)
+            elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
+            elements.append(Spacer(1, 12))
+            
+            # Información del cliente
+            elements.append(Paragraph("<b>CLIENTE:</b>", style_bold))
+            elements.append(Paragraph(customer_info, style_normal))
+            elements.append(Spacer(1, 12))
+            
+            # Tabla de productos/servicios
+            headers = ["Tipo", "Descripción", "Cantidad", "P. Unitario", "Total"]
+            col_widths = [0.8*inch, 3.0*inch, 0.7*inch, 1.0*inch, 1.0*inch]
+            
+            table_data = [headers]
+            for item in items:
+                item_type = "Servicio" if item.get('is_service', False) else "Producto"
+                row = [
+                    item_type,
+                    item['name'],
+                    str(item['quantity']),
+                    f"{item['unit_price']:.2f}",
+                    f"{item['total']:.2f}"
+                ]
+                table_data.append(row)
+            
+            items_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+            items_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#4a6fa5")),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+                ('ALIGN', (2,1), (-1,-1), 'RIGHT'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), 10),
+                ('FONTSIZE', (0,1), (-1,-1), 9),
+                ('BOTTOMPADDING', (0,0), (-1,0), 6),
+                ('BACKGROUND', (0,1), (-1,-1), colors.white),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            
+            elements.append(items_table)
+            elements.append(Spacer(1, 12))
+            
+            # Totales
+            iva_tax = Tax.get_by_name("IVA")
+            
+            if iva_tax and iva_tax.get('status_name') == 'active':
+                subtotal_table = Table([
+                    ["Subtotal:", f"{subtotal:.2f}"]
+                ], colWidths=[1.5*inch, 1.5*inch])
+                
+                subtotal_table.setStyle(TableStyle([
+                    ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
+                ]))
+                
+                elements.append(subtotal_table)
+                
+                iva_table = Table([
+                    [f"IVA ({iva_tax['value']}%):", f"{taxes:.2f}"]
+                ], colWidths=[1.5*inch, 1.5*inch])
+                
+                iva_table.setStyle(TableStyle([
+                    ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+                    ('FONTSIZE', (0,0), (-1,-1), 10),
+                ]))
+                
+                elements.append(iva_table)
+            
+            # Total
+            total_table = Table([
+                ["", ""],
+                [
+                    Paragraph("<b>TOTAL:</b>", style_total),
+                    Paragraph(f"<b>{total:.2f}</b>", style_total)
+                ]
+            ], colWidths=[3.5*inch, 2*inch])
+            
+            total_table.setStyle(TableStyle([
+                ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            
+            elements.append(total_table)
+            elements.append(Spacer(1, 15))
+            
+            # Información del empleado
+            elements.append(Paragraph(f"<b>Atendido por:</b> {employee_info}", style_normal))
+            elements.append(Spacer(1, 8))
+            
+            # Notas
+            elements.append(Paragraph("<i>Notas:</i>", style_italic))
+            elements.append(Paragraph("<i>Este recibo es generado automáticamente por el sistema.</i>", style_italic))
+            
+            if any(item.get('is_service', False) for item in items):
+                elements.append(Paragraph("<i>Nota: Los servicios solicitados serán atendidos según lo acordado.</i>", style_italic))
+            
+            # Generar PDF
+            doc.build(elements)
+            
+            messagebox.showinfo(
+                "Éxito",
+                f"El recibo se ha generado correctamente en:\n{file_path}",
+                parent=parent
+            )
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"No se pudo generar el PDF:\n{str(e)}",
+                parent=parent
+            )

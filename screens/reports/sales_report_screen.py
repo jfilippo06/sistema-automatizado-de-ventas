@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Callable, Any
 from datetime import datetime
 from widgets.custom_button import CustomButton
@@ -10,6 +10,7 @@ from sqlite_cli.models.sales_report_model import SalesReport
 from sqlite_cli.models.customer_model import Customer
 from reports.InvoiceViewer import InvoiceViewer
 from utils.session_manager import SessionManager
+from utils.pdf_generator import PDFGenerator
 
 class SalesReportScreen(tk.Frame):
     def __init__(
@@ -117,8 +118,12 @@ class SalesReportScreen(tk.Frame):
         self.customer_combobox.pack(side=tk.LEFT, padx=5)
         self.load_customers()
 
+        # Campo de búsqueda y botones
+        search_btn_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        search_btn_frame.pack(side=tk.RIGHT, padx=5, fill=tk.X, expand=True)
+
         # Campo de búsqueda
-        search_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        search_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
         search_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         CustomLabel(
@@ -135,17 +140,30 @@ class SalesReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
-        search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
+        
+        # Botones de acción
+        btn_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
+        btn_frame.pack(side=tk.RIGHT, padx=5)
 
-        # Botón de búsqueda
-        btn_search = CustomButton(
-            filters_frame,
-            text="Filtrar",
-            command=self.refresh_data,
+        # Botón Ver Recibo
+        btn_view = CustomButton(
+            btn_frame,
+            text="Ver Recibo",
+            command=self.view_invoice,
             padding=6,
-            width=10
+            width=12,
         )
-        btn_search.pack(side=tk.RIGHT, padx=5)
+        btn_view.pack(side=tk.LEFT, padx=5)
+
+        # Botón Generar PDF
+        btn_pdf = CustomButton(
+            btn_frame,
+            text="Generar PDF",
+            command=self.generate_pdf,
+            padding=6,
+            width=12,
+        )
+        btn_pdf.pack(side=tk.LEFT, padx=5)
 
         # Treeview para mostrar las ventas
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
@@ -178,9 +196,6 @@ class SalesReportScreen(tk.Frame):
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
-
-        # Bind double click to view invoice
-        self.tree.bind("<Double-1>", self.view_invoice)
 
     def load_customers(self):
         """Carga la lista de clientes en el combobox"""
@@ -227,10 +242,11 @@ class SalesReportScreen(tk.Frame):
                 f"Bs. {sale['total']:,.2f}"
             ))
 
-    def view_invoice(self, event) -> None:
+    def view_invoice(self, event=None) -> None:
         """Muestra el recibo de la venta seleccionada"""
         selected = self.tree.selection()
         if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una venta", parent=self)
             return
             
         invoice_id = self.tree.item(selected[0])['values'][0]
@@ -259,8 +275,55 @@ class SalesReportScreen(tk.Frame):
             total=invoice_data['total']
         )
 
+    def generate_pdf(self) -> None:
+        """Genera PDF del recibo seleccionado"""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una venta", parent=self)
+            return
+            
+        invoice_id = self.tree.item(selected[0])['values'][0]
+        invoice_data = SalesReport.get_invoice_details(invoice_id)
+        
+        # Preparar items para el PDF
+        items = []
+        for item in invoice_data['items']:
+            items.append({
+                'id': item['product_id'] or item['service_request_id'],
+                'name': item['item_name'],
+                'quantity': item['quantity'],
+                'unit_price': item['unit_price'],
+                'total': item['subtotal'],
+                'is_service': item['item_type'] == 'service'
+            })
+        
+        # Obtener información del empleado
+        current_user = SessionManager.get_current_user()
+        employee_info = "No disponible"
+        if current_user:
+            if 'first_name' in current_user and 'last_name' in current_user:
+                employee_info = f"{current_user['first_name']} {current_user['last_name']}"
+                if current_user.get('username'):
+                    employee_info += f" ({current_user['username']})"
+            elif 'username' in current_user:
+                employee_info = current_user['username']
+            elif 'id' in current_user:
+                employee_info = f"Empleado ID: {current_user['id']}"
+        
+        # Generar PDF
+        PDFGenerator.generate_invoice(
+            parent=self,
+            invoice_id=invoice_data['id'],
+            customer_info=f"{invoice_data['customer_name']} - {invoice_data['customer_id_number']}",
+            items=items,
+            subtotal=invoice_data['subtotal'],
+            taxes=invoice_data['taxes'],
+            total=invoice_data['total'],
+            employee_info=employee_info
+        )
+
     def go_back(self) -> None:
         """Regresa a la pantalla anterior"""
         self.pack_forget()
-        self.parent.state('normal')  # Reset window state before going back
+        self.parent.state('normal')
         self.open_previous_screen_callback()
