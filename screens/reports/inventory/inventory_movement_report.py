@@ -156,8 +156,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
         
         self.tree = ttk.Treeview(
             tree_container,
-            columns=("Fecha", "Tipo", "Cambio Cantidad", "Cambio Stock", 
-                    "Anterior Cantidad", "Nuevo Cantidad", "Anterior Stock", "Nuevo Stock",
+            columns=("Fecha", "Tipo", "Cantidad", "Stock", 
+                    "Ant. Cantidad", "Nva. Cantidad", "Ant. Stock", "Nva. Stock",
                     "Usuario", "Referencia", "Notas"),
             show="headings",
             height=15,
@@ -168,12 +168,12 @@ class InventoryMovementReportScreen(tk.Toplevel):
         columns = [
             ("Fecha", 120, tk.CENTER),
             ("Tipo", 120, tk.CENTER),
-            ("Cambio Cantidad", 100, tk.CENTER),
-            ("Cambio Stock", 100, tk.CENTER), 
-            ("Anterior Cantidad", 100, tk.CENTER),
-            ("Nuevo Cantidad", 100, tk.CENTER),
-            ("Anterior Stock", 100, tk.CENTER),
-            ("Nuevo Stock", 100, tk.CENTER),
+            ("Cantidad", 100, tk.CENTER),
+            ("Stock", 100, tk.CENTER), 
+            ("Ant. Cantidad", 100, tk.CENTER),
+            ("Nva. Cantidad", 100, tk.CENTER),
+            ("Ant. Stock", 100, tk.CENTER),
+            ("Nva. Stock", 100, tk.CENTER),
             ("Usuario", 100, tk.CENTER),
             ("Referencia", 120, tk.CENTER),
             ("Notas", 200, tk.W)

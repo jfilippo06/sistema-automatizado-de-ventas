@@ -239,6 +239,12 @@ class PDFGenerator:
                 fontName='Helvetica-Bold',
                 alignment=TA_LEFT
             )
+            style_italic = ParagraphStyle(
+                name='Italic',
+                parent=style_normal,
+                fontName='Helvetica-Oblique',
+                alignment=TA_LEFT
+            )
             
             elements = []
             
@@ -266,14 +272,15 @@ class PDFGenerator:
             elements.append(Spacer(1, 12))
             
             # Tabla de movimientos (ajustada para hoja horizontal)
-            headers = ["Fecha", "Tipo", "Cambio Cant.", "Cambio Stock", 
-                    "Ant. Cant.", "Nva. Cant.", "Ant. Stock", "Nva. Stock", 
-                    "Usuario", "Referencia"]
+            headers = ["Fecha", "Tipo", "Cant.", "Stock", 
+                      "Ant. Cant.", "Nva. Cant.", "Ant. Stock", "Nva. Stock", 
+                      "Usuario", "Referencia", "Notas"]  # Añadida columna de Notas
             
             # Preparar datos
             data = [headers]
             for mov in movements:
                 ref = f"{mov['reference_type']}" if mov['reference_type'] else ""
+                notes = mov.get('notes', '')  # Obtenemos las notas del movimiento
                 row = [
                     mov['created_at'],
                     mov['movement_type'],
@@ -284,22 +291,24 @@ class PDFGenerator:
                     str(mov['previous_stock']),
                     str(mov['new_stock']),
                     mov['user'],
-                    ref
+                    ref,
+                    notes  # Añadimos las notas a la fila
                 ]
                 data.append(row)
             
             # Anchos de columna optimizados para horizontal
             col_widths = [
-                1.0*inch,  # Fecha
-                0.8*inch,  # Tipo
-                0.7*inch,  # Cambio Cant.
-                0.7*inch,  # Cambio Stock
+                1.2*inch,  # Fecha
+                1.0*inch,  # Tipo
+                0.7*inch,  # Cant.
+                0.7*inch,  # Stock
                 0.7*inch,  # Ant. Cant.
                 0.7*inch,  # Nva. Cant.
                 0.7*inch,  # Ant. Stock
                 0.7*inch,  # Nva. Stock
                 0.9*inch,  # Usuario
-                1.2*inch   # Referencia
+                1.2*inch,  # Referencia
+                1.5*inch   # Notas (nueva columna más ancha)
             ]
             
             table = Table(data, colWidths=col_widths, repeatRows=1)
@@ -310,7 +319,7 @@ class PDFGenerator:
                 ('TEXTCOLOR', (0,0), (-1,0), colors.white),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('ALIGN', (1,1), (1,-1), 'LEFT'),
-                ('ALIGN', (8,1), (9,-1), 'LEFT'),
+                ('ALIGN', (8,1), (-1,-1), 'LEFT'),  # Alineación izquierda para Usuario, Referencia y Notas
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0,0), (-1,0), 9),
                 ('FONTSIZE', (0,1), (-1,-1), 8),
@@ -331,8 +340,8 @@ class PDFGenerator:
             totals_table = Table([
                 [
                     Paragraph(f"<b>Total Movimientos:</b> {total_mov}", style_normal),
-                    Paragraph(f"<b>Total Cambio Cantidad:</b> {total_qty}", style_normal),
-                    Paragraph(f"<b>Total Cambio Stock:</b> {total_stock}", style_normal)
+                    Paragraph(f"<b>Total Cantidad:</b> {total_qty}", style_normal),
+                    Paragraph(f"<b>Total Stock:</b> {total_stock}", style_normal)
                 ]
             ], colWidths=[3*inch, 3*inch, 3*inch])
             
@@ -356,8 +365,8 @@ class PDFGenerator:
             elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
             elements.append(Spacer(1, 6))
             
-            # Notas
-            elements.append(Paragraph("<i>Este reporte fue generado automáticamente por el sistema.</i>", style_normal))
+            # Notas generales del reporte
+            elements.append(Paragraph("<i>Este reporte fue generado automáticamente por el sistema.</i>", style_italic))
             
             # Generar PDF
             doc.build(elements)
@@ -365,6 +374,13 @@ class PDFGenerator:
             messagebox.showinfo(
                 "Éxito",
                 f"El reporte se ha generado correctamente en:\n{file_path}",
+                parent=parent
+            )
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Error",
+                f"No se pudo generar el PDF:\n{str(e)}",
                 parent=parent
             )
             
