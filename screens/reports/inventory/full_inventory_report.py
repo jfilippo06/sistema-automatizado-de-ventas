@@ -66,6 +66,16 @@ class FullInventoryReportScreen(tk.Toplevel):
         )
         btn_filter.pack(side=tk.LEFT, padx=5)
         
+        # Botón Limpiar añadido aquí
+        btn_clear = CustomButton(
+            row1_frame,
+            text="Limpiar",
+            command=self.clear_filters,
+            padding=6,
+            width=10
+        )
+        btn_clear.pack(side=tk.LEFT, padx=5)
+        
         # Fila 2: Cantidad y Existencias
         row2_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row2_frame.pack(fill=tk.X, pady=5)
@@ -233,6 +243,16 @@ class FullInventoryReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         )
         self.count_label.pack(side=tk.BOTTOM, fill=tk.X, pady=(5, 0))
+
+    def clear_filters(self):
+        """Limpia todos los filtros y refresca los datos"""
+        self.search_var.set("")
+        self.quantity_var.set("")
+        self.existencia_var.set("")
+        self.min_stock_var.set("")
+        self.max_stock_var.set("")
+        self.supplier_var.set("")
+        self.refresh_data()
 
     def apply_filters(self):
         """Aplica los filtros"""

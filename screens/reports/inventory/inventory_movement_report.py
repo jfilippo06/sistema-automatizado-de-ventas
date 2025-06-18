@@ -5,10 +5,10 @@ from datetime import datetime
 from sqlite_cli.models.inventory_report_model import InventoryReport
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
-from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
 from reports.inventory_movement_viewer import InventoryMovementViewer
 from utils.pdf_generator import PDFGenerator
+from widgets.custom_date_picker import CustomDatePicker
 
 class InventoryMovementReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, inventory_id: int):
@@ -22,8 +22,6 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.state('zoomed')
         
         # Variables
-        self.start_date_var = tk.StringVar()
-        self.end_date_var = tk.StringVar()
         self.movement_type_var = tk.StringVar(value="Todos")
         
         self.configure_ui()
@@ -64,14 +62,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
         
-        start_date_entry = CustomEntry(
-            row1_frame,
-            textvariable=self.start_date_var,
-            width=12,
-            font=("Arial", 10),
-            placeholder="DD/MM/AAAA"
-        )
-        start_date_entry.pack(side=tk.LEFT, padx=5)
+        self.start_date_picker = CustomDatePicker(row1_frame)
+        self.start_date_picker.pack(side=tk.LEFT, padx=5)
         
         CustomLabel(
             row1_frame,
@@ -80,14 +72,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
-        end_date_entry = CustomEntry(
-            row1_frame,
-            textvariable=self.end_date_var,
-            width=12,
-            font=("Arial", 10),
-            placeholder="DD/MM/AAAA"
-        )
-        end_date_entry.pack(side=tk.LEFT, padx=5)
+        self.end_date_picker = CustomDatePicker(row1_frame)
+        self.end_date_picker.pack(side=tk.LEFT, padx=5)
         
         # Filtro de tipo de movimiento
         CustomLabel(
@@ -108,16 +94,7 @@ class InventoryMovementReportScreen(tk.Toplevel):
         movement_combobox.pack(side=tk.LEFT, padx=5)
         movement_combobox.current(0)
         
-        # Botones de acción
-        btn_pdf = CustomButton(
-            row1_frame,
-            text="Generar PDF",
-            command=self.generate_pdf,
-            padding=6,
-            width=15,
-        )
-        btn_pdf.pack(side=tk.RIGHT, padx=5)
-        
+        # Botones Filtrar y Limpiar (juntos después de los campos)
         btn_filter = CustomButton(
             row1_frame,
             text="Filtrar",
@@ -125,38 +102,58 @@ class InventoryMovementReportScreen(tk.Toplevel):
             padding=6,
             width=10
         )
-        btn_filter.pack(side=tk.RIGHT, padx=5)
+        btn_filter.pack(side=tk.LEFT, padx=(10, 5))
+        
+        btn_clear = CustomButton(
+            row1_frame,
+            text="Limpiar",
+            command=self.clear_filters,
+            padding=6,
+            width=10
+        )
+        btn_clear.pack(side=tk.LEFT)
+        
+        # Botones de acción (a la derecha)
+        action_frame = tk.Frame(row1_frame, bg="#f5f5f5")
+        action_frame.pack(side=tk.RIGHT)
         
         btn_report = CustomButton(
-            row1_frame,
+            action_frame,
             text="Ver Reporte",
             command=self.generate_report,
             padding=6,
             width=15
         )
-        btn_report.pack(side=tk.RIGHT, padx=5)
+        btn_report.pack(side=tk.LEFT, padx=5)
+        
+        btn_pdf = CustomButton(
+            action_frame,
+            text="Generar PDF",
+            command=self.generate_pdf,
+            padding=6,
+            width=15,
+        )
+        btn_pdf.pack(side=tk.LEFT, padx=5)
         
         btn_back = CustomButton(
-            row1_frame,
+            action_frame,
             text="Regresar",
             command=self.destroy,
             padding=6,
             width=10
         )
-        btn_back.pack(side=tk.RIGHT)
+        btn_back.pack(side=tk.LEFT)
         
-        # Contenedor para Treeview con scrollbars
+        # Treeview y scrollbars
         tree_container = tk.Frame(main_frame, bg="#f5f5f5")
         tree_container.pack(fill=tk.BOTH, expand=True)
         
-        # Scrollbars
         xscrollbar = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL)
         xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         
         yscrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL)
         yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Treeview con columnas ajustadas
         self.tree = ttk.Treeview(
             tree_container,
             columns=("Fecha", "Tipo", "Cambio Cantidad", "Cambio Stock", 
@@ -168,7 +165,6 @@ class InventoryMovementReportScreen(tk.Toplevel):
             yscrollcommand=yscrollbar.set
         )
         
-        # Configurar columnas
         columns = [
             ("Fecha", 120, tk.CENTER),
             ("Tipo", 120, tk.CENTER),
@@ -189,11 +185,9 @@ class InventoryMovementReportScreen(tk.Toplevel):
         
         self.tree.pack(fill=tk.BOTH, expand=True)
         
-        # Configurar scrollbars
         xscrollbar.config(command=self.tree.xview)
         yscrollbar.config(command=self.tree.yview)
         
-        # Contador de resultados
         self.count_label = CustomLabel(
             main_frame,
             text="0 movimientos encontrados",
@@ -201,6 +195,13 @@ class InventoryMovementReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         )
         self.count_label.pack(side=tk.BOTTOM, fill=tk.X, pady=(5, 0))
+
+    def clear_filters(self):
+        """Limpia todos los filtros aplicados"""
+        self.start_date_picker.set_date("")
+        self.end_date_picker.set_date("")
+        self.movement_type_var.set("Todos")
+        self.refresh_data()
 
     def load_product_info(self):
         """Carga la información del producto seleccionado"""
@@ -226,8 +227,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             self.tree.delete(item)
             
         # Obtener valores de los filtros
-        start_date = self._parse_date(self.start_date_var.get())
-        end_date = self._parse_date(self.end_date_var.get())
+        start_date = self._parse_date(self.start_date_picker.get_date())
+        end_date = self._parse_date(self.end_date_picker.get_date())
         movement_type = self.movement_type_var.get() if self.movement_type_var.get() != "Todos" else None
         
         movements = InventoryReport.get_inventory_movements_report(
@@ -296,10 +297,13 @@ class InventoryMovementReportScreen(tk.Toplevel):
         """Obtiene los filtros actuales aplicados"""
         filters = []
         
-        if self.start_date_var.get():
-            filters.append(f"Desde: {self.start_date_var.get()}")
-        if self.end_date_var.get():
-            filters.append(f"Hasta: {self.end_date_var.get()}")
+        start_date = self.start_date_picker.get_date()
+        end_date = self.end_date_picker.get_date()
+        
+        if start_date:
+            filters.append(f"Desde: {start_date}")
+        if end_date:
+            filters.append(f"Hasta: {end_date}")
         if self.movement_type_var.get() != "Todos":
             filters.append(f"Tipo: {self.movement_type_var.get()}")
             
