@@ -1,15 +1,21 @@
+# Standard library imports
+from datetime import datetime
+from typing import List, Dict
+import tkinter.messagebox as messagebox
+from tkinter import Toplevel, filedialog
+
+# ReportLab imports
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
-from datetime import datetime
-import tkinter.messagebox as messagebox
-from tkinter import Toplevel
-from typing import List, Dict
+from reportlab.platypus.flowables import HRFlowable
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
+
+# Local application imports
 from sqlite_cli.models.tax_model import Tax
 from utils.session_manager import SessionManager
-from reportlab.platypus.flowables import HRFlowable
 class PDFGenerator:
     @staticmethod
     def generate_inventory_report(
@@ -186,9 +192,7 @@ class PDFGenerator:
         company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
         company_rif: str = "RIF: J-40339817-8"
     ) -> None:
-        """Genera un reporte de movimientos en PDF en orientación horizontal"""
-        # Mostrar diálogo para guardar el archivo
-        from tkinter import filedialog
+        """Genera un reporte de movimientos en PDF en hoja oficio horizontal"""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -201,7 +205,7 @@ class PDFGenerator:
             return
         
         try:
-            # Crear documento en horizontal
+            # Configurar documento en hoja oficio horizontal
             doc = SimpleDocTemplate(
                 file_path,
                 pagesize=landscape(letter),
@@ -211,51 +215,60 @@ class PDFGenerator:
                 bottomMargin=40
             )
             
+            # Estilos
             styles = getSampleStyleSheet()
-            style_title = styles["Title"]
+            style_title = ParagraphStyle(
+                name='Title',
+                parent=styles["Title"],
+                fontSize=14,
+                leading=16,
+                spaceAfter=6,
+                alignment=TA_LEFT
+            )
             style_normal = styles["Normal"]
-            style_heading = styles["Heading2"]
+            style_heading = ParagraphStyle(
+                name='Heading',
+                parent=styles["Heading2"],
+                fontSize=12,
+                spaceAfter=12,
+                alignment=TA_LEFT
+            )
+            style_bold = ParagraphStyle(
+                name='Bold',
+                parent=style_normal,
+                fontName='Helvetica-Bold',
+                alignment=TA_LEFT
+            )
             
             elements = []
             
-            # Encabezado con tabla para mejor organización
-            header_table = Table([
-                [Paragraph(company_name, style_title), "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
-                [Paragraph(company_rif, style_normal), "", Paragraph(f"Filtros: {filters}", style_normal)],
-                ["", Paragraph(title, style_heading), ""]
-            ], colWidths=[3*inch, 3*inch, 3*inch])
+            # Encabezado alineado a la izquierda
+            elements.append(Paragraph(f"<b>{company_name}</b>", style_title))
+            elements.append(Paragraph(company_rif, style_normal))
+            elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal))
+            elements.append(Spacer(1, 12))
             
-            header_table.setStyle(TableStyle([
-                ('SPAN', (0,0), (0,1)),
-                ('SPAN', (2,0), (2,1)),
-                ('SPAN', (1,2), (1,2)),
-                ('ALIGN', (1,2), (1,2), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ]))
+            # Título del reporte
+            elements.append(Paragraph(title, style_heading))
+            elements.append(Paragraph(f"Filtros: {filters}", style_normal))
+            elements.append(Spacer(1, 12))
             
-            elements.append(header_table)
+            # Línea divisoria
+            elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
             elements.append(Spacer(1, 12))
             
             # Información del producto
-            product_table = Table([
-                [Paragraph("<b>Producto:</b>", style_normal), product_info['product']],
-                [Paragraph("<b>Código:</b>", style_normal), product_info['code']],
-                [Paragraph("<b>Descripción:</b>", style_normal), product_info['description']]
-            ], colWidths=[1*inch, 6*inch])
-            
-            product_table.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('ALIGN', (0,0), (0,-1), 'RIGHT'),
-                ('LEFTPADDING', (0,0), (0,-1), 10),
-                ('RIGHTPADDING', (0,0), (0,-1), 5),
-            ]))
-            
-            elements.append(product_table)
+            elements.append(Paragraph("<b>PRODUCTO:</b>", style_bold))
+            elements.append(Paragraph(
+                f"{product_info['product']} ({product_info['code']}) - {product_info['description']}",
+                style_normal
+            ))
             elements.append(Spacer(1, 12))
             
-            # Tabla de movimientos (ajustada para horizontal)
-            headers = ["Fecha", "Tipo", "Cant.", "Stock.", "Ant. Cant.", 
-                     "Nva. Cant.", "Ant. Stock.", "Nva. Stock.", "Usuario", "Referencia"]
+            # Tabla de movimientos (ajustada para hoja horizontal)
+            headers = ["Fecha", "Tipo", "Cambio Cant.", "Cambio Stock", 
+                    "Ant. Cant.", "Nva. Cant.", "Ant. Stock", "Nva. Stock", 
+                    "Usuario", "Referencia"]
             
             # Preparar datos
             data = [headers]
@@ -275,22 +288,23 @@ class PDFGenerator:
                 ]
                 data.append(row)
             
-            # Anchos de columna optimizados
+            # Anchos de columna optimizados para horizontal
             col_widths = [
                 1.0*inch,  # Fecha
-                1.0*inch,  # Tipo
-                0.6*inch,  # Cant.
-                0.6*inch,  # Stock.
+                0.8*inch,  # Tipo
+                0.7*inch,  # Cambio Cant.
+                0.7*inch,  # Cambio Stock
                 0.7*inch,  # Ant. Cant.
                 0.7*inch,  # Nva. Cant.
-                0.7*inch,  # Ant. Stock.
-                0.7*inch,  # Nva. Stock.
-                1.0*inch,  # Usuario
-                1.0*inch   # Referencia
+                0.7*inch,  # Ant. Stock
+                0.7*inch,  # Nva. Stock
+                0.9*inch,  # Usuario
+                1.2*inch   # Referencia
             ]
             
             table = Table(data, colWidths=col_widths, repeatRows=1)
             
+            # Estilo de tabla
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#4a6fa5")),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.white),
@@ -298,8 +312,8 @@ class PDFGenerator:
                 ('ALIGN', (1,1), (1,-1), 'LEFT'),
                 ('ALIGN', (8,1), (9,-1), 'LEFT'),
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0,0), (-1,0), 8),
-                ('FONTSIZE', (0,1), (-1,-1), 7),
+                ('FONTSIZE', (0,0), (-1,0), 9),
+                ('FONTSIZE', (0,1), (-1,-1), 8),
                 ('BOTTOMPADDING', (0,0), (-1,0), 6),
                 ('BACKGROUND', (0,1), (-1,-1), colors.white),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
@@ -317,28 +331,40 @@ class PDFGenerator:
             totals_table = Table([
                 [
                     Paragraph(f"<b>Total Movimientos:</b> {total_mov}", style_normal),
-                    Paragraph(f"<b>Total Cantidad:</b> {total_qty}", style_normal),
-                    Paragraph(f"<b>Total Stock:</b> {total_stock}", style_normal)
+                    Paragraph(f"<b>Total Cambio Cantidad:</b> {total_qty}", style_normal),
+                    Paragraph(f"<b>Total Cambio Stock:</b> {total_stock}", style_normal)
                 ]
             ], colWidths=[3*inch, 3*inch, 3*inch])
             
             elements.append(totals_table)
             elements.append(Spacer(1, 12))
             
+            # Información del generador
+            current_user = SessionManager.get_current_user()
+            user_info = "No disponible"
+            
+            if current_user:
+                if 'first_name' in current_user and 'last_name' in current_user:
+                    user_info = f"{current_user['first_name']} {current_user['last_name']}"
+                elif 'username' in current_user:
+                    user_info = current_user['username']
+            
+            elements.append(Paragraph(f"<b>Generado por:</b> {user_info}", style_bold))
+            elements.append(Spacer(1, 6))
+            
+            # Línea divisoria final
+            elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
+            elements.append(Spacer(1, 6))
+            
             # Notas
-            notes = [m['notes'] for m in movements if m['notes'] and m['notes'] != "None"]
-            if notes:
-                elements.append(Paragraph("<b>Notas relevantes:</b>", style_normal))
-                for note in notes[:3]:  # Mostrar máximo 3 notas
-                    elements.append(Paragraph(f"- {note}", style_normal))
-                    elements.append(Spacer(1, 4))
+            elements.append(Paragraph("<i>Este reporte fue generado automáticamente por el sistema.</i>", style_normal))
             
             # Generar PDF
             doc.build(elements)
             
             messagebox.showinfo(
                 "Éxito",
-                f"Reporte generado en:\n{file_path}",
+                f"El reporte se ha generado correctamente en:\n{file_path}",
                 parent=parent
             )
             
@@ -365,11 +391,6 @@ class PDFGenerator:
         company_address: str = "Av. Principal, Edif. Empresarial"
     ) -> None:
         """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer"""
-        from tkinter import filedialog
-        from reportlab.platypus.flowables import HRFlowable
-        from reportlab.lib.styles import ParagraphStyle
-        from reportlab.lib.enums import TA_RIGHT
-        
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -555,12 +576,7 @@ class PDFGenerator:
         company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
         company_rif: str = "RIF: J-40339817-8"
     ) -> None:
-        """Genera un recibo en PDF idéntico a InvoiceViewer"""
-        from tkinter import filedialog
-        from reportlab.platypus.flowables import HRFlowable
-        from reportlab.lib.styles import ParagraphStyle
-        from reportlab.lib.enums import TA_RIGHT, TA_LEFT
-        
+        """Genera un recibo en PDF idéntico a InvoiceViewer"""     
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
