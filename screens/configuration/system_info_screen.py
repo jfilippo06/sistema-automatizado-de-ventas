@@ -40,7 +40,7 @@ class SystemInfoScreen(tk.Frame):
         system_info = {
             "Nombre del Sistema": "Sistema automatizado de ventas y servicios",
             "Versión": "1.0.0",
-            "Desarrollado por": "Diego Rodríguez",
+            "Desarrollado por": "Diego Nieves",
             "Año": "2025",
             "Plataforma": "Python 3.13.2",
             "Interfaz": "Tkinter",
