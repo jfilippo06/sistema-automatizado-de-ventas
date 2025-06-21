@@ -52,9 +52,9 @@ class LoginScreen(tk.Frame):
         right_frame.rowconfigure(0, weight=1)
 
         login_content = tk.Frame(right_frame, bg="#2356a2")
-        login_content.pack(expand=True)
+        login_content.pack(expand=True, pady=20)  # Reducido de 50 a 20 para subir el contenido
 
-        CustomLabel(login_content, text="Login", font=("Arial", 22, "bold"), fg="white", bg="#2356a2").pack(pady=(30, 20))
+        CustomLabel(login_content, text="Login", font=("Arial", 22, "bold"), fg="white", bg="#2356a2").pack(pady=10)  # Reducido de 20 a 10
 
         form_frame = tk.Frame(login_content, bg="#2356a2")
         form_frame.pack()
@@ -64,13 +64,13 @@ class LoginScreen(tk.Frame):
 
         CustomLabel(form_frame, text="Usuario", font=("Arial", 12), fg="white", bg="#2356a2").grid(row=0, column=0, sticky="w")
         self.user_entry = CustomEntry(form_frame, textvariable=self.username_var, width=30)
-        self.user_entry.grid(row=1, column=0, pady=(0, 10))
+        self.user_entry.grid(row=1, column=0, pady=(0, 5))  # Reducido de 10 a 5
 
         CustomLabel(form_frame, text="Contraseña", font=("Arial", 12), fg="white", bg="#2356a2").grid(row=2, column=0, sticky="w")
         self.password_entry = CustomEntry(form_frame, textvariable=self.password_var, show="*", width=30)
-        self.password_entry.grid(row=3, column=0, pady=(0, 20))
+        self.password_entry.grid(row=3, column=0, pady=(0, 10))  # Reducido de 20 a 10
 
-        CustomButton(login_content, text="Iniciar Sesión", command=self.authenticate, width=20).pack()
+        CustomButton(login_content, text="Iniciar Sesión", command=self.authenticate, width=20).pack(pady=5)  # Añadido pady para mejor espaciado
 
     def load_and_pack_image(self, parent: tk.Widget, path: str, size: tuple[int, int]) -> None:
         try:
