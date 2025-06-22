@@ -1,7 +1,9 @@
 import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+from typing import Any, Callable
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
-from typing import Any, Callable
 from utils.session_manager import SessionManager
 
 class HomeScreen(tk.Frame):
@@ -26,21 +28,24 @@ class HomeScreen(tk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.open_login_screen_callback = open_login_screen_callback
-        self.open_inventory_callback = open_inventory_callback
-        self.open_suppliers_callback = open_suppliers_callback
-        self.open_customers_callback = open_customers_callback
-        self.open_service_requests_callback = open_service_requests_callback
-        self.open_services_callback = open_services_callback
-        self.open_config_callback = open_config_callback
-        self.open_maintenance_callback = open_maintenance_callback
-        self.open_recovery_callback = open_recovery_callback
-        self.open_billing_callback = open_billing_callback
-        self.open_reports_callback = open_reports_callback
-        self.open_catalog_callback = open_catalog_callback
-        self.open_purchase_orders_callback = open_purchase_orders_callback
-        self.open_purchase_order_report_callback = open_purchase_order_report_callback
+        self.callbacks = {
+            "inventory": open_inventory_callback,
+            "suppliers": open_suppliers_callback,
+            "customers": open_customers_callback,
+            "service_requests": open_service_requests_callback,
+            "services": open_services_callback,
+            "config": open_config_callback,
+            "maintenance": open_maintenance_callback,
+            "recovery": open_recovery_callback,
+            "billing": open_billing_callback,
+            "reports": open_reports_callback,
+            "catalog": open_catalog_callback,
+            "purchase_orders": open_purchase_orders_callback,
+            "purchase_order_report": open_purchase_order_report_callback
+        }
         
-        self.configure(bg="#f0f0f0")
+        self.configure(bg="#f5f5f5")
+        self.images = {}
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -49,93 +54,115 @@ class HomeScreen(tk.Frame):
             return
             
         self.parent.state('normal')
-        self.parent.geometry("700x600")
+        self.parent.geometry("700x500")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, bg="#f0f0f0")
-        main_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        # Frame principal con organización vertical
+        main_frame = tk.Frame(self, bg="#f5f5f5")
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
+        # Mostrar las tres imágenes en una fila
+        self.load_and_display_images(main_frame)
+        
+        # Título del sistema
         title = CustomLabel(
             main_frame,
             text="Sistema de Gestión",
             font=("Arial", 24, "bold"),
-            fg="#333",
-            bg="#f0f0f0"
+            fg="#2356a2",
+            bg="#f5f5f5"
         )
-        title.grid(row=0, column=0, columnspan=3, pady=(0, 30))
-
+        title.pack(pady=(20, 30))
+        
+        # Contenedor para los botones
+        buttons_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        buttons_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Botones principales en el orden solicitado
         buttons = [
-            ("Proveedores", self.suppliers_control),
-            ("Productos", self.inventory_control),
-            ("Orden de compra", self.purchase_orders_control),
-            ("Reportes", self.reports_control),
-            ("Ventas", self.billing_control),
-            ("Clientes", self.customers_control),
-            ("Solicitudes de servicio", self.service_requests_control),
-            ("Servicios", self.services_control),
-            ("Catálogo", self.catalog_control),
-            ("Mantenimiento", self.maintenance),
-            ("Recuperación", self.recovery),
-            ("Configuración", self.config_control),
-            ("Salir", self.exit)
+            ("Proveedores", "suppliers", "#2356a2"),
+            ("Productos", "inventory", "#3a6eb5"),
+            ("Orden de compra", "purchase_orders", "#4d87d1"),
+            ("Reportes", "reports", "#5c9ae0"),
+            ("Ventas", "billing", "#6eabed"),
+            ("Clientes", "customers", "#2356a2"),
+            ("Solicitudes de servicio", "service_requests", "#3a6eb5"),
+            ("Servicios", "services", "#4d87d1"),
+            ("Catálogo", "catalog", "#5c9ae0"),
+            ("Mantenimiento", "maintenance", "#6eabed"),
+            ("Recuperación", "recovery", "#2356a2"),
+            ("Configuración", "config", "#3a6eb5"),
+            ("Salir", "exit", "#d9534f")
         ]
-
-        for i, (text, command) in enumerate(buttons):
-            row = (i // 3) + 1
-            col = i % 3
+        
+        # Organización de botones en 4 columnas (para acomodar los 13 botones mejor)
+        columns = 4
+        for i, (text, key, color) in enumerate(buttons):
+            row = i // columns
+            col = i % columns
             
-            btn = CustomButton(
-                main_frame,
-                text=text,
-                command=command,
-                padding=20,
-                width=30,
-                wraplength=150 if text in ["Catálogo", "Orden de compra"] else None
-            )
-            btn.grid(row=row, column=col, padx=10, pady=10, ipady=20, sticky="nsew")
+            btn = self.create_menu_button(
+                buttons_frame, 
+                text, 
+                color,
+                lambda k=key: self.navigate(k))
+            btn.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            
+            # Configurar expansión uniforme
+            buttons_frame.grid_columnconfigure(col, weight=1)
+            buttons_frame.grid_rowconfigure(row, weight=1)
 
-        for i in range(5):
-            main_frame.grid_rowconfigure(i, weight=1)
-        for i in range(3):
-            main_frame.grid_columnconfigure(i, weight=1)
+    def load_and_display_images(self, parent):
+        try:
+            img_frame = tk.Frame(parent, bg="#f5f5f5")
+            img_frame.pack()
+            
+            # Cargar las tres imágenes existentes
+            img_paths = [
+                ("assets/republica.png", (70, 70)),
+                ("assets/empresa.png", (70, 70)),
+                ("assets/universidad.png", (70, 70))
+            ]
+            
+            for path, size in img_paths:
+                img = Image.open(path).resize(size, Image.Resampling.LANCZOS)
+                self.images[path] = ImageTk.PhotoImage(img)
+                label = tk.Label(img_frame, image=self.images[path], bg="#f5f5f5")
+                label.pack(side=tk.LEFT, padx=10)
+                
+        except Exception as e:
+            print(f"Error cargando imágenes: {e}")
 
-    def suppliers_control(self) -> None:
-        self.open_suppliers_callback()
+    def create_menu_button(self, parent, text, bg_color, command):
+        btn = tk.Frame(parent, bg=bg_color, bd=0, highlightthickness=0)
+        
+        btn.bind("<Button-1>", lambda e: command())
+        
+        # Texto del botón
+        label = tk.Label(
+            btn, 
+            text=text, 
+            bg=bg_color, 
+            fg="white", 
+            font=("Arial", 11), 
+            padx=10, 
+            pady=15,
+            wraplength=100
+        )
+        label.pack(fill=tk.BOTH, expand=True)
+        
+        # Hacer todo el label clickeable
+        label.bind("<Button-1>", lambda e: command())
+        
+        return btn
 
-    def inventory_control(self) -> None:
-        self.open_inventory_callback()
-
-    def purchase_orders_control(self) -> None:
-        self.open_purchase_orders_callback()
-
-    def reports_control(self) -> None:
-        self.open_reports_callback()
-
-    def billing_control(self) -> None:
-        self.open_billing_callback()
-
-    def customers_control(self) -> None:
-        self.open_customers_callback()
-
-    def service_requests_control(self) -> None:
-        self.open_service_requests_callback()
-
-    def services_control(self) -> None:
-        self.open_services_callback()
-
-    def catalog_control(self) -> None:
-        self.open_catalog_callback()
-
-    def maintenance(self) -> None:
-        self.open_maintenance_callback()
-
-    def recovery(self) -> None:
-        self.open_recovery_callback()
-
-    def config_control(self) -> None:
-        self.open_config_callback()
+    def navigate(self, key):
+        if key == "exit":
+            self.exit()
+        elif key in self.callbacks:
+            self.callbacks[key]()
 
     def exit(self) -> None:
         SessionManager.logout()
