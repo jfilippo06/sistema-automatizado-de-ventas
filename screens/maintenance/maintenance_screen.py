@@ -3,6 +3,7 @@ from tkinter import messagebox, filedialog
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from typing import Any, Callable
+from PIL import Image, ImageTk
 import sqlite3
 import os
 import shutil
@@ -17,56 +18,108 @@ class MaintenanceScreen(tk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
-        self.configure(bg="#f0f0f0")
+        self.configure(bg="#f5f5f5")
+        self.images = {}
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("500x370")
+        self.parent.geometry("700x500")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, bg="#f0f0f0")
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-
+        main_frame = tk.Frame(self, bg="#f5f5f5")
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        self.load_and_display_images(main_frame)
+        
         title = CustomLabel(
             main_frame,
             text="Mantenimiento del Sistema",
-            font=("Arial", 20, "bold"),
-            fg="#333",
-            bg="#f0f0f0"
+            font=("Arial", 24, "bold"),
+            fg="#2356a2",
+            bg="#f5f5f5"
         )
-        title.pack(pady=(10, 20))
-
-        options_frame = tk.Frame(main_frame, bg="#f0f0f0")
-        options_frame.pack(pady=(0, 10))
-
+        title.pack(pady=(20, 30))
+        
+        buttons_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        buttons_frame.pack(fill=tk.BOTH, expand=True)
+        
         buttons = [
-            ("Compactar Base de Datos", self.compress_database),
-            ("Exportar Base de Datos", self.export_database),
-            ("Importar Base de Datos", self.import_database),
-            ("Regresar", self.go_back)
+            ("Compactar Base de Datos", "compress", "#2356a2"),
+            ("Exportar Base de Datos", "export", "#3a6eb5"),
+            ("Importar Base de Datos", "import", "#4d87d1"),
+            ("Regresar", "back", "#d9534f")
         ]
+        
+        for i, (text, key, color) in enumerate(buttons):
+            row = i // 2
+            col = i % 2
+            
+            btn = self.create_menu_button(
+                buttons_frame, 
+                text, 
+                color,
+                lambda k=key: self.navigate(k))
+            btn.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            
+            buttons_frame.grid_columnconfigure(col, weight=1)
+            buttons_frame.grid_rowconfigure(row, weight=1)
 
-        for text, command in buttons:
-            btn = CustomButton(
-                options_frame,
-                text=text,
-                command=command,
-                padding=10,
-                width=30
-            )
-            btn.pack(pady=5, ipady=10, ipadx=10)
+    def load_and_display_images(self, parent):
+        try:
+            img_frame = tk.Frame(parent, bg="#f5f5f5")
+            img_frame.pack()
+            
+            img_paths = [
+                ("assets/republica.png", (70, 70)),
+                ("assets/empresa.png", (70, 70)),
+                ("assets/universidad.png", (70, 70))
+            ]
+            
+            for path, size in img_paths:
+                img = Image.open(path).resize(size, Image.Resampling.LANCZOS)
+                self.images[path] = ImageTk.PhotoImage(img)
+                label = tk.Label(img_frame, image=self.images[path], bg="#f5f5f5")
+                label.pack(side=tk.LEFT, padx=10)
+                
+        except Exception as e:
+            print(f"Error cargando imágenes: {e}")
+
+    def create_menu_button(self, parent, text, bg_color, command):
+        btn = tk.Frame(parent, bg=bg_color, bd=0, highlightthickness=0)
+        btn.bind("<Button-1>", lambda e: command())
+        
+        label = tk.Label(
+            btn, 
+            text=text, 
+            bg=bg_color, 
+            fg="white", 
+            font=("Arial", 11), 
+            padx=10, 
+            pady=15,
+            wraplength=150
+        )
+        label.pack(fill=tk.BOTH, expand=True)
+        label.bind("<Button-1>", lambda e: command())
+        
+        return btn
+
+    def navigate(self, key):
+        if key == "back":
+            self.go_back()
+        elif key == "compress":
+            self.compress_database()
+        elif key == "export":
+            self.export_database()
+        elif key == "import":
+            self.import_database()
 
     def get_db_path(self) -> str:
-        """Obtiene la ruta completa del archivo de base de datos"""
-        # Obtener el directorio base del proyecto (sistema-automatizado-de-ventas)
         project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        # Construir la ruta completa a la base de datos
         return os.path.join(project_dir, 'sqlite_cli', 'database', 'db.db')
 
     def compress_database(self) -> None:
-        """Comprime la base de datos SQLite"""
         confirm = messagebox.askyesno(
             "Compactar Base de Datos",
             "¿Está seguro que desea compactar la base de datos?\n"
@@ -80,8 +133,6 @@ class MaintenanceScreen(tk.Frame):
         try:
             db_path = self.get_db_path()
             conn = sqlite3.connect(db_path)
-            
-            # Vaciar el espacio no utilizado
             conn.execute("VACUUM")
             conn.close()
             
@@ -98,7 +149,6 @@ class MaintenanceScreen(tk.Frame):
             )
 
     def export_database(self) -> None:
-        """Exporta la base de datos a un archivo seleccionado por el usuario"""
         default_filename = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         
         file_path = filedialog.asksaveasfilename(
@@ -109,7 +159,7 @@ class MaintenanceScreen(tk.Frame):
         )
         
         if not file_path:
-            return  # Usuario canceló la operación
+            return
 
         try:
             db_path = self.get_db_path()
@@ -128,7 +178,6 @@ class MaintenanceScreen(tk.Frame):
             )
 
     def import_database(self) -> None:
-        """Importa una base de datos desde un archivo seleccionado por el usuario"""
         confirm = messagebox.askyesno(
             "Importar Base de Datos",
             "ADVERTENCIA: Esta operación reemplazará la base de datos actual.\n"
@@ -145,19 +194,15 @@ class MaintenanceScreen(tk.Frame):
         )
         
         if not file_path:
-            return  # Usuario canceló la operación
+            return
 
         try:
             db_path = self.get_db_path()
-            
-            # Hacer backup de la base de datos actual
             backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
             os.makedirs(backup_dir, exist_ok=True)
             backup_filename = f"db_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
             backup_path = os.path.join(backup_dir, backup_filename)
             shutil.copyfile(db_path, backup_path)
-            
-            # Reemplazar con la nueva base de datos
             shutil.copyfile(file_path, db_path)
             
             messagebox.showinfo(
