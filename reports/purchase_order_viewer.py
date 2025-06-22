@@ -1,7 +1,8 @@
-from tkinter import messagebox
-from datetime import datetime
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import messagebox, filedialog
+from datetime import datetime
+from tkinter import ttk
+from PIL import Image, ImageTk
 from sqlite_cli.models.tax_model import Tax
 from utils.pdf_generator import PDFGenerator
 
@@ -17,6 +18,7 @@ class PurchaseOrderViewer(tk.Toplevel):
         self.total = total
         self.delivery_date = delivery_date
         self.created_by = created_by
+        self.images = {}  # Diccionario para almacenar las imágenes
         
         self.title(f"Orden de Compra - {order_number}")
         
@@ -62,16 +64,24 @@ class PurchaseOrderViewer(tk.Toplevel):
         header_frame = tk.Frame(scrollable_frame, bg="white")
         header_frame.pack(fill="x", pady=(0, 15))
         
-        # Logo e información de la empresa (izquierda)
+        # Logo e información de la empresa (izquierda) - ahora con imagen
         company_frame = tk.Frame(header_frame, bg="white")
         company_frame.pack(side="left", anchor="nw")
         
-        tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
-                font=("Arial", 12, "bold"), bg="white").pack(anchor="w")
-        tk.Label(company_frame, text="RIF: J-40339817-8", 
-                font=("Arial", 10), bg="white").pack(anchor="w")
-        tk.Label(company_frame, text="Av. Principal, Edif. Empresarial", 
-                font=("Arial", 10), bg="white").pack(anchor="w")
+        try:
+            img = Image.open("assets/empresa.png").resize((150, 70), Image.Resampling.LANCZOS)
+            self.images["empresa"] = ImageTk.PhotoImage(img)
+            img_label = tk.Label(company_frame, image=self.images["empresa"], bg="white")
+            img_label.pack(anchor="w")
+        except Exception as e:
+            print(f"Error cargando imagen de empresa: {e}")
+            # Fallback a texto si no se puede cargar la imagen
+            tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
+                    font=("Arial", 12, "bold"), bg="white").pack(anchor="w")
+            tk.Label(company_frame, text="RIF: J-40339817-8", 
+                    font=("Arial", 10), bg="white").pack(anchor="w")
+            tk.Label(company_frame, text="Av. Principal, Edif. Empresarial", 
+                    font=("Arial", 10), bg="white").pack(anchor="w")
         
         # Número de orden y fecha (derecha)
         order_frame = tk.Frame(header_frame, bg="white")

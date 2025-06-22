@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+from PIL import Image, ImageTk
 from utils.session_manager import SessionManager
 from utils.pdf_generator import PDFGenerator
 
@@ -12,6 +13,7 @@ class InventoryReportViewer(tk.Toplevel):
         self.items = items
         self.report_title = title
         self.filters = filters
+        self.images = {}  # Diccionario para almacenar las imágenes
         
         # Configurar ventana modal centrada
         self.transient(parent)
@@ -46,14 +48,23 @@ class InventoryReportViewer(tk.Toplevel):
         header_frame = tk.Frame(scrollable_frame, bg="white")
         header_frame.pack(fill="x", pady=(0, 15))
         
-        # Información de la empresa (izquierda)
+        # Información de la empresa (izquierda) - Ahora con imagen
         company_frame = tk.Frame(header_frame, bg="white")
         company_frame.pack(side="left", anchor="nw")
         
-        tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
-                font=("Arial", 12, "bold"), bg="white").pack(anchor="w")
-        tk.Label(company_frame, text="RIF: J-40339817-8", 
-                font=("Arial", 10), bg="white").pack(anchor="w")
+        # Cargar y mostrar imagen de la empresa
+        try:
+            img = Image.open("assets/empresa.png").resize((150, 70), Image.Resampling.LANCZOS)
+            self.images["empresa"] = ImageTk.PhotoImage(img)
+            img_label = tk.Label(company_frame, image=self.images["empresa"], bg="white")
+            img_label.pack(anchor="w")
+        except Exception as e:
+            print(f"Error cargando imagen de empresa: {e}")
+            # Fallback a texto si no se puede cargar la imagen
+            tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
+                    font=("Arial", 12, "bold"), bg="white").pack(anchor="w")
+            tk.Label(company_frame, text="RIF: J-40339817-8", 
+                    font=("Arial", 10), bg="white").pack(anchor="w")
         
         # Título y fecha (derecha)
         title_frame = tk.Frame(header_frame, bg="white")
