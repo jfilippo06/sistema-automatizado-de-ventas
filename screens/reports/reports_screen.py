@@ -44,7 +44,7 @@ class ReportsScreen(tk.Frame):
         buttons_frame.pack(fill=tk.BOTH, expand=True)
         
         buttons = [
-            ("Inventario de productos", "inventory", "#2356a2"),
+            ("Productos", "inventory", "#2356a2"),
             ("Ordenes de Compra", "purchase_orders", "#3a6eb5"),
             ("Ventas", "sales", "#4d87d1"),
             ("Regresar", "back", "#d9534f")
