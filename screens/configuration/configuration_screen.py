@@ -122,16 +122,21 @@ class ConfigurationScreen(tk.Frame):
             self.system_info_management()
 
     def users_management(self) -> None:
+        self.pack_forget()
         self.open_users_callback()
 
     def currency_management(self) -> None:
+        self.pack_forget()
         self.open_currency_callback()
 
     def taxes_management(self) -> None:
+        self.pack_forget()
         self.open_taxes_callback()
 
     def system_info_management(self) -> None:
+        self.pack_forget()
         self.open_system_info_callback()
 
     def go_back(self) -> None:
+        self.pack_forget()
         self.open_previous_screen_callback()
