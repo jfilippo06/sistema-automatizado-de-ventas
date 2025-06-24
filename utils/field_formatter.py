@@ -7,39 +7,28 @@ class FieldFormatter:
     @staticmethod
     def format_code(text: str) -> str:
         """Formatea el código: todo en mayúsculas, permite letras y números"""
-        # Elimina caracteres no permitidos
         cleaned = re.sub(r'[^a-zA-Z0-9]', '', text)
         return cleaned.upper()
 
     @staticmethod
     def format_id_number(text: str) -> str:
         """Formatea la cédula: solo números y puntos"""
-        # Elimina caracteres no permitidos
         cleaned = re.sub(r'[^0-9.]', '', text)
-        
-        # Validación adicional para puntos (solo permite un punto)
         parts = cleaned.split('.')
         if len(parts) > 2:
             cleaned = f"{parts[0]}.{''.join(parts[1:])}"
-        
         return cleaned
 
     @staticmethod
     def format_name(text: str) -> str:
         """Formatea nombres: solo letras, cada palabra con primera mayúscula"""
-        # Elimina números y caracteres especiales
         cleaned = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]', '', text)
-        
-        # Capitaliza cada palabra
         return ' '.join(word.capitalize() for word in cleaned.split(' '))
 
     @staticmethod
-    def format_address(text: str) -> str:
+    def format_first_name(text: str) -> str:
         """Formatea dirección: alfanumérico, primera letra mayúscula"""
-        # Elimina caracteres especiales no permitidos (permite espacios, comas, puntos)
         cleaned = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,.-]', '', text)
-        
-        # Capitaliza la primera letra de cada palabra
         words = cleaned.split(' ')
         if words:
             words[0] = words[0].capitalize()
@@ -52,50 +41,73 @@ class FieldFormatter:
 
     @staticmethod
     def format_email(text: str) -> str:
-        """Formatea email: valida formato de email, todo en minúsculas"""
-        cleaned = text.lower()
-        # No aplicamos validación estricta aquí, solo formateo
-        return cleaned
+        """Formatea email: todo en minúsculas"""
+        return text.lower()
 
     @staticmethod
     def format_tax_id(text: str) -> str:
         """Formatea RIF: permite caracteres especiales y primera letra mayúscula"""
-        # Solo capitaliza la primera letra si existe
-        if len(text) > 0 and text[0].isalpha():
+        if text and text[0].isalpha():
             return text[0].upper() + text[1:]
         return text
 
     @staticmethod
     def format_company(text: str) -> str:
         """Formatea empresa: permite caracteres especiales y primera letra mayúscula"""
-        # Capitaliza la primera letra del texto (si existe)
-        if len(text) > 0:
+        if text:
             return text[0].upper() + text[1:]
         return text
+
+    @staticmethod
+    def format_integer(text: str) -> str:
+        """Formatea números enteros: solo dígitos"""
+        return re.sub(r'[^0-9]', '', text)
+
+    @staticmethod
+    def format_decimal(text: str) -> str:
+        """Formatea números decimales: dígitos y un punto decimal"""
+        cleaned = re.sub(r'[^0-9.]', '', text)
+        parts = cleaned.split('.')
+        if len(parts) > 1:
+            cleaned = f"{parts[0]}.{''.join(parts[1:])}"
+        return cleaned
+
+    @staticmethod
+    def format_date(text: str) -> str:
+        """Formatea fecha: YYYY/MM/DD, autoinserta barras"""
+        cleaned = re.sub(r'[^0-9]', '', text)
+        formatted = []
+        for i, char in enumerate(cleaned):
+            if i in (4, 6):  # Inserta barras después del año (4) y mes (6)
+                formatted.append('/')
+            if i < 8:  # Limita a 8 dígitos (YYYYMMDD)
+                formatted.append(char)
+        return ''.join(formatted)
 
     @staticmethod
     def validate_and_format(widget: tk.Widget, field_type: str) -> None:
         """Valida y formatea el contenido de un widget según su tipo"""
         current_text = widget.get()
         
-        # Mapeo de tipos de campo a funciones de formateo
         formatters = {
             'code': FieldFormatter.format_code,
             'id_number': FieldFormatter.format_id_number,
+            'name': FieldFormatter.format_name,
             'first_name': FieldFormatter.format_name,
             'last_name': FieldFormatter.format_name,
-            'address': FieldFormatter.format_address,
+            'address': FieldFormatter.format_first_name,
+            'description': FieldFormatter.format_first_name,
             'phone': FieldFormatter.format_phone,
             'email': FieldFormatter.format_email,
             'tax_id': FieldFormatter.format_tax_id,
-            'company': FieldFormatter.format_company
+            'company': FieldFormatter.format_company,
+            'integer': FieldFormatter.format_integer,
+            'decimal': FieldFormatter.format_decimal,
+            'date': FieldFormatter.format_date
         }
         
         if field_type in formatters:
-            # Aplicar el formateo correspondiente
             formatted_text = formatters[field_type](current_text)
-            
-            # Solo actualizar si hubo cambios para evitar problemas con el cursor
             if formatted_text != current_text:
                 widget.delete(0, tk.END)
                 widget.insert(0, formatted_text)
@@ -108,16 +120,7 @@ class FieldFormatter:
 
     @staticmethod
     def validate_required_fields(entries: Dict[str, Tuple[tk.Widget, str]], parent: Optional[tk.Widget] = None) -> bool:
-        """
-        Valida que todos los campos requeridos estén completos.
-        
-        Args:
-            entries: Diccionario de {nombre_campo: (widget, valor)}
-            parent: Widget padre para mostrar mensajes
-            
-        Returns:
-            bool: True si todos los campos son válidos, False de lo contrario
-        """
+        """Valida que todos los campos requeridos estén completos"""
         for field_name, (widget, value) in entries.items():
             if not value.strip():
                 messagebox.showwarning(
@@ -132,15 +135,10 @@ class FieldFormatter:
     @staticmethod
     def validate_email_format(email: str, parent: Optional[tk.Widget] = None) -> bool:
         """Valida que el email tenga un formato válido"""
-        if not email:  # Si está vacío, la validación de campo requerido ya lo capturará
+        if not email:
             return True
-            
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(pattern, email):
-            messagebox.showerror(
-                "Error", 
-                "El formato del email no es válido", 
-                parent=parent
-            )
+            messagebox.showerror("Error", "El formato del email no es válido", parent=parent)
             return False
         return True
