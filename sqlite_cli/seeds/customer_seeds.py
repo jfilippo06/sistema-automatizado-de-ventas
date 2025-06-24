@@ -9,7 +9,7 @@ def seed_customers() -> None:
             'id_number': '123456789',
             'email': 'john.doe@example.com',
             'address': '123 Main St, Springfield',
-            'phone': '555-1234'
+            'phone': '5551234'
         },
         {
             'first_name': 'Jane',
@@ -17,7 +17,7 @@ def seed_customers() -> None:
             'id_number': '987654321',
             'email': 'jane.smith@example.com',
             'address': '456 Oak Ave, Shelbyville',
-            'phone': '555-5678'
+            'phone': '5555678'
         },
         {
             'first_name': 'Robert',
@@ -25,7 +25,7 @@ def seed_customers() -> None:
             'id_number': '456123789',
             'email': 'robert.j@example.com',
             'address': '789 Pine Rd, Capital City',
-            'phone': '555-9012'
+            'phone': '5559012'
         }
     ]
     
