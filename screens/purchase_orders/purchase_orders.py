@@ -11,6 +11,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
+from utils.field_formatter import FieldFormatter
 
 class PurchaseOrdersScreen(tk.Frame):
     def __init__(self, parent: tk.Widget, open_previous_screen_callback: Callable[[], None]) -> None:
@@ -99,7 +100,6 @@ class PurchaseOrdersScreen(tk.Frame):
             bg="white"
         ).pack(side=tk.LEFT)
 
-        # Mostrar el número de orden como texto en lugar de un Entry
         self.order_number_label = CustomLabel(
             order_num_frame,
             text=PurchaseOrder.get_next_order_number(),
@@ -156,13 +156,13 @@ class PurchaseOrdersScreen(tk.Frame):
         row1_frame.pack(fill=tk.X, pady=5)
 
         fields_row1 = [
-            ("Cédula/RIF:", "supplier_id", 20, "readonly"),
-            ("Nombre:", "supplier_first_name", 20, "readonly"),
-            ("Apellido:", "supplier_last_name", 20, "readonly"),
-            ("Empresa:", "supplier_company", 25, "readonly")
+            ("Cédula/RIF:", "supplier_id", 20, "readonly", "id_number"),
+            ("Nombre:", "supplier_first_name", 20, "readonly", "first_name"),
+            ("Apellido:", "supplier_last_name", 20, "readonly", "name"),
+            ("Empresa:", "supplier_company", 25, "readonly", "company")
         ]
 
-        for label, var_name, width, state in fields_row1:
+        for label, var_name, width, state, field_type in fields_row1:
             col = tk.Frame(row1_frame, bg="white")
             col.pack(side=tk.LEFT, padx=5, expand=True)
             
@@ -185,19 +185,22 @@ class PurchaseOrdersScreen(tk.Frame):
             )
             entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
             setattr(self, var_name, entry)
+            
+            if state == "normal":
+                FieldFormatter.bind_validation(entry, field_type)
 
         # Second row of supplier fields (4 columns)
         row2_frame = tk.Frame(supplier_frame, bg="white")
         row2_frame.pack(fill=tk.X, pady=5)
 
         fields_row2 = [
-            ("Teléfono:", "supplier_phone", 15, "readonly"),
-            ("Email:", "supplier_email", 25, "readonly"),
-            ("Dirección:", "supplier_address", 30, "readonly"),
-            ("Fecha Entrega*:", "delivery_date", 15, "normal")
+            ("Teléfono:", "supplier_phone", 15, "readonly", "phone"),
+            ("Email:", "supplier_email", 25, "readonly", "email"),
+            ("Dirección:", "supplier_address", 30, "readonly", "address"),
+            ("Fecha Entrega*:", "delivery_date", 15, "normal", "date")
         ]
 
-        for label, var_name, width, state in fields_row2:
+        for label, var_name, width, state, field_type in fields_row2:
             col = tk.Frame(row2_frame, bg="white")
             col.pack(side=tk.LEFT, padx=5, expand=True)
             
@@ -220,6 +223,9 @@ class PurchaseOrdersScreen(tk.Frame):
             )
             entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
             setattr(self, var_name, entry)
+            
+            if state == "normal":
+                FieldFormatter.bind_validation(entry, field_type)
 
         # Products Tab (only input fields, no table)
         products_tab = tk.Frame(self.notebook, bg="white")
@@ -241,13 +247,13 @@ class PurchaseOrdersScreen(tk.Frame):
         product_fields_frame.pack(fill=tk.X, pady=5)
 
         product_fields = [
-            ("Código:", "product_code", 15),
-            ("Descripción:", "product_description", 30),
-            ("Cantidad:", "product_quantity", 10),
-            ("Precio Unit.:", "product_unit_price", 15)
+            ("Código:", "product_code", 15, "code"),
+            ("Descripción:", "product_description", 30, "first_name"),
+            ("Cantidad:", "product_quantity", 10, "integer"),
+            ("Precio Unit.:", "product_unit_price", 15, "decimal")
         ]
 
-        for label, var_name, width in product_fields:
+        for label, var_name, width, field_type in product_fields:
             col = tk.Frame(product_fields_frame, bg="white")
             col.pack(side=tk.LEFT, padx=5)
             
@@ -269,6 +275,7 @@ class PurchaseOrdersScreen(tk.Frame):
             )
             entry.pack(side=tk.LEFT, padx=5)
             setattr(self, var_name, entry)
+            FieldFormatter.bind_validation(entry, field_type)
 
         # Button to add product
         btn_add_product = CustomButton(
@@ -343,7 +350,7 @@ class PurchaseOrdersScreen(tk.Frame):
         self.dollar = Currency.get_by_name("Dólar")
         self.euro = Currency.get_by_name("Euro")
 
-        # Initialize total labels (always create them, show/hide based on status)
+        # Initialize total labels
         self.lbl_subtotal = CustomLabel(
             totals_frame,
             text="Subtotal: 0.00",
