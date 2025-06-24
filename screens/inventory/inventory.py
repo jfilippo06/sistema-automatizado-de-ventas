@@ -300,7 +300,19 @@ class Inventory(tk.Frame):
         self.open_previous_screen_callback()
 
     def add_item(self) -> None:
-        CrudInventory(self, mode="create", refresh_callback=self.refresh_data)
+        # Crear la ventana de entrada inicial
+        crud_window = CrudInventory(self, mode="create", refresh_callback=self.refresh_data)
+        
+        # Calcular posición para centrar
+        window_width = 800  # Ajusta según el tamaño de tu ventana
+        window_height = 600  # Ajusta según el tamaño de tu ventana
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        crud_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     def edit_item(self) -> None:
         selected = self.tree.selection()
@@ -309,7 +321,25 @@ class Inventory(tk.Frame):
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
-        CrudInventory(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
+        
+        # Crear la ventana de edición
+        crud_window = CrudInventory(
+            self, 
+            mode="edit", 
+            item_id=item_id, 
+            refresh_callback=self.refresh_data
+        )
+        
+        # Calcular posición para centrar
+        window_width = 800  # Ajusta según el tamaño de tu ventana
+        window_height = 600  # Ajusta según el tamaño de tu ventana
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        crud_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     def adjust_item(self, adjustment_type: str) -> None:
         selected = self.tree.selection()

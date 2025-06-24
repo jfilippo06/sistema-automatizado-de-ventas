@@ -7,7 +7,7 @@ from sqlite_cli.models.movement_type_model import MovementType
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from utils.valdations import Validations
+from utils.field_formatter import FieldFormatter
 from utils.session_manager import SessionManager
 
 class AdjustInventory(tk.Toplevel):
@@ -33,8 +33,8 @@ class AdjustInventory(tk.Toplevel):
         self.grab_set()
         
         # Variables para los campos
-        self.quantity_var = tk.StringVar(value="0")
-        self.stock_var = tk.StringVar(value="0")
+        self.quantity_var = tk.StringVar()
+        self.stock_var = tk.StringVar()
         
         self.configure_ui()
         self.load_item_data()
@@ -54,7 +54,7 @@ class AdjustInventory(tk.Toplevel):
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título con estilo consistente
+        # Título
         title_text = f"Ajuste {'Positivo (+)' if self.adjustment_type == 'positive' else 'Negativo (-)'}"
         title_label = CustomLabel(
             main_frame,
@@ -109,11 +109,7 @@ class AdjustInventory(tk.Toplevel):
             font=("Arial", 12),
             width=15
         )
-        self.quantity_entry.configure(validate="key")
-        self.quantity_entry.configure(validatecommand=(
-            self.quantity_entry.register(self.validate_integer), 
-            '%P'
-        ))
+        FieldFormatter.bind_validation(self.quantity_entry, 'decimal')
         self.quantity_entry.pack(side=tk.RIGHT, padx=5)
         
         # Campo de existencias
@@ -135,11 +131,7 @@ class AdjustInventory(tk.Toplevel):
             font=("Arial", 12),
             width=15
         )
-        self.stock_entry.configure(validate="key")
-        self.stock_entry.configure(validatecommand=(
-            self.stock_entry.register(self.validate_integer), 
-            '%P'
-        ))
+        FieldFormatter.bind_validation(self.stock_entry, 'decimal')
         self.stock_entry.pack(side=tk.RIGHT, padx=5)
         
         # Área de notas
@@ -192,10 +184,6 @@ class AdjustInventory(tk.Toplevel):
         )
         btn_apply.pack(side=tk.RIGHT, padx=5)
 
-    def validate_integer(self, text: str) -> bool:
-        """Valida que la entrada sea un número entero"""
-        return Validations.validate_integer(text)
-
     def load_item_data(self):
         """Carga los datos del producto a ajustar"""
         item = InventoryItem.get_by_id(self.item_id)
@@ -214,8 +202,8 @@ class AdjustInventory(tk.Toplevel):
     def apply_adjustment(self):
         """Aplica el ajuste al inventario"""
         try:
-            quantity_change = int(self.quantity_var.get())
-            stock_change = int(self.stock_var.get())
+            quantity_change = float(self.quantity_var.get() or 0)
+            stock_change = float(self.stock_var.get() or 0)
             notes = self.notes_text.get("1.0", tk.END).strip()
             
             if quantity_change == 0 and stock_change == 0:

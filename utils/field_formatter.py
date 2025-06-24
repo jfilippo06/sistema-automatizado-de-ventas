@@ -27,7 +27,7 @@ class FieldFormatter:
 
     @staticmethod
     def format_first_name(text: str) -> str:
-        """Formatea dirección: alfanumérico, primera letra mayúscula"""
+        """Formatea texto con primera letra mayúscula y permite caracteres especiales"""
         cleaned = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,.-]', '', text)
         words = cleaned.split(' ')
         if words:
@@ -78,9 +78,9 @@ class FieldFormatter:
         cleaned = re.sub(r'[^0-9]', '', text)
         formatted = []
         for i, char in enumerate(cleaned):
-            if i in (4, 6):  # Inserta barras después del año (4) y mes (6)
+            if i in (4, 6):
                 formatted.append('/')
-            if i < 8:  # Limita a 8 dígitos (YYYYMMDD)
+            if i < 8:
                 formatted.append(char)
         return ''.join(formatted)
 
@@ -93,7 +93,7 @@ class FieldFormatter:
             'code': FieldFormatter.format_code,
             'id_number': FieldFormatter.format_id_number,
             'name': FieldFormatter.format_name,
-            'first_name': FieldFormatter.format_name,
+            'first_name': FieldFormatter.format_first_name,
             'last_name': FieldFormatter.format_name,
             'address': FieldFormatter.format_first_name,
             'description': FieldFormatter.format_first_name,
@@ -103,7 +103,8 @@ class FieldFormatter:
             'company': FieldFormatter.format_company,
             'integer': FieldFormatter.format_integer,
             'decimal': FieldFormatter.format_decimal,
-            'date': FieldFormatter.format_date
+            'date': FieldFormatter.format_date,
+            'notes': FieldFormatter.format_first_name
         }
         
         if field_type in formatters:
