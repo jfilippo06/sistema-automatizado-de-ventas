@@ -8,7 +8,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
-from utils.valdations import Validations
+from utils.field_formatter import FieldFormatter
 
 class CrudUser(tk.Toplevel):
     def __init__(
@@ -25,18 +25,14 @@ class CrudUser(tk.Toplevel):
         
         self.title("Crear Usuario" if mode == "create" else "Editar Usuario")
         
-        # Tamaño de la ventana
+        # Configuración de tamaño y posición centrada
         window_width = 400
         window_height = 680
-        
-        # Calcular posición para centrar
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        
         x = (screen_width // 2) - (window_width // 2)
         y = (screen_height // 2) - (window_height // 2)
         
-        # Configurar geometría centrada
         self.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
@@ -65,11 +61,9 @@ class CrudUser(tk.Toplevel):
             self.load_user_data()
 
     def configure_ui(self) -> None:
-        # Frame principal con fondo gris claro
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=25, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título con estilo azul
         title_frame = tk.Frame(main_frame, bg="#f5f5f5")
         title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="ew")
         
@@ -83,31 +77,30 @@ class CrudUser(tk.Toplevel):
         )
         title_label.pack(pady=10, padx=10, anchor="w")
         
-        # Campos del formulario agrupados en secciones
+        # Definición de secciones y campos con sus tipos de formateo
         sections = [
             ("Información de Acceso", [
-                ("Usuario:", self.username_var, 'text', True),
-                ("Contraseña:", self.password_var, 'password', self.mode == "create"),
-                ("Confirmar Contraseña:", self.confirm_password_var, 'password', self.mode == "create"),
+                ("Usuario:", self.username_var, 'name', True),
+                ("Contraseña:", self.password_var, None, self.mode == "create", True),
+                ("Confirmar Contraseña:", self.confirm_password_var, None, self.mode == "create", True),
                 ("Rol:", self.role_var, None, True)
             ]),
             ("Información Personal", [
-                ("Nombres:", self.first_name_var, 'text', True),
-                ("Apellidos:", self.last_name_var, 'text', True),
-                ("Cédula:", self.id_number_var, 'text', True),
-                ("Dirección:", self.address_var, 'text', True),
-                ("Teléfono:", self.phone_var, 'text', True),
-                ("Correo:", self.email_var, 'text', True)
+                ("Nombres:", self.first_name_var, 'name', True),
+                ("Apellidos:", self.last_name_var, 'name', True),
+                ("Cédula:", self.id_number_var, 'integer', True),
+                ("Dirección:", self.address_var, 'first_name', True),
+                ("Teléfono:", self.phone_var, 'phone', True),
+                ("Correo:", self.email_var, 'email', True)
             ]),
             ("Información Laboral", [
-                ("Departamento:", self.department_var, 'text', True),
-                ("Cargo:", self.position_var, 'text', True)
+                ("Departamento:", self.department_var, 'first_name', True),
+                ("Cargo:", self.position_var, 'first_name', True)
             ])
         ]
         
         row_counter = 1
         for section_title, fields in sections:
-            # Sección con título
             section_label = CustomLabel(
                 main_frame,
                 text=section_title,
@@ -118,8 +111,10 @@ class CrudUser(tk.Toplevel):
             section_label.grid(row=row_counter, column=0, columnspan=2, pady=(10, 5), sticky="w")
             row_counter += 1
             
-            for label, var, val_type, editable in fields:
-                # Frame para cada campo
+            for field in fields:
+                label, var, field_type, editable, *extra = field
+                is_password = len(extra) > 0 and extra[0]
+                
                 field_frame = tk.Frame(main_frame, bg="#f5f5f5")
                 field_frame.grid(row=row_counter, column=0, columnspan=2, sticky="ew", pady=3)
                 
@@ -135,7 +130,6 @@ class CrudUser(tk.Toplevel):
                 field_label.pack(side=tk.LEFT, padx=(0, 10))
                 
                 if label == "Rol:":
-                    # Obtener roles
                     roles = Role.all()
                     values = [role['name'] for role in roles]
                     
@@ -155,22 +149,20 @@ class CrudUser(tk.Toplevel):
                         font=("Arial", 10),
                         width=30,
                         state="normal" if editable else "readonly",
-                        show="*" if val_type == 'password' else None
+                        show="*" if is_password else None
                     )
                     
-                    if val_type == 'text':
-                        entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
+                    if field_type and editable:
+                        FieldFormatter.bind_validation(entry, field_type)
                     
                     entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
                     self.entries[label] = entry
                 
                 row_counter += 1
 
-        # Frame para botones
         btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
         btn_frame.grid(row=row_counter, column=0, columnspan=2, pady=(20, 0), sticky="e")
         
-        # Botón Cancelar
         btn_cancel = CustomButton(
             btn_frame, 
             text="Cancelar", 
@@ -180,7 +172,6 @@ class CrudUser(tk.Toplevel):
         )
         btn_cancel.pack(side=tk.RIGHT, padx=5)
         
-        # Botón Guardar/Actualizar
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_frame, 
@@ -199,22 +190,16 @@ class CrudUser(tk.Toplevel):
             )
         btn_action.pack(side=tk.RIGHT, padx=5)
 
-    def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
-        Validations.validate_entry(event, validation_func)
-
-    def validate_text(self, text: str) -> bool:
-        return Validations.validate_text(text)
-
     def validate_required_fields(self) -> bool:
         required_fields = {
-            "Usuario:": self.username_var.get(),
-            "Nombres:": self.first_name_var.get(),
-            "Apellidos:": self.last_name_var.get(),
-            "Cédula:": self.id_number_var.get(),
-            "Rol:": self.role_var.get()
+            "Usuario:": (self.entries["Usuario:"], self.username_var.get()),
+            "Nombres:": (self.entries["Nombres:"], self.first_name_var.get()),
+            "Apellidos:": (self.entries["Apellidos:"], self.last_name_var.get()),
+            "Cédula:": (self.entries["Cédula:"], self.id_number_var.get()),
+            "Rol:": (self.entries["Rol:"], self.role_var.get())
         }
         
-        if not Validations.validate_required_fields(self.entries, required_fields, self):
+        if not FieldFormatter.validate_required_fields(required_fields, self):
             return False
             
         if self.mode == "create":
@@ -245,7 +230,6 @@ class CrudUser(tk.Toplevel):
         self.department_var.set(user['department'] or "")
         self.position_var.set(user['position'] or "")
         
-        # Establecer rol
         roles = Role.all()
         role = next((r for r in roles if r['id'] == user['role_id']), None)
         if role:
@@ -256,7 +240,6 @@ class CrudUser(tk.Toplevel):
             return
             
         try:
-            # Primero crear persona
             person_id = Person.create(
                 first_name=self.first_name_var.get(),
                 last_name=self.last_name_var.get(),
@@ -268,12 +251,10 @@ class CrudUser(tk.Toplevel):
                 position=self.position_var.get() or None
             )
             
-            # Obtener ID del rol
             role = next((r for r in Role.all() if r['name'] == self.role_var.get()), None)
             if not role:
                 raise ValueError("Rol seleccionado no válido")
             
-            # Crear usuario
             User.create(
                 username=self.username_var.get(),
                 password=self.password_var.get(),
@@ -297,12 +278,10 @@ class CrudUser(tk.Toplevel):
             if not self.user_id:
                 raise ValueError("ID de usuario no válido")
             
-            # Obtener datos actuales del usuario
             user = User.get_by_id(self.user_id)
             if not user:
                 raise ValueError("Usuario no encontrado")
             
-            # Actualizar persona
             Person.update(
                 person_id=user['person_id'],
                 first_name=self.first_name_var.get(),
@@ -315,12 +294,10 @@ class CrudUser(tk.Toplevel):
                 position=self.position_var.get() or None
             )
             
-            # Obtener ID del rol
             role = next((r for r in Role.all() if r['name'] == self.role_var.get()), None)
             if not role:
                 raise ValueError("Rol seleccionado no válido")
             
-            # Actualizar usuario
             password = self.password_var.get() if self.password_var.get() else None
             User.update(
                 user_id=self.user_id,
