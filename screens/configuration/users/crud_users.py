@@ -24,9 +24,22 @@ class CrudUser(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Crear Usuario" if mode == "create" else "Editar Usuario")
-        self.geometry("400x680")  # Tamaño aumentado para mejor visualización
+        
+        # Tamaño de la ventana
+        window_width = 400
+        window_height = 680
+        
+        # Calcular posición para centrar
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        # Configurar geometría centrada
+        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.resizable(False, False)
-        self.configure(bg="#f5f5f5")  # Fondo general
+        self.configure(bg="#f5f5f5")
         
         self.transient(parent)
         self.grab_set()

@@ -26,7 +26,19 @@ class ConfigurationScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        self.parent.geometry("700x500")
+         # Tamaño de la ventana
+        window_width = 700
+        window_height = 500
+        
+        # Calcular posición para centrar
+        screen_width = self.parent.winfo_screenwidth()
+        screen_height = self.parent.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        # Configurar geometría centrada
+        self.parent.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
