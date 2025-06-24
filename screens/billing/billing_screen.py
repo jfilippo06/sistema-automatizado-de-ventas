@@ -543,12 +543,23 @@ class BillingScreen(tk.Frame):
         def on_customer_created():
             self.search_customer()  # Volver a buscar después de crear
 
-        CrudCustomer(
+        # Crear la ventana de registro
+        crud_window = CrudCustomer(
             self,
             mode="create",
             initial_id_number=id_number,
             refresh_callback=on_customer_created
         )
+        
+        window_width = 380 
+        window_height = 400 
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        crud_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     def on_product_click(self, event) -> None:
         if not self.current_customer:

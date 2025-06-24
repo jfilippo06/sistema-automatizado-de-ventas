@@ -181,4 +181,21 @@ class CustomersScreen(tk.Frame):
             return
             
         customer_id = self.tree.item(selected[0])['values'][0]
-        CrudCustomer(self, mode="edit", customer_id=customer_id, refresh_callback=self.refresh_data)
+        
+        # Crear la ventana de edición
+        crud_window = CrudCustomer(
+            self, 
+            mode="edit", 
+            customer_id=customer_id, 
+            refresh_callback=self.refresh_data
+        )
+        
+        window_width = 380
+        window_height = 400
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        crud_window.geometry(f"{window_width}x{window_height}+{x}+{y}")

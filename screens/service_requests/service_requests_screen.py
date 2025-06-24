@@ -212,7 +212,24 @@ class ServiceRequestsScreen(tk.Frame):
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
-        CrudServiceRequest(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
+        
+        # Crear la ventana de edición
+        crud_window = CrudServiceRequest(
+            self, 
+            mode="edit", 
+            item_id=item_id, 
+            refresh_callback=self.refresh_data
+        )
+        
+        window_width = 400
+        window_height = 200 
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        crud_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     def disable_item(self) -> None:
         selected = self.tree.selection()
@@ -248,11 +265,21 @@ class ServiceRequestsScreen(tk.Frame):
         
         status_window = tk.Toplevel(self)
         status_window.title("Cambiar Estado de Solicitud")
-        status_window.geometry("400x200")
         status_window.resizable(False, False)
         status_window.configure(bg="#f5f5f5")
         status_window.transient(self)
         status_window.grab_set()
+        
+        # Configurar tamaño y posición centrada
+        window_width = 400
+        window_height = 200
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        x = (screen_width // 2) - (window_width // 2)
+        y = (screen_height // 2) - (window_height // 2)
+        
+        status_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
         
         # Frame principal
         main_frame = tk.Frame(status_window, bg="#f5f5f5", padx=20, pady=20)
