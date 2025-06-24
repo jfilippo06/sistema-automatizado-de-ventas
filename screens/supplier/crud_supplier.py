@@ -78,7 +78,7 @@ class CrudSupplier(tk.Toplevel):
         # Campos del formulario con sus tipos
         fields = [
             ("Código:", self.code_var, 'code', code_editable),
-            ("Cédula:", self.id_number_var, 'id_number', id_number_editable),
+            ("Cédula:", self.id_number_var, 'integer', id_number_editable),
             ("Nombres:", self.first_name_var, 'first_name', True),
             ("Apellidos:", self.last_name_var, 'last_name', True),
             ("Dirección:", self.address_var, 'address', True),

@@ -11,15 +11,6 @@ class FieldFormatter:
         return cleaned.upper()
 
     @staticmethod
-    def format_id_number(text: str) -> str:
-        """Formatea la cédula: solo números y puntos"""
-        cleaned = re.sub(r'[^0-9.]', '', text)
-        parts = cleaned.split('.')
-        if len(parts) > 2:
-            cleaned = f"{parts[0]}.{''.join(parts[1:])}"
-        return cleaned
-
-    @staticmethod
     def format_name(text: str) -> str:
         """Formatea nombres: solo letras, cada palabra con primera mayúscula"""
         cleaned = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]', '', text)
@@ -91,7 +82,6 @@ class FieldFormatter:
         
         formatters = {
             'code': FieldFormatter.format_code,
-            'id_number': FieldFormatter.format_id_number,
             'name': FieldFormatter.format_name,
             'first_name': FieldFormatter.format_first_name,
             'last_name': FieldFormatter.format_name,

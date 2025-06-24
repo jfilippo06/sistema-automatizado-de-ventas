@@ -4,6 +4,7 @@ from typing import Callable, List, Dict, Any, Optional
 from reports.InvoiceViewer import InvoiceViewer
 from sqlite_cli.models.invoice_model import Invoice
 from sqlite_cli.models.service_request_model import ServiceRequest
+from utils.field_formatter import FieldFormatter
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -75,6 +76,7 @@ class BillingScreen(tk.Frame):
             font=("Arial", 12),
             width=20
         )
+        FieldFormatter.bind_validation(self.entry_customer, 'integer')
         self.entry_customer.pack(side=tk.LEFT, padx=5)
 
         btn_search_customer = CustomButton(
