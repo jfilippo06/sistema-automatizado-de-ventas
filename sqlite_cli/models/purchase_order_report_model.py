@@ -131,7 +131,7 @@ class PurchaseOrderReport:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Get order information
+        # Get order information - modificado para obtener el nombre completo de la persona
         cursor.execute('''
             SELECT 
                 po.*,
@@ -140,18 +140,23 @@ class PurchaseOrderReport:
                 s.id_number as supplier_id_number,
                 s.phone as supplier_phone,
                 s.email as supplier_email,
-                u.username as created_by,
+                p.first_name || ' ' || p.last_name as created_by_name,
+                u.username as created_by_username,
                 a.username as approved_by
             FROM purchase_orders po
             JOIN suppliers s ON po.supplier_id = s.id
             JOIN users u ON po.created_by = u.id
+            JOIN person p ON u.person_id = p.id  -- Unión con la tabla person
             LEFT JOIN users a ON po.approved_by = a.id
             WHERE po.id = ?
         ''', (order_id,))
         
         order = dict(cursor.fetchone())
         
-        # Get order details
+        # Renombrar el campo para mantener compatibilidad
+        order['created_by'] = order.get('created_by_name', order.get('created_by_username', 'Desconocido'))
+        
+        # Resto del código permanece igual...
         cursor.execute('''
             SELECT 
                 pod.*,
