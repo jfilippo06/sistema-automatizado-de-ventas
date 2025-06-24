@@ -7,7 +7,7 @@ from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from widgets.custom_combobox import CustomCombobox
-from utils.valdations import Validations
+from utils.field_formatter import FieldFormatter
 
 class CrudSupplier(tk.Toplevel):
     def __init__(
@@ -17,19 +17,19 @@ class CrudSupplier(tk.Toplevel):
         supplier_id: Optional[int] = None, 
         initial_id_number: Optional[str] = None,
         refresh_callback: Optional[Callable[[], None]] = None,
-        lock_id_number: bool = False  # Nuevo parámetro para controlar bloqueo de cédula
+        lock_id_number: bool = False
     ) -> None:
         super().__init__(parent)
         self.mode = mode
         self.supplier_id = supplier_id
         self.refresh_callback = refresh_callback
-        self.lock_id_number = lock_id_number  # Guardamos el parámetro
+        self.lock_id_number = lock_id_number
         
         # Configuración de la ventana
         self.title("Guardar Proveedor" if mode == "create" else "Editar Proveedor")
-        self.geometry("360x500")  # Tamaño más adecuado para los campos
+        self.geometry("360x500")
         self.resizable(False, False)
-        self.configure(bg="#f5f5f5")  # Fondo consistente
+        self.configure(bg="#f5f5f5")
         
         self.transient(parent)
         self.grab_set()
@@ -56,7 +56,7 @@ class CrudSupplier(tk.Toplevel):
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título con estilo consistente
+        # Título
         title_text = "Nuevo Proveedor" if self.mode == "create" else "Editar Proveedor"
         title_label = CustomLabel(
             main_frame,
@@ -67,31 +67,28 @@ class CrudSupplier(tk.Toplevel):
         )
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
         
-        # Definir qué campos deben estar bloqueados según el modo y el origen
+        # Configuración de campos editables
         if self.mode == "create":
-            # En creación: código editable siempre
             code_editable = True
-            # Cédula editable solo si no está bloqueada explícitamente
             id_number_editable = not self.lock_id_number
         else:
-            # En edición: código y cédula siempre bloqueados
             code_editable = False
             id_number_editable = False
         
-        # Campos del formulario
+        # Campos del formulario con sus tipos
         fields = [
-            ("Código:", self.code_var, 'text', code_editable),
-            ("Cédula:", self.id_number_var, 'number', id_number_editable),
-            ("Nombres:", self.first_name_var, 'text', True),
-            ("Apellidos:", self.last_name_var, 'text', True),
-            ("Dirección:", self.address_var, 'text', True),
-            ("Teléfono:", self.phone_var, 'number', True),
-            ("Email:", self.email_var, None, True),
-            ("RIF:", self.tax_id_var, 'text', True),
-            ("Empresa:", self.company_var, 'text', True)
+            ("Código:", self.code_var, 'code', code_editable),
+            ("Cédula:", self.id_number_var, 'id_number', id_number_editable),
+            ("Nombres:", self.first_name_var, 'first_name', True),
+            ("Apellidos:", self.last_name_var, 'last_name', True),
+            ("Dirección:", self.address_var, 'address', True),
+            ("Teléfono:", self.phone_var, 'phone', True),
+            ("Email:", self.email_var, 'email', True),
+            ("RIF:", self.tax_id_var, 'tax_id', True),
+            ("Empresa:", self.company_var, 'company', True)
         ]
         
-        for i, (label, var, val_type, editable) in enumerate(fields, start=1):
+        for i, (label, var, field_type, editable) in enumerate(fields, start=1):
             # Etiqueta del campo
             field_label = CustomLabel(
                 main_frame,
@@ -108,25 +105,21 @@ class CrudSupplier(tk.Toplevel):
                 textvariable=var,
                 font=("Arial", 12),
                 width=35,
-                state="normal" if editable else "readonly"  # Esto controla si el campo es editable
+                state="normal" if editable else "readonly"
             )
             
-            # Configurar validaciones
-            if val_type == 'number':
-                entry.configure(validate="key")
-                entry.configure(validatecommand=(entry.register(self.validate_integer), '%P'))
-            elif val_type == 'text':
-                entry.bind("<KeyRelease>", lambda e, func=self.validate_text: self.validate_entry(e, func))
+            # Configurar validación y formateo
+            if editable:
+                FieldFormatter.bind_validation(entry, field_type)
             
             entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
-            self.entries[label] = entry
+            self.entries[label] = (entry, field_type)
         
-        # Resto del código permanece igual...
         # Frame para botones
         btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
         btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 0))
         
-        # Botón principal (Guardar/Actualizar)
+        # Botón principal
         btn_action = CustomButton(
             btn_frame, 
             text="Guardar" if self.mode == "create" else "Actualizar", 
@@ -146,41 +139,28 @@ class CrudSupplier(tk.Toplevel):
         )
         btn_cancel.pack(side=tk.LEFT, padx=5)
 
-    def validate_entry(self, event: tk.Event, validation_func: Callable[[str], bool]) -> None:
-        """Valida la entrada del campo"""
-        Validations.validate_entry(event, validation_func)
-
-    def validate_text(self, text: str) -> bool:
-        """Valida texto general"""
-        return Validations.validate_text(text)
-
-    def validate_integer(self, text: str) -> bool:
-        """Valida números enteros"""
-        return Validations.validate_integer(text)
-
     def validate_required_fields(self) -> bool:
         """Valida que todos los campos requeridos estén completos"""
         required_fields = {
-            "Código:": self.code_var.get(),
-            "Cédula:": self.id_number_var.get(),
-            "Nombres:": self.first_name_var.get(),
-            "Apellidos:": self.last_name_var.get(),
-            "Dirección:": self.address_var.get(),
-            "Teléfono:": self.phone_var.get(),
-            "Email:": self.email_var.get(),
-            "RIF:": self.tax_id_var.get(),
-            "Empresa:": self.company_var.get()
+            "Código:": (self.entries["Código:"][0], self.code_var.get()),
+            "Cédula:": (self.entries["Cédula:"][0], self.id_number_var.get()),
+            "Nombres:": (self.entries["Nombres:"][0], self.first_name_var.get()),
+            "Apellidos:": (self.entries["Apellidos:"][0], self.last_name_var.get()),
+            "Dirección:": (self.entries["Dirección:"][0], self.address_var.get()),
+            "Teléfono:": (self.entries["Teléfono:"][0], self.phone_var.get()),
+            "Email:": (self.entries["Email:"][0], self.email_var.get()),
+            "RIF:": (self.entries["RIF:"][0], self.tax_id_var.get()),
+            "Empresa:": (self.entries["Empresa:"][0], self.company_var.get())
         }
         
-        if not Validations.validate_required_fields(self.entries, required_fields, self):
+        if not FieldFormatter.validate_required_fields(required_fields, self):
             return False
             
-        numeric_fields = {
-            "Cédula:": (self.id_number_var.get(), False),
-            "Teléfono:": (self.phone_var.get(), False)
-        }
+        # Validación adicional para email
+        if not FieldFormatter.validate_email_format(self.email_var.get(), self):
+            return False
             
-        return Validations.validate_numeric_fields(numeric_fields, self)
+        return True
 
     def load_supplier_data(self) -> None:
         """Carga los datos del proveedor para edición"""
@@ -216,7 +196,7 @@ class CrudSupplier(tk.Toplevel):
                 email=self.email_var.get(),
                 tax_id=self.tax_id_var.get(),
                 company=self.company_var.get(),
-                status_id=1  # Siempre activo al crear
+                status_id=1
             )
             
             messagebox.showinfo("Éxito", "Proveedor creado correctamente", parent=self)
