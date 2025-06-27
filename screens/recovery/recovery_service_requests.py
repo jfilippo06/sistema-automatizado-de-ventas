@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, List, Dict, Any
 from sqlite_cli.models.service_request_model import ServiceRequest
-from sqlite_cli.models.request_status_model import RequestStatus
+from sqlite_cli.models.status_model import Status
 from widgets.custom_button import CustomButton
 from widgets.custom_combobox import CustomCombobox
 from widgets.custom_entry import CustomEntry
@@ -192,7 +192,7 @@ class RecoveryServiceRequests(tk.Frame):
         
         if response:
             try:
-                status_active = RequestStatus.get_by_name('active')
+                status_active = next((s for s in Status.all() if s['name'] == 'active'), None)
                 if status_active:
                     ServiceRequest.update_request_status(request_id, status_active['id'])
                     messagebox.showinfo("Éxito", "Solicitud habilitada correctamente", parent=self)
