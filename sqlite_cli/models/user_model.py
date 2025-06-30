@@ -42,6 +42,23 @@ class User:
         return users
 
     @staticmethod
+    def all_inactive() -> List[Dict]:
+        """Obtiene todos los usuarios inactivos."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT u.*, p.first_name, p.last_name, p.email, r.name as role_name, s.name as status_name
+            FROM users u
+            JOIN person p ON u.person_id = p.id
+            JOIN roles r ON u.role_id = r.id
+            JOIN status s ON u.status_id = s.id
+            WHERE s.name = 'inactive'
+        ''')
+        users = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return users
+
+    @staticmethod
     def search_active(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
         """Busca usuarios activos con filtro opcional."""
         conn = get_db_connection()
@@ -54,6 +71,58 @@ class User:
             JOIN roles r ON u.role_id = r.id
             JOIN status s ON u.status_id = s.id
             WHERE s.name = 'active'
+        '''
+        
+        params = []
+        
+        if search_term:
+            if field:
+                field_map = {
+                    "ID": "u.id",
+                    "Username": "u.username",
+                    "Name": "p.first_name || ' ' || p.last_name",
+                    "Email": "p.email",
+                    "Role": "r.name"
+                }
+                field_name = field_map.get(field)
+                if field_name:
+                    if field == "ID":
+                        try:
+                            user_id = int(search_term)
+                            base_query += f" AND {field_name} = ?"
+                            params.append(user_id)
+                        except ValueError:
+                            base_query += " AND 1 = 0"
+                    else:
+                        base_query += f" AND LOWER({field_name}) LIKE ?"
+                        params.append(f"%{search_term}%")
+            else:
+                base_query += '''
+                    AND (LOWER(u.username) LIKE ? OR 
+                        LOWER(p.first_name || ' ' || p.last_name) LIKE ? OR 
+                        LOWER(p.email) LIKE ? OR
+                        LOWER(r.name) LIKE ?)
+                '''
+                params.extend([f"%{search_term}%"] * 4)
+        
+        cursor.execute(base_query, params)
+        users = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return users
+
+    @staticmethod
+    def search_inactive(search_term: str = "", field: Optional[str] = None) -> List[Dict]:
+        """Busca usuarios inactivos con filtro opcional."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        base_query = '''
+            SELECT u.*, p.first_name, p.last_name, p.email, r.name as role_name, s.name as status_name
+            FROM users u
+            JOIN person p ON u.person_id = p.id
+            JOIN roles r ON u.role_id = r.id
+            JOIN status s ON u.status_id = s.id
+            WHERE s.name = 'inactive'
         '''
         
         params = []
@@ -161,14 +230,7 @@ class User:
 
     @staticmethod
     def get_by_username(username: str) -> Optional[Dict]:
-        """Obtiene un usuario por su nombre de usuario.
-        
-        Args:
-            username: Nombre de usuario a buscar
-        
-        Returns:
-            Un diccionario con los datos del usuario o None si no se encuentra
-        """
+        """Obtiene un usuario por su nombre de usuario."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''

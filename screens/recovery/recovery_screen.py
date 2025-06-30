@@ -12,7 +12,8 @@ class RecoveryScreen(tk.Frame):
         open_recovery_suppliers_callback: Callable[[], None],
         open_recovery_inventory_callback: Callable[[], None],
         open_recovery_service_requests_callback: Callable[[], None],
-        open_recovery_services_callback: Callable[[], None]
+        open_recovery_services_callback: Callable[[], None],
+        open_recovery_users_callback: Callable[[], None]
     ) -> None:
         super().__init__(parent)
         self.parent = parent
@@ -21,6 +22,7 @@ class RecoveryScreen(tk.Frame):
         self.open_recovery_inventory_callback = open_recovery_inventory_callback
         self.open_recovery_service_requests_callback = open_recovery_service_requests_callback
         self.open_recovery_services_callback = open_recovery_services_callback
+        self.open_recovery_users_callback = open_recovery_users_callback
         self.configure(bg="#f5f5f5")
         self.images = {}
         self.configure_ui()
@@ -53,6 +55,7 @@ class RecoveryScreen(tk.Frame):
             ("Inventario de Productos", "inventory", "#3a6eb5"),
             ("Solicitudes de Servicio", "service_requests", "#4d87d1"),
             ("Gestión de Servicios", "services", "#5c9ae0"),
+            ("Gestión de Usuarios", "users", "#6eabed"),
             ("Regresar", "back", "#d9534f")
         ]
         
@@ -120,6 +123,8 @@ class RecoveryScreen(tk.Frame):
             self.recover_service_requests()
         elif key == "services":
             self.recover_services()
+        elif key == "users":
+            self.recover_users()
 
     def recover_suppliers(self) -> None:
         self.open_recovery_suppliers_callback()
@@ -132,6 +137,9 @@ class RecoveryScreen(tk.Frame):
 
     def recover_services(self) -> None:
         self.open_recovery_services_callback()
+
+    def recover_users(self) -> None:
+        self.open_recovery_users_callback()
 
     def go_back(self) -> None:
         self.open_previous_screen_callback()

@@ -17,6 +17,7 @@ from screens.recovery.recovery_suppliers import RecoverySuppliers
 from screens.recovery.recovery_inventory import RecoveryInventory
 from screens.recovery.recovery_service_requests import RecoveryServiceRequests
 from screens.recovery.recovery_services import RecoveryServices
+from screens.recovery.recovery_users import RecoveryUsers
 from screens.billing.billing_screen import BillingScreen
 from screens.reports.reports_screen import ReportsScreen
 from screens.reports.sales_report_screen import SalesReportScreen
@@ -178,13 +179,16 @@ def main() -> None:
     recovery_inventory_screen = RecoveryInventory(app, lambda: [recovery_inventory_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
     recovery_service_requests_screen = RecoveryServiceRequests(app, lambda: [recovery_service_requests_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
     recovery_services_screen = RecoveryServices(app, lambda: [recovery_services_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
+    recovery_users_screen = RecoveryUsers(app, lambda: [recovery_users_screen.pack_forget(), recovery_screen.pack(fill=tk.BOTH, expand=True)])
+    
     recovery_screen = RecoveryScreen(
         app, 
         lambda: open_home_from_current(recovery_screen),
         lambda: [recovery_screen.pack_forget(), recovery_suppliers_screen.pack(fill=tk.BOTH, expand=True)],
         lambda: [recovery_screen.pack_forget(), recovery_inventory_screen.pack(fill=tk.BOTH, expand=True)],
         lambda: [recovery_screen.pack_forget(), recovery_service_requests_screen.pack(fill=tk.BOTH, expand=True)],
-        lambda: [recovery_screen.pack_forget(), recovery_services_screen.pack(fill=tk.BOTH, expand=True)]
+        lambda: [recovery_screen.pack_forget(), recovery_services_screen.pack(fill=tk.BOTH, expand=True)],
+        lambda: [recovery_screen.pack_forget(), recovery_users_screen.pack(fill=tk.BOTH, expand=True)]
     )
     
     billing_screen = BillingScreen(app, lambda: open_home_from_current(billing_screen))
@@ -213,6 +217,11 @@ def main() -> None:
         system_info_screen,
         maintenance_screen,
         recovery_screen,
+        recovery_suppliers_screen,
+        recovery_inventory_screen,
+        recovery_service_requests_screen,
+        recovery_services_screen,
+        recovery_users_screen,
         billing_screen,
         reports_screen,
         sales_report_screen,
