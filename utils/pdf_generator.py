@@ -6,7 +6,7 @@ from tkinter import Toplevel, filedialog
 
 # ReportLab imports
 from reportlab.lib.pagesizes import landscape, letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
@@ -16,19 +16,17 @@ from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
 # Local application imports
 from sqlite_cli.models.tax_model import Tax
 from utils.session_manager import SessionManager
+
 class PDFGenerator:
     @staticmethod
     def generate_inventory_report(
         parent: Toplevel,
         title: str,
         items: List[Dict],
-        filters: str,
-        company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
-        company_rif: str = "RIF: J-40339817-8"
+        filters: str
     ) -> None:
-        """Genera un reporte de inventario en PDF en orientación horizontal"""
+        """Genera un reporte de inventario en PDF en orientación horizontal con imagen de empresa"""
         # Mostrar diálogo para guardar el archivo
-        from tkinter import filedialog
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -60,20 +58,42 @@ class PDFGenerator:
             # Contenido del PDF
             elements = []
             
-            # Encabezado
-            header_table = Table([
-                [Paragraph(company_name, style_title), "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
-                [Paragraph(company_rif, style_normal), "", Paragraph(f"Filtros: {filters}", style_normal)],
-                ["", Paragraph(title, style_heading), ""]
-            ], colWidths=[3*inch, 3*inch, 3*inch])
-            
-            header_table.setStyle(TableStyle([
-                ('SPAN', (0,0), (0,1)),  # Combinar celdas para company info
-                ('SPAN', (2,0), (2,1)),  # Combinar celdas para fecha/filtros
-                ('SPAN', (1,2), (1,2)),  # Título centrado
-                ('ALIGN', (1,2), (1,2), 'CENTER'),
-                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ]))
+            # Encabezado con imagen
+            try:
+                # Intentar cargar la imagen de la empresa
+                logo_path = "assets/empresa.png"
+                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                
+                header_table = Table([
+                    [logo, "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
+                    ["", Paragraph(title, style_heading), Paragraph(f"Filtros: {filters}", style_normal)]
+                ], colWidths=[3*inch, 3*inch, 3*inch])
+                
+                header_table.setStyle(TableStyle([
+                    ('SPAN', (0,0), (0,1)),  # Combinar celdas para el logo
+                    ('SPAN', (1,1), (1,1)),  # Título centrado
+                    ('ALIGN', (1,1), (1,1), 'CENTER'),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
+                    ('ALIGN', (2,1), (2,1), 'RIGHT'),
+                ]))
+                
+            except Exception as e:
+                print(f"Error cargando imagen de empresa: {e}")
+                # Fallback a texto si no se puede cargar la imagen
+                header_table = Table([
+                    [Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title), "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
+                    [Paragraph("RIF: J-40339817-8", style_normal), Paragraph(title, style_heading), Paragraph(f"Filtros: {filters}", style_normal)]
+                ], colWidths=[3*inch, 3*inch, 3*inch])
+                
+                header_table.setStyle(TableStyle([
+                    ('SPAN', (0,0), (0,1)),  # Combinar celdas para company info
+                    ('SPAN', (1,1), (1,1)),  # Título centrado
+                    ('ALIGN', (1,1), (1,1), 'CENTER'),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
+                    ('ALIGN', (2,1), (2,1), 'RIGHT'),
+                ]))
             
             elements.append(header_table)
             elements.append(Spacer(1, 24))
@@ -181,18 +201,16 @@ class PDFGenerator:
                 f"No se pudo generar el PDF:\n{str(e)}",
                 parent=parent
             )
-    
+
     @staticmethod
     def generate_movement_report(
         parent: Toplevel,
         title: str,
         product_info: Dict,
         movements: List[Dict],
-        filters: str,
-        company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
-        company_rif: str = "RIF: J-40339817-8"
+        filters: str
     ) -> None:
-        """Genera un reporte de movimientos en PDF en hoja oficio horizontal"""
+        """Genera un reporte de movimientos en PDF en hoja oficio horizontal con imagen de empresa"""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -248,20 +266,45 @@ class PDFGenerator:
             
             elements = []
             
-            # Encabezado alineado a la izquierda
-            elements.append(Paragraph(f"<b>{company_name}</b>", style_title))
-            elements.append(Paragraph(company_rif, style_normal))
-            elements.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal))
-            elements.append(Spacer(1, 12))
+            # Encabezado con imagen
+            try:
+                # Intentar cargar la imagen de la empresa
+                logo_path = "assets/empresa.png"
+                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                
+                header_table = Table([
+                    [logo, "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
+                    ["", Paragraph(title, style_heading), Paragraph(f"Filtros: {filters}", style_normal)]
+                ], colWidths=[3*inch, 3*inch, 3*inch])
+                
+                header_table.setStyle(TableStyle([
+                    ('SPAN', (0,0), (0,1)),  # Combinar celdas para el logo
+                    ('SPAN', (1,1), (1,1)),  # Título centrado
+                    ('ALIGN', (1,1), (1,1), 'CENTER'),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
+                    ('ALIGN', (2,1), (2,1), 'RIGHT'),
+                ]))
+                
+            except Exception as e:
+                print(f"Error cargando imagen de empresa: {e}")
+                # Fallback a texto si no se puede cargar la imagen
+                header_table = Table([
+                    [Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title), "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
+                    [Paragraph("RIF: J-40339817-8", style_normal), Paragraph(title, style_heading), Paragraph(f"Filtros: {filters}", style_normal)]
+                ], colWidths=[3*inch, 3*inch, 3*inch])
+                
+                header_table.setStyle(TableStyle([
+                    ('SPAN', (0,0), (0,1)),  # Combinar celdas para company info
+                    ('SPAN', (1,1), (1,1)),  # Título centrado
+                    ('ALIGN', (1,1), (1,1), 'CENTER'),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
+                    ('ALIGN', (2,1), (2,1), 'RIGHT'),
+                ]))
             
-            # Título del reporte
-            elements.append(Paragraph(title, style_heading))
-            elements.append(Paragraph(f"Filtros: {filters}", style_normal))
-            elements.append(Spacer(1, 12))
-            
-            # Línea divisoria
-            elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
-            elements.append(Spacer(1, 12))
+            elements.append(header_table)
+            elements.append(Spacer(1, 24))
             
             # Información del producto
             elements.append(Paragraph("<b>PRODUCTO:</b>", style_bold))
@@ -274,13 +317,13 @@ class PDFGenerator:
             # Tabla de movimientos (ajustada para hoja horizontal)
             headers = ["Fecha", "Tipo", "Cant.", "Stock", 
                       "Ant. Cant.", "Nva. Cant.", "Ant. Stock", "Nva. Stock", 
-                      "Usuario", "Referencia", "Notas"]  # Añadida columna de Notas
+                      "Usuario", "Referencia", "Notas"]
             
             # Preparar datos
             data = [headers]
             for mov in movements:
                 ref = f"{mov['reference_type']}" if mov['reference_type'] else ""
-                notes = mov.get('notes', '')  # Obtenemos las notas del movimiento
+                notes = mov.get('notes', '')
                 row = [
                     mov['created_at'],
                     mov['movement_type'],
@@ -292,7 +335,7 @@ class PDFGenerator:
                     str(mov['new_stock']),
                     mov['user'],
                     ref,
-                    notes  # Añadimos las notas a la fila
+                    notes
                 ]
                 data.append(row)
             
@@ -308,7 +351,7 @@ class PDFGenerator:
                 0.7*inch,  # Nva. Stock
                 0.9*inch,  # Usuario
                 1.2*inch,  # Referencia
-                1.5*inch   # Notas (nueva columna más ancha)
+                1.5*inch   # Notas
             ]
             
             table = Table(data, colWidths=col_widths, repeatRows=1)
@@ -319,7 +362,7 @@ class PDFGenerator:
                 ('TEXTCOLOR', (0,0), (-1,0), colors.white),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('ALIGN', (1,1), (1,-1), 'LEFT'),
-                ('ALIGN', (8,1), (-1,-1), 'LEFT'),  # Alineación izquierda para Usuario, Referencia y Notas
+                ('ALIGN', (8,1), (-1,-1), 'LEFT'),
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0,0), (-1,0), 9),
                 ('FONTSIZE', (0,1), (-1,-1), 8),
@@ -383,14 +426,7 @@ class PDFGenerator:
                 f"No se pudo generar el PDF:\n{str(e)}",
                 parent=parent
             )
-            
-        except Exception as e:
-            messagebox.showerror(
-                "Error",
-                f"No se pudo generar el PDF:\n{str(e)}",
-                parent=parent
-            )
-    
+
     @staticmethod
     def generate_purchase_order(
         parent: Toplevel,
@@ -401,12 +437,9 @@ class PDFGenerator:
         taxes: float,
         total: float,
         delivery_date: str,
-        created_by: str,
-        company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
-        company_rif: str = "RIF: J-40339817-8",
-        company_address: str = "Av. Principal, Edif. Empresarial"
+        created_by: str
     ) -> None:
-        """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer"""
+        """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer con imagen de empresa"""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -433,15 +466,11 @@ class PDFGenerator:
             styles = getSampleStyleSheet()
             style_title = styles["Title"]
             style_normal = styles["Normal"]
-            
-            # Estilo para texto en negrita
             style_bold = ParagraphStyle(
                 name='Bold',
                 parent=style_normal,
                 fontName='Helvetica-Bold'
             )
-            
-            # Estilo para el total
             style_total = ParagraphStyle(
                 name='Total',
                 parent=style_normal,
@@ -453,25 +482,60 @@ class PDFGenerator:
             
             elements = []
             
-            # Encabezado (empresa a la izquierda, orden a la derecha)
-            header_data = [
-                [
-                    Paragraph(f"<b>{company_name}</b><br/>{company_rif}<br/>{company_address}", style_normal),
-                    "",
-                    Paragraph(
+            # Encabezado con imagen
+            try:
+                # Intentar cargar la imagen de la empresa
+                logo_path = "assets/empresa.png"
+                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                
+                header_data = [
+                    [logo, "", Paragraph(
                         f"<b>ORDEN DE COMPRA N°:</b> {order_number}<br/>"
                         f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}<br/>"
                         f"<b>Fecha Entrega:</b> {delivery_date}",
                         style_normal
-                    )
+                    )]
                 ]
-            ]
-            
-            header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
-            header_table.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 12),
-            ]))
+                
+                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table.setStyle(TableStyle([
+                    ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+                ]))
+                
+            except Exception as e:
+                print(f"Error cargando imagen de empresa: {e}")
+                # Fallback a texto si no se puede cargar la imagen
+                header_data = [
+                    [
+                        Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title),
+                        "",
+                        Paragraph(
+                            f"<b>ORDEN DE COMPRA N°:</b> {order_number}<br/>"
+                            f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}<br/>"
+                            f"<b>Fecha Entrega:</b> {delivery_date}",
+                            style_normal
+                        )
+                    ],
+                    [
+                        Paragraph("RIF: J-40339817-8", style_normal),
+                        "",
+                        ""
+                    ],
+                    [
+                        Paragraph("Av. Principal, Edif. Empresarial", style_normal),
+                        "",
+                        ""
+                    ]
+                ]
+                
+                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table.setStyle(TableStyle([
+                    ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+                    ('SPAN', (0,1), (1,1)),
+                    ('SPAN', (0,2), (1,2)),
+                ]))
             
             elements.append(header_table)
             elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
@@ -502,7 +566,7 @@ class PDFGenerator:
                 ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#4a6fa5")),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.white),
                 ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-                ('ALIGN', (2,1), (-1,-1), 'RIGHT'),  # Alinear números a la derecha
+                ('ALIGN', (2,1), (-1,-1), 'RIGHT'),
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0,0), (-1,0), 10),
                 ('FONTSIZE', (0,1), (-1,-1), 9),
@@ -543,7 +607,7 @@ class PDFGenerator:
             
             # TOTAL con formato especial
             total_table = Table([
-                ["", ""],  # Espacio en blanco para alineación
+                ["", ""],
                 [
                     Paragraph("<b>TOTAL:</b>", style_total),
                     Paragraph(f"<b>{total:,.2f}</b>", style_total)
@@ -588,11 +652,9 @@ class PDFGenerator:
         subtotal: float,
         taxes: float,
         total: float,
-        employee_info: str,
-        company_name: str = "RN&M SERVICIOS INTEGRALES, C.A",
-        company_rif: str = "RIF: J-40339817-8"
+        employee_info: str
     ) -> None:
-        """Genera un recibo en PDF idéntico a InvoiceViewer"""     
+        """Genera un recibo en PDF idéntico a InvoiceViewer con imagen de empresa"""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -618,13 +680,11 @@ class PDFGenerator:
             # Estilos personalizados
             styles = getSampleStyleSheet()
             style_normal = styles["Normal"]
-            
             style_bold = ParagraphStyle(
                 name='Bold',
                 parent=style_normal,
                 fontName='Helvetica-Bold'
             )
-            
             style_title = ParagraphStyle(
                 name='Title',
                 parent=style_normal,
@@ -632,7 +692,6 @@ class PDFGenerator:
                 fontSize=12,
                 spaceAfter=6
             )
-            
             style_total = ParagraphStyle(
                 name='Total',
                 parent=style_normal,
@@ -641,7 +700,6 @@ class PDFGenerator:
                 alignment=TA_RIGHT,
                 spaceAfter=12
             )
-            
             style_italic = ParagraphStyle(
                 name='Italic',
                 parent=style_normal,
@@ -651,24 +709,52 @@ class PDFGenerator:
             
             elements = []
             
-            # Encabezado
-            header_data = [
-                [
-                    Paragraph(f"<b>{company_name}</b><br/>{company_rif}", style_normal),
-                    "",
-                    Paragraph(
+            # Encabezado con imagen
+            try:
+                # Intentar cargar la imagen de la empresa
+                logo_path = "assets/empresa.png"
+                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                
+                header_data = [
+                    [logo, "", Paragraph(
                         f"<b>RECIBO N°:</b> {invoice_id}<br/>"
                         f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}",
                         style_normal
-                    )
+                    )]
                 ]
-            ]
-            
-            header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
-            header_table.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 12),
-            ]))
+                
+                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table.setStyle(TableStyle([
+                    ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+                ]))
+                
+            except Exception as e:
+                print(f"Error cargando imagen de empresa: {e}")
+                # Fallback a texto si no se puede cargar la imagen
+                header_data = [
+                    [
+                        Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title),
+                        "",
+                        Paragraph(
+                            f"<b>RECIBO N°:</b> {invoice_id}<br/>"
+                            f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            style_normal
+                        )
+                    ],
+                    [
+                        Paragraph("RIF: J-40339817-8", style_normal),
+                        "",
+                        ""
+                    ]
+                ]
+                
+                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table.setStyle(TableStyle([
+                    ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 12),
+                    ('SPAN', (0,1), (1,1)),
+                ]))
             
             elements.append(header_table)
             elements.append(HRFlowable(width="100%", thickness=1, color=colors.lightgrey))
