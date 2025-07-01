@@ -5,11 +5,10 @@ from datetime import datetime
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.purchase_order_report_model import PurchaseOrderReport
-from sqlite_cli.models.supplier_model import Supplier
 from reports.purchase_order_viewer import PurchaseOrderViewer
 from utils.pdf_generator import PDFGenerator
+from utils.field_formatter import FieldFormatter
 
 class PurchaseOrderReportScreen(tk.Frame):
     def __init__(
@@ -23,7 +22,6 @@ class PurchaseOrderReportScreen(tk.Frame):
         self.search_var = tk.StringVar()
         self.start_date_var = tk.StringVar()
         self.end_date_var = tk.StringVar()
-        self.supplier_var = tk.StringVar()
         self.configure(bg="#f5f5f5")
         self.configure_ui()
         self.refresh_data()
@@ -47,7 +45,7 @@ class PurchaseOrderReportScreen(tk.Frame):
         )
         title_label.pack(side=tk.LEFT, padx=20, pady=15)
 
-        # Back button
+        # Botón de regreso
         btn_back = CustomButton(
             header_frame,
             text="Regresar",
@@ -57,11 +55,11 @@ class PurchaseOrderReportScreen(tk.Frame):
         )
         btn_back.pack(side=tk.RIGHT, padx=20, pady=5)
 
-        # Filters frame
+        # Frame de filtros
         filters_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
         filters_frame.pack(fill=tk.X)
 
-        # Date filter
+        # Filtro por fechas
         date_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         date_frame.pack(side=tk.LEFT, padx=5)
 
@@ -79,7 +77,7 @@ class PurchaseOrderReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         start_date_entry.pack(side=tk.LEFT, padx=5)
-        start_date_entry.insert(0, datetime.now().strftime("%Y-%m-01"))
+        FieldFormatter.bind_validation(start_date_entry, 'date')
 
         CustomLabel(
             date_frame,
@@ -95,46 +93,19 @@ class PurchaseOrderReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         end_date_entry.pack(side=tk.LEFT, padx=5)
-        end_date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
+        FieldFormatter.bind_validation(end_date_entry, 'date')
 
-        # Bind date changes to refresh
-        self.start_date_var.trace_add("write", lambda *args: self.refresh_data())
-        self.end_date_var.trace_add("write", lambda *args: self.refresh_data())
-
-        # Supplier filter
-        supplier_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        supplier_frame.pack(side=tk.LEFT, padx=15)
-
-        CustomLabel(
-            supplier_frame,
-            text="Proveedor:",
-            font=("Arial", 10),
-            bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-
-        self.supplier_combobox = CustomCombobox(
-            supplier_frame,
-            textvariable=self.supplier_var,
-            width=30,
-            font=("Arial", 10)
-        )
-        self.supplier_combobox.pack(side=tk.LEFT, padx=5)
-        self.load_suppliers()
-        
-        # Bind supplier changes to refresh
-        self.supplier_var.trace_add("write", lambda *args: self.refresh_data())
-
-        # Search field and buttons frame
+        # Campo de búsqueda y botones
         search_btn_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         search_btn_frame.pack(side=tk.RIGHT, padx=5, fill=tk.X, expand=True)
 
-        # Search field
+        # Campo de búsqueda
         search_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
         search_frame.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         CustomLabel(
             search_frame,
-            text="Buscar (N° Orden/Proveedor):",
+            text="Buscar:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
@@ -142,39 +113,56 @@ class PurchaseOrderReportScreen(tk.Frame):
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
-            width=30,
+            width=40,
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
         
-        # Bind search changes to refresh
-        self.search_var.trace_add("write", lambda *args: self.refresh_data())
-
-        # Action buttons frame
+        # Botones de acción
         btn_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
         btn_frame.pack(side=tk.RIGHT, padx=5)
 
-        # View button
+        # Botón Filtrar
+        btn_filter = CustomButton(
+            btn_frame,
+            text="Filtrar",
+            command=self.refresh_data,
+            padding=6,
+            width=10,
+        )
+        btn_filter.pack(side=tk.LEFT, padx=5)
+
+        # Botón Limpiar
+        btn_clear = CustomButton(
+            btn_frame,
+            text="Limpiar",
+            command=self.clear_filters,
+            padding=6,
+            width=10,
+        )
+        btn_clear.pack(side=tk.LEFT, padx=5)
+
+        # Botón Ver Orden
         btn_view = CustomButton(
             btn_frame,
             text="Ver Orden",
             command=self.view_order,
-            padding=8,
+            padding=6,
             width=12,
         )
         btn_view.pack(side=tk.LEFT, padx=5)
 
-        # PDF button
+        # Botón Generar PDF
         btn_pdf = CustomButton(
             btn_frame,
             text="Generar PDF",
             command=self.generate_pdf,
-            padding=8,
-            width=20,
+            padding=6,
+            width=12,
         )
         btn_pdf.pack(side=tk.LEFT, padx=5)
 
-        # Treeview to show orders
+        # Treeview para mostrar las órdenes
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
         tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
@@ -207,39 +195,27 @@ class PurchaseOrderReportScreen(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-    def load_suppliers(self):
-        """Load suppliers list into combobox"""
-        suppliers = Supplier.search_active()
-        supplier_list = [f"{s['company']} ({s['id_number']})" for s in suppliers]
-        self.supplier_combobox['values'] = supplier_list
+    def clear_filters(self):
+        """Limpia todos los filtros de búsqueda"""
+        self.search_var.set("")
+        self.start_date_var.set("")
+        self.end_date_var.set("")
+        self.refresh_data()
 
     def refresh_data(self) -> None:
-        """Refresh report data based on filters"""
-        start_date = self.start_date_var.get()
-        end_date = self.end_date_var.get()
-        supplier = self.supplier_var.get()
+        """Actualiza los datos del reporte según los filtros"""
+        start_date = self.start_date_var.get().replace("/", "-") if self.start_date_var.get() else None
+        end_date = self.end_date_var.get().replace("/", "-") if self.end_date_var.get() else None
         search_term = self.search_var.get()
 
-        # Get supplier ID if selected
-        supplier_id = None
-        if supplier:
-            try:
-                id_number = supplier.split("(")[-1].rstrip(")")
-                supplier_data = Supplier.get_by_id_number(id_number)
-                if supplier_data:
-                    supplier_id = supplier_data['id']
-            except:
-                pass
-
-        # Get purchase orders report - now getting all orders by default
+        # Obtener reporte de órdenes de compra
         orders = PurchaseOrderReport.get_purchase_orders_report(
             start_date=start_date,
             end_date=end_date,
-            supplier_id=supplier_id,
             search_term=search_term if search_term else None
         )
 
-        # Update treeview
+        # Actualizar treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
             
@@ -257,7 +233,7 @@ class PurchaseOrderReportScreen(tk.Frame):
             ))
 
     def view_order(self) -> None:
-        """View the selected purchase order"""
+        """Muestra la orden de compra seleccionada"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione una orden", parent=self)
@@ -266,7 +242,7 @@ class PurchaseOrderReportScreen(tk.Frame):
         order_id = self.tree.item(selected[0])['values'][0]
         order_data = PurchaseOrderReport.get_order_details(order_id)
         
-        # Prepare items for PurchaseOrderViewer
+        # Preparar items para el visor
         items = []
         for item in order_data['items']:
             items.append({
@@ -277,7 +253,7 @@ class PurchaseOrderReportScreen(tk.Frame):
                 'total': item['subtotal']
             })
         
-        # Show the order
+        # Mostrar la orden
         PurchaseOrderViewer(
             self,
             order_number=order_data['order_number'],
@@ -291,7 +267,7 @@ class PurchaseOrderReportScreen(tk.Frame):
         )
 
     def generate_pdf(self) -> None:
-        """Generate PDF for selected order"""
+        """Genera PDF de la orden seleccionada"""
         selected = self.tree.selection()
         if not selected:
             messagebox.showwarning("Advertencia", "Por favor seleccione una orden", parent=self)
@@ -300,7 +276,7 @@ class PurchaseOrderReportScreen(tk.Frame):
         order_id = self.tree.item(selected[0])['values'][0]
         order_data = PurchaseOrderReport.get_order_details(order_id)
         
-        # Prepare items for PDF
+        # Preparar items para el PDF
         items = []
         for item in order_data['items']:
             items.append({
@@ -311,7 +287,7 @@ class PurchaseOrderReportScreen(tk.Frame):
                 'total': item['subtotal']
             })
         
-        # Generate PDF
+        # Generar PDF
         PDFGenerator.generate_purchase_order(
             parent=self,
             order_number=order_data['order_number'],
@@ -325,7 +301,7 @@ class PurchaseOrderReportScreen(tk.Frame):
         )
 
     def go_back(self) -> None:
-        """Go back to previous screen"""
+        """Regresa a la pantalla anterior"""
         self.pack_forget()
-        self.parent.state('normal')  # Reset window state before going back
+        self.parent.state('normal')
         self.open_previous_screen_callback()

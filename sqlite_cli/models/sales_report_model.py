@@ -11,16 +11,6 @@ class SalesReport:
         invoice_id: Optional[int] = None,
         search_term: Optional[str] = None
     ) -> List[Dict]:
-        """
-        Obtiene un reporte completo de ventas con información de facturas y sus detalles.
-        
-        :param start_date: Fecha de inicio en formato YYYY-MM-DD
-        :param end_date: Fecha de fin en formato YYYY-MM-DD
-        :param customer_id: ID del cliente para filtrar
-        :param invoice_id: ID de factura específico
-        :param search_term: Término para buscar en ID factura, nombre o cédula del cliente
-        :return: Lista de diccionarios con los datos completos de las ventas
-        """
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -48,30 +38,28 @@ class SalesReport:
         params = []
         
         if start_date:
+            # Aseguramos que la fecha esté en formato YYYY-MM-DD para SQLite
+            start_date = start_date.replace("/", "-")
             invoice_query += " AND DATE(i.issue_date) >= ?"
             params.append(start_date)
         
         if end_date:
+            # Aseguramos que la fecha esté en formato YYYY-MM-DD para SQLite
+            end_date = end_date.replace("/", "-")
             invoice_query += " AND DATE(i.issue_date) <= ?"
             params.append(end_date)
         
-        if customer_id:
-            invoice_query += " AND i.customer_id = ?"
-            params.append(customer_id)
-        
-        if invoice_id:
-            invoice_query += " AND i.id = ?"
-            params.append(invoice_id)
-        
         if search_term:
+            search_param = f"%{search_term}%"
             invoice_query += '''
                 AND (i.id LIKE ? 
                 OR c.first_name LIKE ? 
                 OR c.last_name LIKE ? 
-                OR c.id_number LIKE ?)
+                OR c.id_number LIKE ?
+                OR it.name LIKE ?
+                OR i.total LIKE ?)
             '''
-            search_param = f"%{search_term}%"
-            params.extend([search_param] * 4)
+            params.extend([search_param] * 6)
         
         invoice_query += " ORDER BY i.issue_date DESC"
         
@@ -178,99 +166,3 @@ class SalesReport:
         
         conn.close()
         return invoice
-
-    @staticmethod
-    def get_sales_summary(
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None
-    ) -> Dict:
-        """
-        Obtiene un resumen estadístico de las ventas.
-        
-        :param start_date: Fecha de inicio en formato YYYY-MM-DD
-        :param end_date: Fecha de fin en formato YYYY-MM-DD
-        :return: Diccionario con estadísticas de ventas
-        """
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Consulta base
-        query = '''
-            SELECT 
-                COUNT(*) as total_invoices,
-                SUM(total) as total_amount,
-                SUM(taxes) as total_taxes,
-                SUM(subtotal) as total_subtotal,
-                AVG(total) as average_sale,
-                MIN(total) as min_sale,
-                MAX(total) as max_sale
-            FROM invoices
-            WHERE 1=1
-        '''
-        
-        params = []
-        
-        if start_date:
-            query += " AND DATE(issue_date) >= ?"
-            params.append(start_date)
-        
-        if end_date:
-            query += " AND DATE(issue_date) <= ?"
-            params.append(end_date)
-        
-        cursor.execute(query, tuple(params))
-        summary = dict(cursor.fetchone())
-        
-        # Obtener ventas por tipo
-        cursor.execute('''
-            SELECT 
-                it.name as invoice_type,
-                COUNT(*) as count,
-                SUM(i.total) as total
-            FROM invoices i
-            JOIN invoice_types it ON i.invoice_type_id = it.id
-            WHERE DATE(i.issue_date) BETWEEN ? AND ?
-            GROUP BY it.name
-        ''', (start_date or '2000-01-01', end_date or '2100-01-01'))
-        
-        summary['by_type'] = [dict(row) for row in cursor.fetchall()]
-        
-        # Obtener productos más vendidos
-        cursor.execute('''
-            SELECT 
-                p.product as name,
-                p.code,
-                SUM(d.quantity) as total_quantity,
-                SUM(d.subtotal) as total_amount
-            FROM invoice_details d
-            JOIN invoices i ON d.invoice_id = i.id
-            JOIN inventory p ON d.product_id = p.id
-            WHERE DATE(i.issue_date) BETWEEN ? AND ?
-            GROUP BY p.product, p.code
-            ORDER BY total_quantity DESC
-            LIMIT 10
-        ''', (start_date or '2000-01-01', end_date or '2100-01-01'))
-        
-        summary['top_products'] = [dict(row) for row in cursor.fetchall()]
-        
-        # Obtener servicios más vendidos
-        cursor.execute('''
-            SELECT 
-                s.name,
-                s.code,
-                COUNT(*) as total_services,
-                SUM(d.subtotal) as total_amount
-            FROM invoice_details d
-            JOIN invoices i ON d.invoice_id = i.id
-            JOIN service_requests sr ON d.service_request_id = sr.id
-            JOIN services s ON sr.service_id = s.id
-            WHERE DATE(i.issue_date) BETWEEN ? AND ?
-            GROUP BY s.name, s.code
-            ORDER BY total_services DESC
-            LIMIT 10
-        ''', (start_date or '2000-01-01', end_date or '2100-01-01'))
-        
-        summary['top_services'] = [dict(row) for row in cursor.fetchall()]
-        
-        conn.close()
-        return summary

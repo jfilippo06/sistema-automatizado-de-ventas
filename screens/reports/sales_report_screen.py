@@ -11,6 +11,7 @@ from sqlite_cli.models.customer_model import Customer
 from reports.InvoiceViewer import InvoiceViewer
 from utils.session_manager import SessionManager
 from utils.pdf_generator import PDFGenerator
+from utils.field_formatter import FieldFormatter
 
 class SalesReportScreen(tk.Frame):
     def __init__(
@@ -24,7 +25,6 @@ class SalesReportScreen(tk.Frame):
         self.search_var = tk.StringVar()
         self.start_date_var = tk.StringVar()
         self.end_date_var = tk.StringVar()
-        self.customer_var = tk.StringVar()
         self.configure(bg="#f5f5f5")
         self.configure_ui()
         self.refresh_data()
@@ -80,7 +80,7 @@ class SalesReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         start_date_entry.pack(side=tk.LEFT, padx=5)
-        start_date_entry.insert(0, datetime.now().strftime("%Y-%m-01"))
+        FieldFormatter.bind_validation(start_date_entry, 'date')
 
         CustomLabel(
             date_frame,
@@ -96,27 +96,7 @@ class SalesReportScreen(tk.Frame):
             font=("Arial", 10)
         )
         end_date_entry.pack(side=tk.LEFT, padx=5)
-        end_date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
-
-        # Filtro por cliente
-        customer_frame = tk.Frame(filters_frame, bg="#f5f5f5")
-        customer_frame.pack(side=tk.LEFT, padx=20)
-
-        CustomLabel(
-            customer_frame,
-            text="Cliente:",
-            font=("Arial", 10),
-            bg="#f5f5f5"
-        ).pack(side=tk.LEFT)
-
-        self.customer_combobox = CustomCombobox(
-            customer_frame,
-            textvariable=self.customer_var,
-            width=30,
-            font=("Arial", 10)
-        )
-        self.customer_combobox.pack(side=tk.LEFT, padx=5)
-        self.load_customers()
+        FieldFormatter.bind_validation(end_date_entry, 'date')
 
         # Campo de búsqueda y botones
         search_btn_frame = tk.Frame(filters_frame, bg="#f5f5f5")
@@ -128,7 +108,7 @@ class SalesReportScreen(tk.Frame):
 
         CustomLabel(
             search_frame,
-            text="Buscar (ID/Nombre/Cédula):",
+            text="Buscar:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
@@ -136,7 +116,7 @@ class SalesReportScreen(tk.Frame):
         search_entry = CustomEntry(
             search_frame,
             textvariable=self.search_var,
-            width=30,
+            width=40,
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -144,6 +124,26 @@ class SalesReportScreen(tk.Frame):
         # Botones de acción
         btn_frame = tk.Frame(search_btn_frame, bg="#f5f5f5")
         btn_frame.pack(side=tk.RIGHT, padx=5)
+
+        # Botón Filtrar
+        btn_filter = CustomButton(
+            btn_frame,
+            text="Filtrar",
+            command=self.refresh_data,
+            padding=6,
+            width=10,
+        )
+        btn_filter.pack(side=tk.LEFT, padx=5)
+
+        # Botón Limpiar
+        btn_clear = CustomButton(
+            btn_frame,
+            text="Limpiar",
+            command=self.clear_filters,
+            padding=6,
+            width=10,
+        )
+        btn_clear.pack(side=tk.LEFT, padx=5)
 
         # Botón Ver Recibo
         btn_view = CustomButton(
@@ -197,32 +197,23 @@ class SalesReportScreen(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-    def load_customers(self):
-        """Carga la lista de clientes en el combobox"""
-        customers = Customer.search_active()
-        customer_list = [f"{c['first_name']} {c['last_name']} ({c['id_number']})" for c in customers]
-        self.customer_combobox['values'] = customer_list
+    def clear_filters(self):
+        """Limpia todos los filtros de búsqueda"""
+        self.search_var.set("")
+        self.start_date_var.set("")
+        self.end_date_var.set("")
+        self.refresh_data()
 
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
-        start_date = self.start_date_var.get()
-        end_date = self.end_date_var.get()
-        customer = self.customer_var.get()
+        start_date = self.start_date_var.get().replace("/", "-") if self.start_date_var.get() else None
+        end_date = self.end_date_var.get().replace("/", "-") if self.end_date_var.get() else None
         search_term = self.search_var.get()
-
-        # Obtener ID del cliente si se seleccionó uno
-        customer_id = None
-        if customer:
-            id_number = customer.split("(")[-1].rstrip(")")
-            customer_data = Customer.get_by_id_number(id_number)
-            if customer_data:
-                customer_id = customer_data['id']
 
         # Obtener reporte de ventas
         sales = SalesReport.get_sales_report(
             start_date=start_date,
             end_date=end_date,
-            customer_id=customer_id,
             search_term=search_term if search_term else None
         )
 
