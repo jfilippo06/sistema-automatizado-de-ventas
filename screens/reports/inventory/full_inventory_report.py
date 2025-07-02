@@ -7,6 +7,7 @@ from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
 from reports.inventory_report_viewer import InventoryReportViewer
 from utils.pdf_generator import PDFGenerator
+from utils.field_formatter import FieldFormatter
 
 class FullInventoryReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, initial_search: Optional[str] = None):
@@ -56,6 +57,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             font=("Arial", 10)
         )
         search_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(search_entry, 'first_name')
         
         btn_filter = CustomButton(
             row1_frame,
@@ -88,13 +90,15 @@ class FullInventoryReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
         
-        CustomEntry(
+        quantity_entry = CustomEntry(
             row2_frame,
             textvariable=self.quantity_var,
             width=10,
             font=("Arial", 10),
             justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=5)
+        )
+        quantity_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(quantity_entry, 'integer')
         
         # Existencias
         CustomLabel(
@@ -104,13 +108,15 @@ class FullInventoryReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
-        CustomEntry(
+        existencia_entry = CustomEntry(
             row2_frame,
             textvariable=self.existencia_var,
             width=10,
             font=("Arial", 10),
             justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=5)
+        )
+        existencia_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(existencia_entry, 'integer')
         
         # Fila 3: Stock mínimo, Stock máximo, Proveedor y botones
         row3_frame = tk.Frame(filters_frame, bg="#f5f5f5")
@@ -124,13 +130,15 @@ class FullInventoryReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
         
-        CustomEntry(
+        min_stock_entry = CustomEntry(
             row3_frame,
             textvariable=self.min_stock_var,
             width=10,
             font=("Arial", 10),
             justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=5)
+        )
+        min_stock_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(min_stock_entry, 'integer')
         
         # Stock máximo
         CustomLabel(
@@ -140,13 +148,15 @@ class FullInventoryReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(5, 0))
         
-        CustomEntry(
+        max_stock_entry = CustomEntry(
             row3_frame,
             textvariable=self.max_stock_var,
             width=10,
             font=("Arial", 10),
             justify=tk.CENTER
-        ).pack(side=tk.LEFT, padx=5)
+        )
+        max_stock_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(max_stock_entry, 'integer')
         
         # Proveedor
         CustomLabel(
@@ -156,12 +166,14 @@ class FullInventoryReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
-        CustomEntry(
+        supplier_entry = CustomEntry(
             row3_frame,
             textvariable=self.supplier_var,
             width=15,
             font=("Arial", 10)
-        ).pack(side=tk.LEFT, padx=5)
+        )
+        supplier_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(supplier_entry, 'first_name')
         
         # Botones de acción en la misma fila 3
         btn_pdf = CustomButton(
@@ -256,25 +268,30 @@ class FullInventoryReportScreen(tk.Toplevel):
 
     def apply_filters(self):
         """Aplica los filtros"""
-        search_term = self.search_var.get() or None
-        quantity = int(self.quantity_var.get()) if self.quantity_var.get().isdigit() else None
-        min_stock = int(self.min_stock_var.get()) if self.min_stock_var.get().isdigit() else None
-        max_stock = int(self.max_stock_var.get()) if self.max_stock_var.get().isdigit() else None
-        supplier = self.supplier_var.get() or None
-        
-        items = InventoryReport.get_inventory_report(
-            search_term=search_term,
-            supplier_id=supplier,
-            min_quantity=quantity,
-            max_quantity=quantity,
-            min_stock=min_stock,
-            max_stock=max_stock
-        )
-        
-        if items:
-            self.update_table(items)
-        else:
-            messagebox.showinfo("Información", "No se encontraron coincidencias", parent=self)
+        try:
+            search_term = self.search_var.get() or None
+            supplier = self.supplier_var.get() or None
+            
+            # Convertir valores numéricos, manejando campos vacíos
+            quantity = int(self.quantity_var.get()) if self.quantity_var.get().isdigit() else None
+            min_stock = int(self.min_stock_var.get()) if self.min_stock_var.get().isdigit() else None
+            max_stock = int(self.max_stock_var.get()) if self.max_stock_var.get().isdigit() else None
+            
+            items = InventoryReport.get_inventory_report(
+                search_term=search_term,
+                supplier_id=supplier,
+                min_quantity=quantity,
+                max_quantity=quantity,
+                min_stock=min_stock,
+                max_stock=max_stock
+            )
+            
+            if items:
+                self.update_table(items)
+            else:
+                messagebox.showinfo("Información", "No se encontraron coincidencias", parent=self)
+        except ValueError as e:
+            messagebox.showerror("Error", f"Error en los filtros: {str(e)}", parent=self)
 
     def refresh_data(self):
         """Carga todos los datos iniciales"""

@@ -142,10 +142,14 @@ class InventoryReport:
             params.append(inventory_id)
             
         if start_date:
+            # Convertir fecha de formato DD/MM/AAAA a AAAA-MM-DD para SQLite
+            start_date = start_date.replace("/", "-")
             query += " AND DATE(im.created_at) >= ?"
             params.append(start_date)
             
         if end_date:
+            # Convertir fecha de formato DD/MM/AAAA a AAAA-MM-DD para SQLite
+            end_date = end_date.replace("/", "-")
             query += " AND DATE(im.created_at) <= ?"
             params.append(end_date)
             
@@ -163,10 +167,19 @@ class InventoryReport:
         movements = []
         for row in cursor.fetchall():
             movement = dict(row)
+            # Formatear la fecha para mostrarla en un formato más amigable
+            if 'created_at' in movement and movement['created_at']:
+                try:
+                    dt = datetime.strptime(movement['created_at'], '%Y-%m-%d %H:%M:%S')
+                    movement['created_at'] = dt.strftime('%d/%m/%Y %H:%M')
+                except ValueError:
+                    pass
+            
             # Reemplazar None por "None" en los campos relevantes
             for key in ['notes', 'reference_type', 'reference_id']:
                 if movement[key] is None:
                     movement[key] = "None"
+                    
             movements.append(movement)
         conn.close()
         return movements

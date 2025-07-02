@@ -6,9 +6,10 @@ from sqlite_cli.models.inventory_report_model import InventoryReport
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_combobox import CustomCombobox
+from widgets.custom_entry import CustomEntry
 from reports.inventory_movement_viewer import InventoryMovementViewer
 from utils.pdf_generator import PDFGenerator
-from widgets.custom_date_picker import CustomDatePicker
+from utils.field_formatter import FieldFormatter
 
 class InventoryMovementReportScreen(tk.Toplevel):
     def __init__(self, parent: tk.Widget, inventory_id: int):
@@ -23,6 +24,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
         
         # Variables
         self.movement_type_var = tk.StringVar(value="Todos")
+        self.start_date_var = tk.StringVar()
+        self.end_date_var = tk.StringVar()
         
         self.configure_ui()
         self.load_product_info()
@@ -62,8 +65,14 @@ class InventoryMovementReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
         
-        self.start_date_picker = CustomDatePicker(row1_frame)
-        self.start_date_picker.pack(side=tk.LEFT, padx=5)
+        start_date_entry = CustomEntry(
+            row1_frame,
+            textvariable=self.start_date_var,
+            width=12,
+            font=("Arial", 10)
+        )
+        start_date_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(start_date_entry, 'date')
         
         CustomLabel(
             row1_frame,
@@ -72,8 +81,14 @@ class InventoryMovementReportScreen(tk.Toplevel):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
-        self.end_date_picker = CustomDatePicker(row1_frame)
-        self.end_date_picker.pack(side=tk.LEFT, padx=5)
+        end_date_entry = CustomEntry(
+            row1_frame,
+            textvariable=self.end_date_var,
+            width=12,
+            font=("Arial", 10)
+        )
+        end_date_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(end_date_entry, 'date')
         
         # Filtro de tipo de movimiento
         CustomLabel(
@@ -198,8 +213,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
 
     def clear_filters(self):
         """Limpia todos los filtros aplicados"""
-        self.start_date_picker.set_date("")
-        self.end_date_picker.set_date("")
+        self.start_date_var.set("")
+        self.end_date_var.set("")
         self.movement_type_var.set("Todos")
         self.refresh_data()
 
@@ -227,8 +242,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             self.tree.delete(item)
             
         # Obtener valores de los filtros
-        start_date = self._parse_date(self.start_date_picker.get_date())
-        end_date = self._parse_date(self.end_date_picker.get_date())
+        start_date = self.start_date_var.get().replace("/", "-") if self.start_date_var.get() else None
+        end_date = self.end_date_var.get().replace("/", "-") if self.end_date_var.get() else None
         movement_type = self.movement_type_var.get() if self.movement_type_var.get() != "Todos" else None
         
         movements = InventoryReport.get_inventory_movements_report(
@@ -258,17 +273,6 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")
         self.current_movements = movements
 
-    def _parse_date(self, date_str):
-        """Intenta parsear la fecha del formato DD/MM/AAAA"""
-        if not date_str:
-            return None
-            
-        try:
-            day, month, year = map(int, date_str.split('/'))
-            return f"{year}-{month:02d}-{day:02d}"
-        except (ValueError, AttributeError):
-            return None
-
     def generate_report(self):
         """Genera el reporte visual de movimientos"""
         if hasattr(self, 'current_movements') and self.current_movements:
@@ -297,8 +301,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
         """Obtiene los filtros actuales aplicados"""
         filters = []
         
-        start_date = self.start_date_picker.get_date()
-        end_date = self.end_date_picker.get_date()
+        start_date = self.start_date_var.get()
+        end_date = self.end_date_var.get()
         
         if start_date:
             filters.append(f"Desde: {start_date}")

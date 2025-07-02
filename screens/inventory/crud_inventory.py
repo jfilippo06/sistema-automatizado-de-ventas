@@ -82,7 +82,7 @@ class CrudInventory(tk.Toplevel):
         # Definición de campos con sus tipos de formateo
         fields = [
             ("Código:", self.code_var, 'code', not (self.mode == "edit")),
-            ("Producto:", self.product_var, 'name', True),
+            ("Producto:", self.product_var, 'first_name', True),
             ("Descripción:", self.description_var, 'description', True),
             ("Cantidad:", self.quantity_var, 'integer', self.mode == "create" or self.from_sales),
             ("Existencias:", self.stock_var, 'integer', self.mode == "create" and not self.from_sales),
