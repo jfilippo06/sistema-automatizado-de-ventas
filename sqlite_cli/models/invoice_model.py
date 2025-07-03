@@ -80,19 +80,58 @@ class Invoice:
         subtotal: float,
         taxes: float,
         total: float,
-        items: List[Dict]
+        items: List[Dict],
+        payment_details: List[Dict]
     ) -> int:
         """
         Crea una factura pagada completamente (tipo Venta)
         Maneja productos y servicios en registros separados
+        
+        Args:
+            customer_id: ID del cliente
+            subtotal: Subtotal de la factura
+            taxes: Impuestos
+            total: Total a pagar
+            items: Lista de productos/servicios
+            payment_details: Lista de métodos de pago [{
+                'method': str, 
+                'amount': float, 
+                'bank': str (opcional), 
+                'reference': str (opcional)
+            }]
+            
+        Returns:
+            ID de la factura creada
         """
+        # Validación básica de los datos
+        if not items:
+            raise ValueError("La factura debe contener al menos un item")
+        
+        if not payment_details:
+            raise ValueError("Debe especificar al menos un método de pago")
+        
+        # Verificar que la suma de pagos coincida con el total (con tolerancia de redondeo)
+        total_payments = sum(p['amount'] for p in payment_details)
+        if abs(total_payments - total) > 0.01:  # Tolerancia de 1 céntimo
+            raise ValueError(f"La suma de los pagos ({total_payments:.2f}) no coincide con el total ({total:.2f})")
+
         # Obtener ID del tipo de factura "Venta"
         invoice_type_id = Invoice._get_invoice_type_id("Venta")
         
         # 1. Registrar factura principal
         invoice_id = Invoice._create_invoice(customer_id, invoice_type_id, subtotal, taxes, total)
         
-        # 2. Procesar items
+        # 2. Registrar métodos de pago (uno por uno)
+        for payment in payment_details:
+            Invoice.add_payment(
+                invoice_id=invoice_id,
+                payment_method=payment['method'],
+                amount=payment['amount'],
+                bank=payment.get('bank'),
+                reference=payment.get('reference')
+            )
+        
+        # 3. Procesar items (uno por uno)
         for item in items:
             if item.get('is_service', False):
                 # Para servicios: crear service_request y luego detalle de servicio
@@ -176,6 +215,76 @@ class Invoice:
         return invoice_id
 
     @staticmethod
+    def add_payment(
+        invoice_id: int,
+        payment_method: str,
+        amount: float,
+        bank: Optional[str] = None,
+        reference: Optional[str] = None
+    ) -> int:
+        """
+        Agrega un método de pago a una factura.
+        
+        Args:
+            invoice_id: ID de la factura
+            payment_method: Método de pago (efectivo, tarjeta_debito, etc.)
+            amount: Monto pagado
+            bank: Banco (opcional para algunos métodos)
+            reference: Referencia/Número (opcional para algunos métodos)
+            
+        Returns:
+            ID del registro de pago creado
+        """
+        return Invoice._execute_sql(
+            '''
+            INSERT INTO invoice_payments (
+                invoice_id, payment_method, bank, amount, reference
+            ) VALUES (?, ?, ?, ?, ?)
+            ''',
+            (invoice_id, payment_method, bank, amount, reference)
+        )
+
+    @staticmethod
+    def get_payments(invoice_id: int) -> List[Dict]:
+        """
+        Obtiene todos los métodos de pago asociados a una factura.
+        
+        Args:
+            invoice_id: ID de la factura
+            
+        Returns:
+            Lista de diccionarios con los datos de cada pago
+        """
+        return Invoice._execute_sql(
+            '''
+            SELECT 
+                id, payment_method, bank, amount, reference, created_at
+            FROM invoice_payments
+            WHERE invoice_id = ?
+            ORDER BY created_at
+            ''',
+            (invoice_id,),
+            fetch=True
+        ) or []
+
+    @staticmethod
+    def delete_payment(payment_id: int) -> bool:
+        """
+        Elimina un registro de pago.
+        
+        Args:
+            payment_id: ID del registro de pago
+            
+        Returns:
+            True si se eliminó correctamente
+        """
+        Invoice._execute_sql(
+            'DELETE FROM invoice_payments WHERE id = ?',
+            (payment_id,)
+        )
+        return True
+
+    @staticmethod
     def _create_invoice(
         customer_id: int,
         invoice_type_id: int,
@@ -211,8 +320,9 @@ class Invoice:
 
     @staticmethod
     def get_by_id(invoice_id: int) -> Optional[Dict]:
-        """Obtiene una factura por su ID con información del cliente y tipo."""
-        result = Invoice._execute_sql(
+        """Obtiene una factura por su ID con información del cliente, tipo y pagos."""
+        # Obtener datos básicos de la factura
+        invoice = Invoice._execute_sql(
             '''
             SELECT 
                 i.*,
@@ -229,7 +339,16 @@ class Invoice:
             (invoice_id,),
             fetch=True
         )
-        return result[0] if result else None
+        
+        if not invoice:
+            return None
+            
+        invoice = invoice[0]
+        
+        # Agregar los métodos de pago
+        invoice['payments'] = Invoice.get_payments(invoice_id)
+        
+        return invoice
     
     @staticmethod
     def _get_invoice_type_id(type_name: str) -> int:

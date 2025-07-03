@@ -816,7 +816,7 @@ class BillingScreen(tk.Frame):
                 messagebox.showwarning("Error", "El pago no está completo", parent=self.payment_window)
                 return
                 
-            # Mapear nombres de métodos de pago
+            # Mapear nombres de métodos de pago para mostrar
             method_names = {
                 "efectivo": "Efectivo",
                 "tarjeta_debito": "Tarjeta Débito",
@@ -826,7 +826,7 @@ class BillingScreen(tk.Frame):
                 "transferencia": "Transferencia"
             }
             
-            # Crear descripción de pagos
+            # Crear descripción de pagos para mostrar
             payment_description = "\n".join(
                 f"{method_names.get(p['method'], 'Desconocido')}" +
                 (f" ({p['bank']})" if p['bank'] != "N/A" else "") +
@@ -834,15 +834,14 @@ class BillingScreen(tk.Frame):
                 for p in self.payment_details
             )
             
-            # Crear la factura
+            # Crear la factura con los pagos
             invoice_id = Invoice.create_paid_invoice(
                 customer_id=self.current_customer['id'],
                 subtotal=self.subtotal,
                 taxes=self.taxes,
                 total=self.total,
-                #payment_method="Múltiples métodos" if len(self.payment_details) > 1 else method_names.get(self.payment_details[0]['method']),
-                #payment_details=payment_description,
-                items=self.cart_items
+                items=self.cart_items,
+                payment_details=self.payment_details  # Pasar los detalles de pago
             )
             
             # Mostrar mensaje de éxito
@@ -862,7 +861,6 @@ class BillingScreen(tk.Frame):
                 self.subtotal,
                 self.taxes,
                 self.total,
-                #payment_description
             )
             
             # Cerrar ventana y refrescar
