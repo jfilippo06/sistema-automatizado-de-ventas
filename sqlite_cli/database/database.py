@@ -286,6 +286,20 @@ def init_db() -> None:
         )
     ''')
 
+    # Tabla de métodos de pago para facturas
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invoice_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            invoice_id INTEGER NOT NULL,
+            payment_method TEXT NOT NULL,
+            bank TEXT,
+            amount REAL NOT NULL,
+            reference TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+        )
+    ''')
+
     # Invoice details table (English)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS invoice_details (
