@@ -460,60 +460,417 @@ class BillingScreen(tk.Frame):
         if not self.cart_items:
             messagebox.showwarning("Advertencia", "Debe agregar al menos un producto o servicio al carrito", parent=self)
             return
-            
-        response = messagebox.askyesno(
-            "Confirmar Venta", 
-            "¿Está seguro que desea realizar la venta?\nLa factura se marcará como Pagada Completamente.",
-            parent=self
+        
+        self.show_payment_screen()
+
+    def show_payment_screen(self) -> None:
+        """Muestra la pantalla de procesamiento de pago"""
+        self.payment_window = tk.Toplevel(self)
+        self.payment_window.title("Procesar Pago")
+        
+        # Configurar tamaño y posición centrada
+        window_width = 600
+        window_height = 500
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width/2)
+        center_y = int(screen_height/2 - window_height/2)
+        
+        self.payment_window.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+        self.payment_window.resizable(False, False)
+        self.payment_window.transient(self)
+        self.payment_window.grab_set()
+        
+        # Calcular totales
+        iva_tax = Tax.get_by_name("IVA")
+        self.subtotal = sum(item['total'] for item in self.cart_items)
+        self.taxes = self.subtotal * (iva_tax['value'] / 100) if iva_tax and iva_tax.get('status_name') == 'active' else 0.0
+        self.total = self.subtotal + self.taxes
+        self.paid_amount = 0.0
+        self.payment_details = []
+        
+        # Frame principal
+        main_frame = tk.Frame(self.payment_window, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Sección superior (Botones e información)
+        top_frame = tk.Frame(main_frame)
+        top_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Botones en una sola fila arriba
+        buttons_frame = tk.Frame(top_frame)
+        buttons_frame.pack(side=tk.RIGHT, padx=10)
+        
+        cancel_btn = tk.Button(
+            buttons_frame,
+            text="Cancelar Venta",
+            command=self.payment_window.destroy,
+            font=("Arial", 10),
+            width=12
+        )
+        cancel_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.confirm_btn = tk.Button(
+            buttons_frame,
+            text="Confirmar Venta",
+            command=self.confirm_sale,
+            font=("Arial", 10),
+            width=12,
+            state=tk.DISABLED
+        )
+        self.confirm_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Información del cliente
+        customer_frame = tk.Frame(top_frame)
+        customer_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        tk.Label(
+            customer_frame, 
+            text=f"Cliente: {self.current_customer['first_name']} {self.current_customer['last_name']}",
+            font=("Arial", 10, "bold")
+        ).pack(anchor=tk.W)
+        
+        tk.Label(
+            customer_frame, 
+            text=f"Cédula: {self.current_customer['id_number']} | Total: {self.total:.2f}",
+            font=("Arial", 9)
+        ).pack(anchor=tk.W)
+        
+        # Frame para métodos de pago (en una sola línea)
+        method_frame = tk.Frame(main_frame)
+        method_frame.pack(fill=tk.X, pady=5)
+        
+        tk.Label(
+            method_frame, 
+            text="Método:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        self.payment_method = tk.StringVar(value="efectivo")
+        
+        payment_options = [
+            ("Efectivo", "efectivo"),
+            ("Tarjeta Débito", "tarjeta_debito"),
+            ("Tarjeta Crédito", "tarjeta_credito"),
+            ("Pago Móvil", "pago_movil"),
+            ("Biopago", "biopago"),
+            ("Transferencia", "transferencia")
+        ]
+        
+        method_menu = ttk.OptionMenu(
+            method_frame,
+            self.payment_method,
+            payment_options[0][1],
+            *[value for text, value in payment_options],
+            style='TMenubutton'
+        )
+        method_menu.pack(side=tk.LEFT, padx=5)
+        
+        # Selector de banco (en la misma línea)
+        self.bank_frame = tk.Frame(method_frame)
+        
+        tk.Label(
+            self.bank_frame, 
+            text="Banco:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        self.bank_var = tk.StringVar()
+        bank_options = ["Banco de Venezuela", "Banesco", "Mercantil"]
+        bank_menu = ttk.OptionMenu(
+            self.bank_frame,
+            self.bank_var,
+            bank_options[0],
+            *bank_options,
+            style='TMenubutton'
+        )
+        bank_menu.pack(side=tk.LEFT, padx=5)
+        
+        # Frame para monto
+        amount_frame = tk.Frame(main_frame)
+        amount_frame.pack(fill=tk.X, pady=5)
+        
+        tk.Label(
+            amount_frame, 
+            text="Monto:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        self.payment_amount = tk.DoubleVar()
+        amount_entry = tk.Entry(
+            amount_frame,
+            textvariable=self.payment_amount,
+            font=("Arial", 10),
+            width=12,
+            validate="key",
+            validatecommand=(self.payment_window.register(self.validate_amount), '%P')
+        )
+        amount_entry.pack(side=tk.LEFT, padx=5)
+        
+        # Frame para referencia (solo para métodos no efectivo)
+        self.reference_frame = tk.Frame(amount_frame)
+        
+        tk.Label(
+            self.reference_frame, 
+            text="Referencia:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        self.payment_reference = tk.StringVar()
+        reference_entry = tk.Entry(
+            self.reference_frame,
+            textvariable=self.payment_reference,
+            font=("Arial", 10),
+            width=20
+        )
+        reference_entry.pack(side=tk.LEFT, padx=5)
+        
+        # Botón para agregar pago
+        add_payment_btn = tk.Button(
+            amount_frame,
+            text="+ Agregar",
+            command=self.add_payment,
+            font=("Arial", 9),
+            width=8
+        )
+        add_payment_btn.pack(side=tk.LEFT, padx=10)
+        
+        # Actualizar visibilidad de frames según método
+        def update_frames(*args):
+            method = self.payment_method.get()
+            if method in ["tarjeta_debito", "tarjeta_credito", "pago_movil", "biopago", "transferencia"]:
+                self.bank_frame.pack(side=tk.LEFT)
+                self.reference_frame.pack(side=tk.LEFT)
+            elif method == "efectivo":
+                self.bank_frame.pack_forget()
+                self.reference_frame.pack_forget()
+        
+        self.payment_method.trace("w", update_frames)
+        update_frames()
+        
+        # Treeview para pagos registrados
+        payments_tree_frame = tk.Frame(main_frame, bd=2, relief=tk.GROOVE)
+        payments_tree_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
+        
+        self.payments_tree = ttk.Treeview(
+            payments_tree_frame, 
+            columns=("Método", "Banco", "Monto", "Referencia"),
+            show="headings",
+            height=8
         )
         
-        if response:
-            try:
-                # Calcular totales
-                iva_tax = Tax.get_by_name("IVA")
-                subtotal = sum(item['total'] for item in self.cart_items)
+        payments_columns = [
+            ("Método", 120, tk.CENTER),
+            ("Banco", 120, tk.CENTER),
+            ("Monto", 100, tk.CENTER),
+            ("Referencia", 150, tk.CENTER)
+        ]
+        
+        for col, width, anchor in payments_columns:
+            self.payments_tree.heading(col, text=col)
+            self.payments_tree.column(col, width=width, anchor=anchor)
+        
+        payments_scrollbar = ttk.Scrollbar(payments_tree_frame, orient=tk.VERTICAL, command=self.payments_tree.yview)
+        self.payments_tree.configure(yscroll=payments_scrollbar.set)
+        payments_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.payments_tree.pack(fill=tk.BOTH, expand=True)
+        
+        # Frame para resumen de pagos
+        payment_summary_frame = tk.Frame(main_frame, bd=2, relief=tk.GROOVE, padx=10, pady=5)
+        payment_summary_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        self.paid_label = tk.Label(
+            payment_summary_frame, 
+            text=f"Total Pagado: {self.paid_amount:.2f}",
+            font=("Arial", 10)
+        )
+        self.paid_label.pack(side=tk.LEFT, padx=10)
+        
+        self.balance_label = tk.Label(
+            payment_summary_frame, 
+            text=f"Saldo Pendiente: {self.total - self.paid_amount:.2f}",
+            font=("Arial", 10, "bold")
+        )
+        self.balance_label.pack(side=tk.RIGHT, padx=10)
+        
+        # Configurar eventos
+        self.payments_tree.bind("<Delete>", self.remove_payment)
+        amount_entry.bind("<Return>", lambda e: self.add_payment())
+
+    def validate_amount(self, text: str) -> bool:
+        """Valida que el monto ingresado sea válido"""
+        if not text:
+            return True
+        try:
+            if float(text) >= 0:
+                return True
+            return False
+        except ValueError:
+            return False
+
+    def add_payment(self) -> None:
+        """Agrega un pago a la lista de pagos registrados"""
+        try:
+            amount = float(self.payment_amount.get())
+            if amount <= 0:
+                messagebox.showwarning("Error", "El monto debe ser mayor a cero", parent=self.payment_window)
+                return
                 
-                if iva_tax and iva_tax.get('status_name') == 'active':
-                    taxes = subtotal * (iva_tax['value'] / 100)
-                else:
-                    taxes = 0.0
+            # Validar que no se exceda el total
+            if (self.paid_amount + amount) > self.total:
+                messagebox.showwarning("Error", "El monto excede el total a pagar", parent=self.payment_window)
+                return
+                
+            method = self.payment_method.get()
+            
+            # Solo validar referencia y banco para métodos no efectivo
+            reference = ""
+            bank = ""
+            
+            if method != "efectivo":
+                reference = self.payment_reference.get().strip()
+                if not reference:
+                    messagebox.showwarning("Error", "La referencia es obligatoria", parent=self.payment_window)
+                    return
                     
-                total = subtotal + taxes
+                bank = self.bank_var.get()
+                if not bank:
+                    messagebox.showwarning("Error", "Debe seleccionar un banco", parent=self.payment_window)
+                    return
+            
+            # Agregar a la lista de pagos
+            self.payment_details.append({
+                "method": method,
+                "amount": amount,
+                "reference": reference if method != "efectivo" else "N/A",
+                "bank": bank if method != "efectivo" else "N/A"
+            })
+            
+            # Agregar al treeview
+            method_name = {
+                "efectivo": "Efectivo",
+                "tarjeta_debito": "Tarjeta Débito",
+                "tarjeta_credito": "Tarjeta Crédito",
+                "pago_movil": "Pago Móvil",
+                "biopago": "Biopago",
+                "transferencia": "Transferencia"
+            }.get(method, "Desconocido")
+            
+            self.payments_tree.insert("", tk.END, values=(
+                method_name,
+                bank if method != "efectivo" else "N/A",
+                f"{amount:.2f}",
+                reference if method != "efectivo" else "N/A"
+            ))
+            
+            # Actualizar total pagado y saldo
+            self.paid_amount += amount
+            self.update_payment_summary()
+            
+            # Limpiar campos
+            self.payment_amount.set(0.0)
+            self.payment_reference.set("")
+            
+        except ValueError:
+            messagebox.showwarning("Error", "Ingrese un monto válido", parent=self.payment_window)
+
+    def remove_payment(self, event) -> None:
+        """Elimina un pago seleccionado de la lista"""
+        selected = self.payments_tree.selection()
+        if not selected:
+            return
+            
+        item = self.payments_tree.item(selected[0])
+        amount = float(item['values'][2])
+        
+        # Eliminar de la lista de pagos
+        for i, payment in enumerate(self.payment_details):
+            if payment['amount'] == amount:
+                del self.payment_details[i]
+                break
+        
+        # Eliminar del treeview
+        self.payments_tree.delete(selected[0])
+        
+        # Actualizar total pagado y saldo
+        self.paid_amount -= amount
+        self.update_payment_summary()
+
+    def update_payment_summary(self) -> None:
+        """Actualiza los labels de resumen de pagos"""
+        self.paid_label.config(text=f"Total Pagado: {self.paid_amount:.2f}")
+        balance = self.total - self.paid_amount
+        self.balance_label.config(text=f"Saldo Pendiente: {balance:.2f}")
+        
+        # Habilitar/deshabilitar botón de confirmar
+        if abs(balance) <= 0.01:  # Tolerancia para redondeos
+            self.confirm_btn.config(state=tk.NORMAL)
+        else:
+            self.confirm_btn.config(state=tk.DISABLED)
+
+    def confirm_sale(self) -> None:
+        """Confirma la venta con los pagos registrados"""
+        try:
+            # Verificar que el pago esté completo (con tolerancia para redondeos)
+            if abs(self.total - self.paid_amount) > 0.01:
+                messagebox.showwarning("Error", "El pago no está completo", parent=self.payment_window)
+                return
                 
-                # Crear la factura
-                invoice_id = Invoice.create_paid_invoice(
-                    customer_id=self.current_customer['id'],
-                    subtotal=subtotal,
-                    taxes=taxes,
-                    total=total,
-                    items=self.cart_items
-                )
-                
-                # Mostrar mensaje de éxito
-                messagebox.showinfo(
-                    "Éxito", 
-                    f"Venta realizada correctamente\nN° Factura: {invoice_id}",
-                    parent=self
-                )
-                
-                # Mostrar factura
-                customer_info = f"{self.current_customer['first_name']} {self.current_customer['last_name']}"
-                InvoiceViewer(
-                    self,
-                    invoice_id,
-                    customer_info,
-                    self.cart_items,
-                    subtotal,
-                    taxes,
-                    total
-                )
-                
-                self.refresh_data()
-                
-            except ValueError as e:
-                messagebox.showerror("Error de validación", str(e), parent=self)
-            except Exception as e:
-                messagebox.showerror("Error", f"No se pudo completar la venta: {str(e)}", parent=self)
+            # Mapear nombres de métodos de pago
+            method_names = {
+                "efectivo": "Efectivo",
+                "tarjeta_debito": "Tarjeta Débito",
+                "tarjeta_credito": "Tarjeta Crédito",
+                "pago_movil": "Pago Móvil",
+                "biopago": "Biopago",
+                "transferencia": "Transferencia"
+            }
+            
+            # Crear descripción de pagos
+            payment_description = "\n".join(
+                f"{method_names.get(p['method'], 'Desconocido')}" +
+                (f" ({p['bank']})" if p['bank'] != "N/A" else "") +
+                (f": {p['amount']:.2f} (Ref: {p['reference']})" if p['reference'] != "N/A" else f": {p['amount']:.2f}")
+                for p in self.payment_details
+            )
+            
+            # Crear la factura
+            invoice_id = Invoice.create_paid_invoice(
+                customer_id=self.current_customer['id'],
+                subtotal=self.subtotal,
+                taxes=self.taxes,
+                total=self.total,
+                #payment_method="Múltiples métodos" if len(self.payment_details) > 1 else method_names.get(self.payment_details[0]['method']),
+                #payment_details=payment_description,
+                items=self.cart_items
+            )
+            
+            # Mostrar mensaje de éxito
+            messagebox.showinfo(
+                "Éxito", 
+                f"Venta realizada correctamente\nN° Factura: {invoice_id}\n\nMétodos de pago:\n{payment_description}",
+                parent=self.payment_window
+            )
+            
+            # Mostrar factura
+            customer_info = f"{self.current_customer['first_name']} {self.current_customer['last_name']}"
+            InvoiceViewer(
+                self,
+                invoice_id,
+                customer_info,
+                self.cart_items,
+                self.subtotal,
+                self.taxes,
+                self.total,
+                #payment_description
+            )
+            
+            # Cerrar ventana y refrescar
+            self.payment_window.destroy()
+            self.refresh_data()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo completar la venta: {str(e)}", parent=self.payment_window)
 
     def search_customer(self) -> None:
         id_number = self.customer_id_var.get().strip()
