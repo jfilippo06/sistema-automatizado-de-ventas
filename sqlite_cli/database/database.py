@@ -370,6 +370,19 @@ def init_db() -> None:
             FOREIGN KEY (product_id) REFERENCES inventory(id)
         )
     ''')
+
+    # Tabla de bancos
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS banks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL UNIQUE,
+            status_id INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (status_id) REFERENCES status(id)
+        )
+    ''')
     
     conn.commit()
     conn.close()
