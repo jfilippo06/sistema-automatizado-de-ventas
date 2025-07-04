@@ -465,6 +465,8 @@ class BillingScreen(tk.Frame):
 
     def show_payment_screen(self) -> None:
         """Muestra la pantalla de procesamiento de pago"""
+        from sqlite_cli.models.bank_model import Bank
+        
         self.payment_window = tk.Toplevel(self)
         self.payment_window.title("Procesar Pago")
         
@@ -488,6 +490,10 @@ class BillingScreen(tk.Frame):
         self.total = self.subtotal + self.taxes
         self.paid_amount = 0.0
         self.payment_details = []
+        
+        # Obtener bancos activos
+        self.active_banks = Bank.get_active_banks()
+        bank_display_options = [f"{bank['code']} - {bank['name']}" for bank in self.active_banks]
         
         # Frame principal
         main_frame = tk.Frame(self.payment_window, padx=20, pady=20)
@@ -536,7 +542,7 @@ class BillingScreen(tk.Frame):
             font=("Arial", 9)
         ).pack(anchor=tk.W)
         
-        # Frame para métodos de pago (en una sola línea)
+        # Frame para métodos de pago
         method_frame = tk.Frame(main_frame)
         method_frame.pack(fill=tk.X, pady=5)
         
@@ -566,7 +572,7 @@ class BillingScreen(tk.Frame):
         )
         method_menu.pack(side=tk.LEFT, padx=5)
         
-        # Selector de banco (en la misma línea)
+        # Selector de banco
         self.bank_frame = tk.Frame(method_frame)
         
         tk.Label(
@@ -576,15 +582,39 @@ class BillingScreen(tk.Frame):
         ).pack(side=tk.LEFT)
         
         self.bank_var = tk.StringVar()
-        bank_options = ["Banco de Venezuela", "Banesco", "Mercantil"]
-        bank_menu = ttk.OptionMenu(
-            self.bank_frame,
-            self.bank_var,
-            bank_options[0],
-            *bank_options,
-            style='TMenubutton'
+        
+        if self.active_banks:
+            default_bank = f"{self.active_banks[0]['code']} - {self.active_banks[0]['name']}"
+            self.bank_var.set(default_bank)
+            
+            bank_menu = ttk.OptionMenu(
+                self.bank_frame,
+                self.bank_var,
+                default_bank,
+                *bank_display_options,
+                style='TMenubutton'
+            )
+            bank_menu.pack(side=tk.LEFT, padx=5)
+        else:
+            tk.Label(self.bank_frame, text="No hay bancos configurados", fg="red").pack(side=tk.LEFT)
+        
+        # Frame para referencia
+        self.reference_frame = tk.Frame(method_frame)
+        
+        tk.Label(
+            self.reference_frame, 
+            text="Referencia:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        self.payment_reference = tk.StringVar()
+        reference_entry = tk.Entry(
+            self.reference_frame,
+            textvariable=self.payment_reference,
+            font=("Arial", 10),
+            width=20
         )
-        bank_menu.pack(side=tk.LEFT, padx=5)
+        reference_entry.pack(side=tk.LEFT, padx=5)
         
         # Frame para monto
         amount_frame = tk.Frame(main_frame)
@@ -606,24 +636,6 @@ class BillingScreen(tk.Frame):
             validatecommand=(self.payment_window.register(self.validate_amount), '%P')
         )
         amount_entry.pack(side=tk.LEFT, padx=5)
-        
-        # Frame para referencia (solo para métodos no efectivo)
-        self.reference_frame = tk.Frame(amount_frame)
-        
-        tk.Label(
-            self.reference_frame, 
-            text="Referencia:",
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT)
-        
-        self.payment_reference = tk.StringVar()
-        reference_entry = tk.Entry(
-            self.reference_frame,
-            textvariable=self.payment_reference,
-            font=("Arial", 10),
-            width=20
-        )
-        reference_entry.pack(side=tk.LEFT, padx=5)
         
         # Botón para agregar pago
         add_payment_btn = tk.Button(
@@ -723,19 +735,23 @@ class BillingScreen(tk.Frame):
                 
             method = self.payment_method.get()
             
-            # Solo validar referencia y banco para métodos no efectivo
+            # Inicializar variables de banco y referencia
+            bank_name = ""
             reference = ""
-            bank = ""
             
             if method != "efectivo":
+                # Obtener el banco seleccionado
+                selected_bank_display = self.bank_var.get()
+                if not selected_bank_display:
+                    messagebox.showwarning("Error", "Debe seleccionar un banco", parent=self.payment_window)
+                    return
+                    
+                # Extraer el nombre completo del banco (todo después del código)
+                bank_name = selected_bank_display.split(" - ", 1)[1]
+                
                 reference = self.payment_reference.get().strip()
                 if not reference:
                     messagebox.showwarning("Error", "La referencia es obligatoria", parent=self.payment_window)
-                    return
-                    
-                bank = self.bank_var.get()
-                if not bank:
-                    messagebox.showwarning("Error", "Debe seleccionar un banco", parent=self.payment_window)
                     return
             
             # Agregar a la lista de pagos
@@ -743,7 +759,7 @@ class BillingScreen(tk.Frame):
                 "method": method,
                 "amount": amount,
                 "reference": reference if method != "efectivo" else "N/A",
-                "bank": bank if method != "efectivo" else "N/A"
+                "bank": bank_name if method != "efectivo" else "N/A"
             })
             
             # Agregar al treeview
@@ -758,7 +774,7 @@ class BillingScreen(tk.Frame):
             
             self.payments_tree.insert("", tk.END, values=(
                 method_name,
-                bank if method != "efectivo" else "N/A",
+                bank_name if method != "efectivo" else "N/A",
                 f"{amount:.2f}",
                 reference if method != "efectivo" else "N/A"
             ))
@@ -834,14 +850,14 @@ class BillingScreen(tk.Frame):
                 for p in self.payment_details
             )
             
-            # Crear la factura con los pagos
+            # Crear la factura con los pagos (incluyendo el nombre del banco)
             invoice_id = Invoice.create_paid_invoice(
                 customer_id=self.current_customer['id'],
                 subtotal=self.subtotal,
                 taxes=self.taxes,
                 total=self.total,
                 items=self.cart_items,
-                payment_details=self.payment_details  # Pasar los detalles de pago
+                payment_details=self.payment_details  # Esto incluye el nombre del banco
             )
             
             # Mostrar mensaje de éxito
