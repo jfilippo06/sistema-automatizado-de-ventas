@@ -492,8 +492,8 @@ class BillingScreen(tk.Frame):
         self.payment_details = []
         
         # Obtener bancos activos
-        self.active_banks = Bank.get_active_banks()
-        bank_display_options = [f"{bank['code']} - {bank['name']}" for bank in self.active_banks]
+        active_banks = Bank.get_active_banks()
+        bank_options = [f"{bank['code']} - {bank['name']}" for bank in active_banks]
         
         # Frame principal
         main_frame = tk.Frame(self.payment_window, padx=20, pady=20)
@@ -542,7 +542,7 @@ class BillingScreen(tk.Frame):
             font=("Arial", 9)
         ).pack(anchor=tk.W)
         
-        # Frame para métodos de pago
+        # Frame para métodos de pago (en una sola línea)
         method_frame = tk.Frame(main_frame)
         method_frame.pack(fill=tk.X, pady=5)
         
@@ -572,7 +572,7 @@ class BillingScreen(tk.Frame):
         )
         method_menu.pack(side=tk.LEFT, padx=5)
         
-        # Selector de banco
+        # Selector de banco (en la misma línea)
         self.bank_frame = tk.Frame(method_frame)
         
         tk.Label(
@@ -583,43 +583,26 @@ class BillingScreen(tk.Frame):
         
         self.bank_var = tk.StringVar()
         
-        if self.active_banks:
-            default_bank = f"{self.active_banks[0]['code']} - {self.active_banks[0]['name']}"
+        if active_banks:
+            default_bank = f"{active_banks[0]['code']} - {active_banks[0]['name']}"
             self.bank_var.set(default_bank)
             
             bank_menu = ttk.OptionMenu(
                 self.bank_frame,
                 self.bank_var,
                 default_bank,
-                *bank_display_options,
+                *bank_options,
                 style='TMenubutton'
             )
             bank_menu.pack(side=tk.LEFT, padx=5)
         else:
             tk.Label(self.bank_frame, text="No hay bancos configurados", fg="red").pack(side=tk.LEFT)
         
-        # Frame para referencia
-        self.reference_frame = tk.Frame(method_frame)
-        
-        tk.Label(
-            self.reference_frame, 
-            text="Referencia:",
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT)
-        
-        self.payment_reference = tk.StringVar()
-        reference_entry = tk.Entry(
-            self.reference_frame,
-            textvariable=self.payment_reference,
-            font=("Arial", 10),
-            width=20
-        )
-        reference_entry.pack(side=tk.LEFT, padx=5)
-        
-        # Frame para monto
+        # Frame para monto, botón y referencia (manteniendo el orden original)
         amount_frame = tk.Frame(main_frame)
         amount_frame.pack(fill=tk.X, pady=5)
         
+        # Campo de monto
         tk.Label(
             amount_frame, 
             text="Monto:",
@@ -645,7 +628,25 @@ class BillingScreen(tk.Frame):
             font=("Arial", 9),
             width=8
         )
-        add_payment_btn.pack(side=tk.LEFT, padx=10)
+        add_payment_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Campo de referencia (solo para métodos no efectivo)
+        self.reference_frame = tk.Frame(amount_frame)
+        
+        tk.Label(
+            self.reference_frame, 
+            text="Referencia:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        self.payment_reference = tk.StringVar()
+        reference_entry = tk.Entry(
+            self.reference_frame,
+            textvariable=self.payment_reference,
+            font=("Arial", 10),
+            width=20
+        )
+        reference_entry.pack(side=tk.LEFT, padx=5)
         
         # Actualizar visibilidad de frames según método
         def update_frames(*args):
