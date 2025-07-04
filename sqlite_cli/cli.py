@@ -41,7 +41,7 @@ def main() -> None:
         seed_invoice_types()
         seed_movement_types()
         seed_purchase_order_statuses()
-        seed_banks
+        seed_banks()
         
         # Semillas de entidades
         seed_suppliers()
@@ -66,7 +66,7 @@ def main() -> None:
         seed_roles()
         seed_persons()
         seed_users()
-        seed_banks
+        seed_banks()
         
         # Semillas de configuración
         seed_request_status()
