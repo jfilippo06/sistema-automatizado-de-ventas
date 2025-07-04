@@ -17,6 +17,7 @@ from seeds.invoice_status_seeds import seed_invoice_status
 from seeds.movement_type_seeds import seed_movement_types
 from seeds.invoice_type_seeds import seed_invoice_types
 from seeds.purchase_order_status_seed import seed_purchase_order_statuses
+from seeds.bank_seeds import seed_banks
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CLI para gestionar el inventario.")
@@ -40,6 +41,7 @@ def main() -> None:
         seed_invoice_types()
         seed_movement_types()
         seed_purchase_order_statuses()
+        seed_banks
         
         # Semillas de entidades
         seed_suppliers()
@@ -64,6 +66,7 @@ def main() -> None:
         seed_roles()
         seed_persons()
         seed_users()
+        seed_banks
         
         # Semillas de configuración
         seed_request_status()
