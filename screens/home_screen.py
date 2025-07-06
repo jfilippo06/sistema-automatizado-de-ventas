@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import Menu, ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 from typing import Callable, Any
@@ -84,7 +84,6 @@ class HomeScreen(tk.Frame):
 
         self.images = {}
         self.menu_buttons = {}  # Para almacenar referencias a los botones de menú
-        self.submenu_windows = {}  # Para almacenar ventanas emergentes de submenús
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -242,65 +241,16 @@ class HomeScreen(tk.Frame):
         self.load_image(bottom_frame, "assets/universidad.png", (40, 40)).pack(side=tk.RIGHT, padx=10)
 
     def create_dropdown_menu(self, parent, title, options, callbacks_dict):
-        """Crea un menú desplegable con botones de submenú que aparece a la derecha"""
+        """Crea un menú desplegable estilo menú contextual"""
         # Botón principal del menú
         main_btn = ttk.Button(
             parent,
             text=title,
-            command=lambda: self.toggle_submenu_window(title, options, callbacks_dict),
+            command=lambda: self.show_context_menu(title, options, callbacks_dict, main_btn),
             style="Menu.TButton"
         )
         main_btn.pack(pady=3, padx=5, fill=tk.X)
         self.menu_buttons[title] = main_btn
-
-    def toggle_submenu_window(self, title, options, callbacks_dict):
-        """Alterna la visibilidad del submenú emergente"""
-        if title in self.submenu_windows and self.submenu_windows[title].winfo_exists():
-            self.submenu_windows[title].destroy()
-            del self.submenu_windows[title]
-        else:
-            self.close_all_submenus()
-            self.show_submenu(title, options, callbacks_dict)
-
-    def show_submenu(self, title, options, callbacks_dict):
-        """Muestra el submenú como una ventana emergente a la derecha del botón"""
-        # Obtener la posición del botón
-        btn = self.menu_buttons[title]
-        x = btn.winfo_rootx() + btn.winfo_width()
-        y = btn.winfo_rooty()
-        
-        # Crear ventana emergente
-        submenu = tk.Toplevel(self)
-        submenu.wm_overrideredirect(True)
-        submenu.wm_geometry(f"+{x}+{y}")
-        submenu.configure(bg="#e0e0e0", bd=1, relief=tk.RAISED)
-        
-        # Configurar un ancho fijo más grande (200 píxeles)
-        submenu_frame = tk.Frame(submenu, bg="#e0e0e0", width=200)
-        submenu_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Crear botones de submenú
-        for option_text, option_key in options.items():
-            btn = ttk.Button(
-                submenu_frame,
-                text=option_text,
-                command=lambda k=option_key: self.navigate_submenu(k, callbacks_dict, submenu),
-                style="Submenu.TButton"
-            )
-            btn.pack(pady=1, padx=1, fill=tk.X)
-        
-        # Guardar referencia a la ventana emergente
-        self.submenu_windows[title] = submenu
-        
-        # Configurar eventos
-        submenu.bind("<FocusOut>", lambda e: submenu.destroy())
-        submenu.bind("<Escape>", lambda e: submenu.destroy())
-        submenu.bind("<ButtonPress>", lambda e: self.check_click_outside_submenu(e, submenu))
-
-    def check_click_outside_submenu(self, event, submenu):
-        """Verifica si se hizo clic fuera del submenú"""
-        if not submenu.winfo_containing(event.x_root, event.y_root):
-            submenu.destroy()
 
     def create_maintenance_menu(self, parent):
         """Menú especial para Mantenimiento con funciones integradas"""
@@ -308,88 +258,57 @@ class HomeScreen(tk.Frame):
         main_btn = ttk.Button(
             parent,
             text="Mantenimiento",
-            command=lambda: self.toggle_maintenance_menu(),
+            command=lambda: self.show_maintenance_menu(main_btn),
             style="Menu.TButton"
         )
         main_btn.pack(pady=3, padx=5, fill=tk.X)
         self.menu_buttons["Mantenimiento"] = main_btn
 
-    def toggle_maintenance_menu(self):
-        """Alterna el menú de mantenimiento"""
-        if "Mantenimiento" in self.submenu_windows and self.submenu_windows["Mantenimiento"].winfo_exists():
-            self.submenu_windows["Mantenimiento"].destroy()
-            del self.submenu_windows["Mantenimiento"]
-        else:
-            self.close_all_submenus()
-            self.show_maintenance_menu()
+    def show_context_menu(self, title, options, callbacks_dict, widget):
+        """Muestra un menú contextual al hacer clic en el botón"""
+        menu = Menu(self, tearoff=0)
+        
+        for option_text, option_key in options.items():
+            menu.add_command(
+                label=option_text,
+                command=lambda k=option_key: callbacks_dict[k]()
+            )
+        
+        # Mostrar el menú contextual en la posición del botón
+        x = widget.winfo_rootx()
+        y = widget.winfo_rooty() + widget.winfo_height()
+        menu.post(x, y)
 
-    def show_maintenance_menu(self):
-        """Muestra el menú de mantenimiento como ventana emergente"""
-        # Obtener la posición del botón
-        btn = self.menu_buttons["Mantenimiento"]
-        x = btn.winfo_rootx() + btn.winfo_width()
-        y = btn.winfo_rooty()
+    def show_maintenance_menu(self, widget):
+        """Muestra el menú de mantenimiento como menú contextual"""
+        menu = Menu(self, tearoff=0)
         
-        # Crear ventana emergente
-        submenu = tk.Toplevel(self)
-        submenu.wm_overrideredirect(True)
-        submenu.wm_geometry(f"+{x}+{y}")
-        submenu.configure(bg="#e0e0e0", bd=1, relief=tk.RAISED)
+        menu.add_command(
+            label="Compactar Base de Datos",
+            command=self.compress_database
+        )
         
-        # Configurar un ancho fijo más grande (200 píxeles)
-        submenu_frame = tk.Frame(submenu, bg="#e0e0e0", width=200)
-        submenu_frame.pack(fill=tk.BOTH, expand=True)
+        menu.add_command(
+            label="Exportar Base de Datos",
+            command=self.export_database
+        )
         
-        # Crear botones de submenú
-        ttk.Button(
-            submenu_frame,
-            text="Compactar Base de Datos",
-            command=lambda: [self.compress_database(), submenu.destroy()],
-            style="Submenu.TButton"
-        ).pack(pady=1, padx=1, fill=tk.X)
+        menu.add_command(
+            label="Importar Base de Datos",
+            command=self.import_database
+        )
         
-        ttk.Button(
-            submenu_frame,
-            text="Exportar Base de Datos",
-            command=lambda: [self.export_database(), submenu.destroy()],
-            style="Submenu.TButton"
-        ).pack(pady=1, padx=1, fill=tk.X)
-        
-        ttk.Button(
-            submenu_frame,
-            text="Importar Base de Datos",
-            command=lambda: [self.import_database(), submenu.destroy()],
-            style="Submenu.TButton"
-        ).pack(pady=1, padx=1, fill=tk.X)
-        
-        # Guardar referencia a la ventana emergente
-        self.submenu_windows["Mantenimiento"] = submenu
-        
-        # Configurar eventos
-        submenu.bind("<FocusOut>", lambda e: submenu.destroy())
-        submenu.bind("<Escape>", lambda e: submenu.destroy())
-        submenu.bind("<ButtonPress>", lambda e: self.check_click_outside_submenu(e, submenu))
-
-    def close_all_submenus(self):
-        """Cierra todos los submenús abiertos"""
-        for title, window in self.submenu_windows.items():
-            if window.winfo_exists():
-                window.destroy()
-        self.submenu_windows.clear()
+        # Mostrar el menú contextual en la posición del botón
+        x = widget.winfo_rootx()
+        y = widget.winfo_rooty() + widget.winfo_height()
+        menu.post(x, y)
 
     def navigate(self, key):
         """Navegación para botones principales"""
-        self.close_all_submenus()
         if key == "exit":
             self.exit()
         elif key in self.main_callbacks:
             self.main_callbacks[key]()
-
-    def navigate_submenu(self, key, callbacks_dict, submenu_window):
-        """Navegación para opciones de submenú"""
-        submenu_window.destroy()
-        if key in callbacks_dict:
-            callbacks_dict[key]()
 
     def load_image(self, parent, path, size):
         try:
@@ -403,7 +322,6 @@ class HomeScreen(tk.Frame):
             return label
 
     def exit(self):
-        self.close_all_submenus()
         SessionManager.logout()
         self.open_login_screen_callback()
 
