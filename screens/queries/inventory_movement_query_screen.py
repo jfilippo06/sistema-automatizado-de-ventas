@@ -1,26 +1,26 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import Optional
+from typing import Any, Optional, Callable
 from datetime import datetime
 from sqlite_cli.models.inventory_report_model import InventoryReport
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_combobox import CustomCombobox
 from widgets.custom_entry import CustomEntry
-from reports.inventory_movement_viewer import InventoryMovementViewer
-from utils.pdf_generator import PDFGenerator
 from utils.field_formatter import FieldFormatter
 
-class InventoryMovementReportScreen(tk.Toplevel):
-    def __init__(self, parent: tk.Widget, inventory_id: int):
+class InventoryMovementQueryScreen(tk.Frame):
+    def __init__(
+        self,
+        parent: tk.Widget,
+        inventory_id: int,
+        open_previous_screen_callback: Callable[[], None]
+    ) -> None:
         super().__init__(parent)
-        self.title("Historial de Movimientos")
         self.parent = parent
         self.inventory_id = inventory_id
+        self.open_previous_screen_callback = open_previous_screen_callback
         self.configure(bg="#f5f5f5")
-        
-        self.resizable(True, True)
-        self.state('zoomed')
         
         # Variables
         self.movement_type_var = tk.StringVar(value="Todos")
@@ -30,6 +30,10 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.configure_ui()
         self.load_product_info()
         self.refresh_data()
+
+    def pack(self, **kwargs: Any) -> None:
+        self.parent.state('zoomed')
+        super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self):
         """Configura la interfaz de usuario"""
@@ -132,28 +136,10 @@ class InventoryMovementReportScreen(tk.Toplevel):
         action_frame = tk.Frame(row1_frame, bg="#f5f5f5")
         action_frame.pack(side=tk.RIGHT)
         
-        btn_report = CustomButton(
-            action_frame,
-            text="Ver Reporte",
-            command=self.generate_report,
-            padding=6,
-            width=15
-        )
-        btn_report.pack(side=tk.LEFT, padx=5)
-        
-        btn_pdf = CustomButton(
-            action_frame,
-            text="Generar PDF",
-            command=self.generate_pdf,
-            padding=6,
-            width=15,
-        )
-        btn_pdf.pack(side=tk.LEFT, padx=5)
-        
         btn_back = CustomButton(
             action_frame,
             text="Regresar",
-            command=self.destroy,
+            command=self.go_back,
             padding=6,
             width=10
         )
@@ -273,30 +259,6 @@ class InventoryMovementReportScreen(tk.Toplevel):
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")
         self.current_movements = movements
 
-    def generate_report(self):
-        """Genera el reporte visual de movimientos"""
-        if hasattr(self, 'current_movements') and self.current_movements:
-            report_title = f"Historial de Movimientos - {self.product_info['product']}"
-            filters = self._get_current_filters()
-            InventoryMovementViewer(self, report_title, self.product_info, self.current_movements, filters)
-        else:
-            messagebox.showwarning("Advertencia", "No hay datos para generar el reporte", parent=self)
-
-    def generate_pdf(self):
-        """Genera directamente un PDF con los movimientos"""
-        if hasattr(self, 'current_movements') and self.current_movements:
-            report_title = f"Historial de Movimientos - {self.product_info['product']}"
-            filters = self._get_current_filters()
-            PDFGenerator.generate_movement_report(
-                parent=self,
-                title=report_title,
-                product_info=self.product_info,
-                movements=self.current_movements,
-                filters=filters
-            )
-        else:
-            messagebox.showwarning("Advertencia", "No hay datos para generar PDF", parent=self)
-
     def _get_current_filters(self):
         """Obtiene los filtros actuales aplicados"""
         filters = []
@@ -312,3 +274,8 @@ class InventoryMovementReportScreen(tk.Toplevel):
             filters.append(f"Tipo: {self.movement_type_var.get()}")
             
         return ", ".join(filters) if filters else "Sin filtros aplicados"
+    
+    def go_back(self) -> None:
+        """Regresa a la pantalla anterior"""
+        self.pack_forget()
+        self.open_previous_screen_callback()

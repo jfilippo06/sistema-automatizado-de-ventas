@@ -21,6 +21,7 @@ class HomeScreen(tk.Frame):
         open_recovery_callback: Callable[[], None],
         open_billing_callback: Callable[[], None],
         open_reports_callback: Callable[[], None],
+        open_queries_callback: Callable[[], None],
         open_catalog_callback: Callable[[], None],
         open_purchase_orders_callback: Callable[[], None],
         open_purchase_order_report_callback: Callable[[], None]
@@ -39,6 +40,7 @@ class HomeScreen(tk.Frame):
             "recovery": open_recovery_callback,
             "billing": open_billing_callback,
             "reports": open_reports_callback,
+            "queries": open_queries_callback,
             "catalog": open_catalog_callback,
             "purchase_orders": open_purchase_orders_callback,
             "purchase_order_report": open_purchase_order_report_callback
@@ -96,19 +98,20 @@ class HomeScreen(tk.Frame):
             ("Proveedores", "suppliers", "#2356a2"),
             ("Productos", "inventory", "#3a6eb5"),
             ("Orden de compra", "purchase_orders", "#4d87d1"),
-            ("Reportes", "reports", "#5c9ae0"),
-            ("Ventas", "billing", "#6eabed"),
-            ("Clientes", "customers", "#2356a2"),
-            ("Solicitudes de servicio", "service_requests", "#3a6eb5"),
-            ("Servicios", "services", "#4d87d1"),
-            ("Catálogo", "catalog", "#5c9ae0"),
-            ("Mantenimiento", "maintenance", "#6eabed"),
-            ("Recuperación", "recovery", "#2356a2"),
-            ("Configuración", "config", "#3a6eb5"),
+            ("Consultas", "queries", "#5c9ae0"),
+            ("Reportes", "reports", "#6eabed"),
+            ("Ventas", "billing", "#2356a2"),
+            ("Clientes", "customers", "#3a6eb5"),
+            ("Solicitudes de servicio", "service_requests", "#4d87d1"),
+            ("Servicios", "services", "#5c9ae0"),
+            ("Catálogo", "catalog", "#6eabed"),
+            ("Mantenimiento", "maintenance", "#2356a2"),
+            ("Recuperación", "recovery", "#3a6eb5"),
+            ("Configuración", "config", "#4d87d1"),
             ("Salir", "exit", "#d9534f")
         ]
         
-        # Organización de botones en 4 columnas (para acomodar los 13 botones mejor)
+        # Organización de botones en 4 columnas
         columns = 4
         for i, (text, key, color) in enumerate(buttons):
             row = i // columns
@@ -130,7 +133,6 @@ class HomeScreen(tk.Frame):
             img_frame = tk.Frame(parent, bg="#f5f5f5")
             img_frame.pack()
             
-            # Cargar las tres imágenes existentes
             img_paths = [
                 ("assets/republica.png", (70, 70)),
                 ("assets/empresa.png", (70, 70)),
@@ -148,10 +150,8 @@ class HomeScreen(tk.Frame):
 
     def create_menu_button(self, parent, text, bg_color, command):
         btn = tk.Frame(parent, bg=bg_color, bd=0, highlightthickness=0)
-        
         btn.bind("<Button-1>", lambda e: command())
         
-        # Texto del botón
         label = tk.Label(
             btn, 
             text=text, 
@@ -163,8 +163,6 @@ class HomeScreen(tk.Frame):
             wraplength=100
         )
         label.pack(fill=tk.BOTH, expand=True)
-        
-        # Hacer todo el label clickeable
         label.bind("<Button-1>", lambda e: command())
         
         return btn

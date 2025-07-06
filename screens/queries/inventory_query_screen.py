@@ -1,17 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Callable, Any
-from datetime import datetime
+from screens.queries.inventory_movement_query_screen import InventoryMovementQueryScreen
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.inventory_report_model import InventoryReport
-from utils.session_manager import SessionManager
-from screens.reports.inventory.inventory_movement_report import InventoryMovementReportScreen
-from screens.reports.full_inventory_report import FullInventoryReportScreen
 
-class InventoryReportScreen(tk.Frame):
+class InventoryQueryScreen(tk.Frame):
     def __init__(
         self,
         parent: tk.Widget,
@@ -37,7 +33,7 @@ class InventoryReportScreen(tk.Frame):
         
         title_label = CustomLabel(
             header_frame,
-            text="Reporte de productos",
+            text="Consulta de Productos",
             font=("Arial", 20, "bold"),
             fg="white",
             bg="#4a6fa5"
@@ -78,21 +74,11 @@ class InventoryReportScreen(tk.Frame):
         search_entry.pack(side=tk.LEFT, padx=5)
         search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
 
-        # Botón de reporte completo
-        btn_full_report = CustomButton(
-            filters_frame,
-            text="Reporte Completo",
-            command=self.open_full_report,
-            padding=6,
-            width=20
-        )
-        btn_full_report.pack(side=tk.RIGHT, padx=5)
-
-        # Botón de reporte de movimientos
+        # Botón de historial de movimientos
         btn_movements = CustomButton(
             filters_frame,
             text="Historial del Producto",
-            command=self.open_movement_report,
+            command=self.open_movement_query,
             padding=6,
             width=20
         )
@@ -117,7 +103,7 @@ class InventoryReportScreen(tk.Frame):
             ("ID", 50, tk.CENTER),
             ("Código", 100, tk.CENTER),
             ("Producto", 150, tk.W),
-            ("Descripción", 300, tk.W),  # Aumentado de 200 a 300
+            ("Descripción", 300, tk.W),
             ("Cantidad", 70, tk.CENTER),
             ("Existencias", 80, tk.CENTER),
             ("Stock mínimo", 80, tk.CENTER),
@@ -172,14 +158,15 @@ class InventoryReportScreen(tk.Frame):
                 expiration_date
             ))
 
-    def open_full_report(self) -> None:
-        """Abre la pantalla de reporte completo"""
-        FullInventoryReportScreen(self.parent, self.search_var.get())
-
-    def open_movement_report(self) -> None:
-        """Abre la pantalla de reporte de movimientos para el producto seleccionado"""
+    def open_movement_query(self) -> None:
+        """Abre la pantalla de consulta de movimientos para el producto seleccionado"""
         if self.selected_item_id:
-            InventoryMovementReportScreen(self.parent, self.selected_item_id)
+            self.pack_forget()
+            InventoryMovementQueryScreen(
+                self.parent,
+                self.selected_item_id,
+                lambda: self.pack(fill=tk.BOTH, expand=True)
+            ).pack(fill=tk.BOTH, expand=True)
         else:
             messagebox.showwarning("Advertencia", "Por favor seleccione un producto", parent=self)
 
