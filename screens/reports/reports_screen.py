@@ -5,7 +5,7 @@ from typing import Any, Callable
 from PIL import Image, ImageTk
 from screens.reports.sales_report_screen import SalesReportScreen
 from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
-from screens.reports.inventory.inventory_report_screen import InventoryReportScreen
+from screens.reports.inventory.full_inventory_report import FullInventoryReportScreen
 
 class ReportsScreen(tk.Frame):
     def __init__(
@@ -21,7 +21,7 @@ class ReportsScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-         # Tamaño de la ventana
+        # Tamaño de la ventana
         window_width = 700
         window_height = 500
         
@@ -127,7 +127,7 @@ class ReportsScreen(tk.Frame):
 
     def inventory_report(self) -> None:
         self.pack_forget()
-        inventory_report_screen = InventoryReportScreen(
+        inventory_report_screen = FullInventoryReportScreen(
             self.parent,
             lambda: self.pack(fill=tk.BOTH, expand=True)
         )

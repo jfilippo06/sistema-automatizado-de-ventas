@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import Optional
+from typing import Any, Optional, Callable
 from sqlite_cli.models.inventory_report_model import InventoryReport
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -9,15 +9,17 @@ from reports.inventory_report_viewer import InventoryReportViewer
 from utils.pdf_generator import PDFGenerator
 from utils.field_formatter import FieldFormatter
 
-class FullInventoryReportScreen(tk.Toplevel):
-    def __init__(self, parent: tk.Widget, initial_search: Optional[str] = None):
+class FullInventoryReportScreen(tk.Frame):
+    def __init__(
+        self,
+        parent: tk.Widget,
+        open_previous_screen_callback: Callable[[], None],
+        initial_search: Optional[str] = None
+    ) -> None:
         super().__init__(parent)
-        self.title("Reporte Completo de Inventario")
         self.parent = parent
+        self.open_previous_screen_callback = open_previous_screen_callback
         self.configure(bg="#f5f5f5")
-        
-        self.resizable(True, True)
-        self.state('zoomed')
         
         # Variables
         self.search_var = tk.StringVar(value=initial_search if initial_search else "")
@@ -30,15 +32,38 @@ class FullInventoryReportScreen(tk.Toplevel):
         self.configure_ui()
         self.refresh_data()
 
+    def pack(self, **kwargs: Any) -> None:
+        self.parent.state('zoomed')
+        super().pack(fill=tk.BOTH, expand=True)
+
     def configure_ui(self):
-        # Frame principal
-        main_frame = tk.Frame(self, bg="#f5f5f5", padx=10, pady=10)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Header
+        header_frame = tk.Frame(self, bg="#4a6fa5")
+        header_frame.pack(side=tk.TOP, fill=tk.X)
         
-        # Frame de filtros (3 filas exactas)
-        filters_frame = tk.Frame(main_frame, bg="#f5f5f5", pady=10)
+        title_label = CustomLabel(
+            header_frame,
+            text="Reporte de productos",
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#4a6fa5"
+        )
+        title_label.pack(side=tk.LEFT, padx=20, pady=15)
+
+        # Botón de regreso
+        btn_back = CustomButton(
+            header_frame,
+            text="Regresar",
+            command=self.go_back,
+            padding=8,
+            width=10,
+        )
+        btn_back.pack(side=tk.RIGHT, padx=20, pady=5)
+
+        # Frame de filtros
+        filters_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=10)
         filters_frame.pack(fill=tk.X)
-        
+
         # Fila 1: Búsqueda de producto + botón Filtrar
         row1_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row1_frame.pack(fill=tk.X, pady=5)
@@ -68,7 +93,6 @@ class FullInventoryReportScreen(tk.Toplevel):
         )
         btn_filter.pack(side=tk.LEFT, padx=5)
         
-        # Botón Limpiar añadido aquí
         btn_clear = CustomButton(
             row1_frame,
             text="Limpiar",
@@ -77,7 +101,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             width=10
         )
         btn_clear.pack(side=tk.LEFT, padx=5)
-        
+
         # Fila 2: Cantidad y Existencias
         row2_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row2_frame.pack(fill=tk.X, pady=5)
@@ -117,7 +141,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         )
         existencia_entry.pack(side=tk.LEFT, padx=5)
         FieldFormatter.bind_validation(existencia_entry, 'integer')
-        
+
         # Fila 3: Stock mínimo, Stock máximo, Proveedor y botones
         row3_frame = tk.Frame(filters_frame, bg="#f5f5f5")
         row3_frame.pack(fill=tk.X, pady=5)
@@ -175,7 +199,7 @@ class FullInventoryReportScreen(tk.Toplevel):
         supplier_entry.pack(side=tk.LEFT, padx=5)
         FieldFormatter.bind_validation(supplier_entry, 'first_name')
         
-        # Botones de acción en la misma fila 3
+        # Botones de acción
         btn_pdf = CustomButton(
             row3_frame,
             text="Generar PDF",
@@ -193,41 +217,21 @@ class FullInventoryReportScreen(tk.Toplevel):
             width=15
         )
         btn_report.pack(side=tk.RIGHT, padx=5)
-        
-        btn_back = CustomButton(
-            row3_frame,
-            text="Regresar",
-            command=self.destroy,
-            padding=6,
-            width=10
-        )
-        btn_back.pack(side=tk.RIGHT)
-        
-        # Treeview con scrollbars
-        tree_container = tk.Frame(main_frame, bg="#f5f5f5")
-        tree_container.pack(fill=tk.BOTH, expand=True)
-        
-        # Scrollbars
-        xscrollbar = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL)
-        xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        
-        yscrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL)
-        yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Treeview (sin estado)
+
+        # Treeview
+        tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
+        tree_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
         self.tree = ttk.Treeview(
-            tree_container,
+            tree_frame,
             columns=("ID", "Código", "Producto", "Descripción", "Cantidad", 
                     "Stock", "Stock mínimo", "Stock máximo", 
                     "Precio compra", "Precio venta", "Proveedor", "Vencimiento"),
             show="headings",
             height=20,
-            xscrollcommand=xscrollbar.set,
-            yscrollcommand=yscrollbar.set
+            style="Custom.Treeview"
         )
-        self.tree.pack(fill=tk.BOTH, expand=True)
-        
-        # Configurar columnas
+
         columns = [
             ("ID", 50, tk.CENTER),
             ("Código", 80, tk.CENTER),
@@ -242,14 +246,19 @@ class FullInventoryReportScreen(tk.Toplevel):
             ("Proveedor", 120, tk.W),
             ("Vencimiento", 100, tk.CENTER)
         ]
-        
+
         for col, width, anchor in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
-        
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
         # Contador de resultados
         self.count_label = CustomLabel(
-            main_frame,
+            self,
             text="0 productos encontrados",
             font=("Arial", 10),
             bg="#f5f5f5"
@@ -272,7 +281,7 @@ class FullInventoryReportScreen(tk.Toplevel):
             search_term = self.search_var.get() or None
             supplier = self.supplier_var.get() or None
             
-            # Convertir valores numéricos, manejando campos vacíos
+            # Convertir valores numéricos
             quantity = int(self.quantity_var.get()) if self.quantity_var.get().isdigit() else None
             min_stock = int(self.min_stock_var.get()) if self.min_stock_var.get().isdigit() else None
             max_stock = int(self.max_stock_var.get()) if self.max_stock_var.get().isdigit() else None
@@ -337,3 +346,9 @@ class FullInventoryReportScreen(tk.Toplevel):
             )
         else:
             messagebox.showwarning("Advertencia", "No hay datos para generar PDF", parent=self)
+
+    def go_back(self) -> None:
+        """Regresa a la pantalla anterior"""
+        self.pack_forget()
+        self.parent.state('normal')
+        self.open_previous_screen_callback()
