@@ -54,8 +54,8 @@ class HomeScreen(tk.Frame):
             self.open_login_screen_callback()
             return
 
-        window_width = 1000
-        window_height = 600
+        window_width = 900
+        window_height = 650
 
         screen_width = self.parent.winfo_screenwidth()
         screen_height = self.parent.winfo_screenheight()
@@ -68,28 +68,62 @@ class HomeScreen(tk.Frame):
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        # Header
-        header_frame = tk.Frame(self, bg="white")
-        header_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.load_image(header_frame, "assets/republica.png", (70, 70)).pack(side=tk.LEFT, padx=5)
-
-        tk.Label(header_frame, text="Sistema de Gestión de Ventas y Servicios", font=("Arial", 18, "bold"), bg="white").pack(side=tk.LEFT, padx=10)
-
-        self.load_image(header_frame, "assets/empresa.png", (70, 70)).pack(side=tk.LEFT, padx=5)
-        self.load_image(header_frame, "assets/universidad.png", (70, 70)).pack(side=tk.LEFT, padx=5)
-
-        salir_button = tk.Button(header_frame, text="Salir", command=self.exit, bg="#eeeeee", padx=10)
+        # Configuración de estilos
+        self.style = ttk.Style()
+        self.style.configure("TButton", padding=5, font=("Arial", 9))
+        
+        # Header compacto
+        header_frame = tk.Frame(self, bg="white", height=60)
+        header_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # Imagen de la empresa (principal)
+        self.load_image(header_frame, "assets/empresa.png", (50, 50)).pack(side=tk.LEFT, padx=10)
+        
+        # Título
+        title = tk.Label(
+            header_frame, 
+            text="Gestión de Ventas y Servicios",
+            font=("Arial", 14, "bold"), 
+            bg="white"
+        )
+        title.pack(side=tk.LEFT, padx=5, expand=True)
+        
+        # Único botón de salir en esquina derecha
+        salir_button = ttk.Button(
+            header_frame, 
+            text="Salir", 
+            command=self.exit,
+            style="TButton"
+        )
         salir_button.pack(side=tk.RIGHT, padx=10)
 
-        # Main content
+        # Contenido principal
         main_frame = tk.Frame(self, bg="white")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Left menu
-        menu_frame = tk.Frame(main_frame, bg="#f0f0f0", width=300)
-        menu_frame.pack(side=tk.LEFT, fill=tk.Y)
+        # Frame para menú con scrollbar
+        menu_container = tk.Frame(main_frame, bg="#f0f0f0")
+        menu_container.pack(side=tk.LEFT, fill=tk.Y, padx=(0,5))
 
+        # Canvas y scrollbar
+        canvas = tk.Canvas(menu_container, bg="#f0f0f0", width=200, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(menu_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f0f0f0")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Botones del menú en una sola columna
         buttons = [
             ("Proveedores", "suppliers"),
             ("Productos", "inventory"),
@@ -103,27 +137,38 @@ class HomeScreen(tk.Frame):
             ("Catálogo", "catalog"),
             ("Mantenimiento", "maintenance"),
             ("Recuperación", "recovery"),
-            ("Configuración", "config"),
-            ("Salir", "exit")
+            ("Configuración", "config")
         ]
 
         for label, key in buttons:
-            color = "#d9534f" if key == "exit" else "#2356a2"
-            btn = tk.Button(menu_frame, text=label, command=lambda k=key: self.navigate(k), bg=color, fg="white", font=("Arial", 10), width=25, pady=10)
-            btn.pack(pady=3, padx=10, anchor="w")
+            btn = ttk.Button(
+                scrollable_frame, 
+                text=label, 
+                command=lambda k=key: self.navigate(k),
+                style="TButton",
+                width=20
+            )
+            btn.pack(pady=3, padx=5, fill=tk.X)
 
-        # Right image
+        # Área de imagen principal
         image_frame = tk.Frame(main_frame, bg="white")
         image_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        central_img = self.load_image(image_frame, "assets/central_image.png", (800, 500))
-        central_img.pack(expand=True)
+        central_img = self.load_image(image_frame, "assets/central_image.png", (500, 350))
+        central_img.pack(expand=True, padx=5, pady=5)
 
-        # Bottom logo
-        bottom_frame = tk.Frame(self, bg="white")
-        bottom_frame.pack(fill=tk.X, pady=5)
-
-        tk.Label(bottom_frame, text="Gobierno Bolivariano de Venezuela", font=("Arial", 12, "bold"), bg="white").pack()
+        # Pie de página con imágenes en esquinas
+        bottom_frame = tk.Frame(self, bg="white", height=50)
+        bottom_frame.pack(fill=tk.X, pady=(0,5))
+        
+        # Imagen en esquina izquierda
+        self.load_image(bottom_frame, "assets/republica.png", (40, 40)).pack(side=tk.LEFT, padx=10)
+        
+        # Espacio central vacío
+        tk.Frame(bottom_frame, bg="white").pack(side=tk.LEFT, expand=True, fill=tk.X)
+        
+        # Imagen en esquina derecha
+        self.load_image(bottom_frame, "assets/universidad.png", (40, 40)).pack(side=tk.RIGHT, padx=10)
 
     def load_image(self, parent, path, size):
         try:
