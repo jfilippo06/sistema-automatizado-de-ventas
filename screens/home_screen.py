@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-from typing import Any, Callable
+from typing import Callable, Any
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from utils.session_manager import SessionManager
@@ -45,8 +45,7 @@ class HomeScreen(tk.Frame):
             "purchase_orders": open_purchase_orders_callback,
             "purchase_order_report": open_purchase_order_report_callback
         }
-        
-        self.configure(bg="#f5f5f5")
+
         self.images = {}
         self.configure_ui()
 
@@ -54,118 +53,88 @@ class HomeScreen(tk.Frame):
         if not SessionManager.is_authenticated():
             self.open_login_screen_callback()
             return
-            
-        # Tamaño de la ventana
-        window_width = 700
-        window_height = 500
-        
-        # Calcular posición para centrar
+
+        window_width = 1000
+        window_height = 600
+
         screen_width = self.parent.winfo_screenwidth()
         screen_height = self.parent.winfo_screenheight()
-        
+
         x = (screen_width // 2) - (window_width // 2)
         y = (screen_height // 2) - (window_height // 2)
-        
-        # Configurar geometría centrada
+
         self.parent.geometry(f"{window_width}x{window_height}+{x}+{y}")
         self.parent.resizable(False, False)
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
-        # Frame principal con organización vertical
-        main_frame = tk.Frame(self, bg="#f5f5f5")
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        # Mostrar las tres imágenes en una fila
-        self.load_and_display_images(main_frame)
-        
-        # Título del sistema
-        title = CustomLabel(
-            main_frame,
-            text="Sistema de Gestión",
-            font=("Arial", 24, "bold"),
-            fg="#2356a2",
-            bg="#f5f5f5"
-        )
-        title.pack(pady=(20, 30))
-        
-        # Contenedor para los botones
-        buttons_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        buttons_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Botones principales en el orden solicitado
+        # Header
+        header_frame = tk.Frame(self, bg="white")
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.load_image(header_frame, "assets/republica.png", (70, 70)).pack(side=tk.LEFT, padx=5)
+
+        tk.Label(header_frame, text="Sistema de Gestión de Ventas y Servicios", font=("Arial", 18, "bold"), bg="white").pack(side=tk.LEFT, padx=10)
+
+        self.load_image(header_frame, "assets/empresa.png", (70, 70)).pack(side=tk.LEFT, padx=5)
+        self.load_image(header_frame, "assets/universidad.png", (70, 70)).pack(side=tk.LEFT, padx=5)
+
+        salir_button = tk.Button(header_frame, text="Salir", command=self.exit, bg="#eeeeee", padx=10)
+        salir_button.pack(side=tk.RIGHT, padx=10)
+
+        # Main content
+        main_frame = tk.Frame(self, bg="white")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Left menu
+        menu_frame = tk.Frame(main_frame, bg="#f0f0f0", width=300)
+        menu_frame.pack(side=tk.LEFT, fill=tk.Y)
+
         buttons = [
-            ("Proveedores", "suppliers", "#2356a2"),
-            ("Productos", "inventory", "#3a6eb5"),
-            ("Orden de compra", "purchase_orders", "#4d87d1"),
-            ("Consultas", "queries", "#5c9ae0"),
-            ("Reportes", "reports", "#6eabed"),
-            ("Ventas", "billing", "#2356a2"),
-            ("Clientes", "customers", "#3a6eb5"),
-            ("Solicitudes de servicio", "service_requests", "#4d87d1"),
-            ("Servicios", "services", "#5c9ae0"),
-            ("Catálogo", "catalog", "#6eabed"),
-            ("Mantenimiento", "maintenance", "#2356a2"),
-            ("Recuperación", "recovery", "#3a6eb5"),
-            ("Configuración", "config", "#4d87d1"),
-            ("Salir", "exit", "#d9534f")
+            ("Proveedores", "suppliers"),
+            ("Productos", "inventory"),
+            ("Orden de compra", "purchase_orders"),
+            ("Consultas", "queries"),
+            ("Reportes", "reports"),
+            ("Ventas", "billing"),
+            ("Clientes", "customers"),
+            ("Solicitudes de servicio", "service_requests"),
+            ("Servicios", "services"),
+            ("Catálogo", "catalog"),
+            ("Mantenimiento", "maintenance"),
+            ("Recuperación", "recovery"),
+            ("Configuración", "config"),
+            ("Salir", "exit")
         ]
-        
-        # Organización de botones en 4 columnas
-        columns = 4
-        for i, (text, key, color) in enumerate(buttons):
-            row = i // columns
-            col = i % columns
-            
-            btn = self.create_menu_button(
-                buttons_frame, 
-                text, 
-                color,
-                lambda k=key: self.navigate(k))
-            btn.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
-            
-            # Configurar expansión uniforme
-            buttons_frame.grid_columnconfigure(col, weight=1)
-            buttons_frame.grid_rowconfigure(row, weight=1)
 
-    def load_and_display_images(self, parent):
+        for label, key in buttons:
+            color = "#d9534f" if key == "exit" else "#2356a2"
+            btn = tk.Button(menu_frame, text=label, command=lambda k=key: self.navigate(k), bg=color, fg="white", font=("Arial", 10), width=25, pady=10)
+            btn.pack(pady=3, padx=10, anchor="w")
+
+        # Right image
+        image_frame = tk.Frame(main_frame, bg="white")
+        image_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        central_img = self.load_image(image_frame, "assets/central_image.png", (800, 500))
+        central_img.pack(expand=True)
+
+        # Bottom logo
+        bottom_frame = tk.Frame(self, bg="white")
+        bottom_frame.pack(fill=tk.X, pady=5)
+
+        tk.Label(bottom_frame, text="Gobierno Bolivariano de Venezuela", font=("Arial", 12, "bold"), bg="white").pack()
+
+    def load_image(self, parent, path, size):
         try:
-            img_frame = tk.Frame(parent, bg="#f5f5f5")
-            img_frame.pack()
-            
-            img_paths = [
-                ("assets/republica.png", (70, 70)),
-                ("assets/empresa.png", (70, 70)),
-                ("assets/universidad.png", (70, 70))
-            ]
-            
-            for path, size in img_paths:
-                img = Image.open(path).resize(size, Image.Resampling.LANCZOS)
-                self.images[path] = ImageTk.PhotoImage(img)
-                label = tk.Label(img_frame, image=self.images[path], bg="#f5f5f5")
-                label.pack(side=tk.LEFT, padx=10)
-                
-        except Exception as e:
-            print(f"Error cargando imágenes: {e}")
-
-    def create_menu_button(self, parent, text, bg_color, command):
-        btn = tk.Frame(parent, bg=bg_color, bd=0, highlightthickness=0)
-        btn.bind("<Button-1>", lambda e: command())
-        
-        label = tk.Label(
-            btn, 
-            text=text, 
-            bg=bg_color, 
-            fg="white", 
-            font=("Arial", 11), 
-            padx=10, 
-            pady=15,
-            wraplength=100
-        )
-        label.pack(fill=tk.BOTH, expand=True)
-        label.bind("<Button-1>", lambda e: command())
-        
-        return btn
+            img = Image.open(path).resize(size, Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.images[path] = photo
+            label = tk.Label(parent, image=photo, bg="white")
+            return label
+        except:
+            label = tk.Label(parent, bg="white")
+            return label
 
     def navigate(self, key):
         if key == "exit":
@@ -173,6 +142,6 @@ class HomeScreen(tk.Frame):
         elif key in self.callbacks:
             self.callbacks[key]()
 
-    def exit(self) -> None:
+    def exit(self):
         SessionManager.logout()
         self.open_login_screen_callback()
