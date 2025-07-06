@@ -9,7 +9,7 @@ from widgets.custom_combobox import CustomCombobox
 from sqlite_cli.models.inventory_report_model import InventoryReport
 from utils.session_manager import SessionManager
 from screens.reports.inventory.inventory_movement_report import InventoryMovementReportScreen
-from screens.reports.inventory.full_inventory_report import FullInventoryReportScreen
+from screens.reports.full_inventory_report import FullInventoryReportScreen
 
 class InventoryReportScreen(tk.Frame):
     def __init__(

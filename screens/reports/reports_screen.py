@@ -5,7 +5,7 @@ from typing import Any, Callable
 from PIL import Image, ImageTk
 from screens.reports.sales_report_screen import SalesReportScreen
 from screens.reports.purchase_order_report_screen import PurchaseOrderReportScreen
-from screens.reports.inventory.full_inventory_report import FullInventoryReportScreen
+from screens.reports.full_inventory_report import FullInventoryReportScreen
 
 class ReportsScreen(tk.Frame):
     def __init__(
