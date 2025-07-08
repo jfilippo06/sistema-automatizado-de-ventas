@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import Menu, ttk
 from tkinter import filedialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 from typing import Callable, Any
 from utils.session_manager import SessionManager
 import tkinter.messagebox as messagebox
@@ -83,7 +83,9 @@ class HomeScreen(tk.Frame):
         }
 
         self.images = {}
-        self.menu_buttons = {}  # Para almacenar referencias a los botones de menú
+        self.menu_buttons = {}
+        self.carousel_images = []
+        self.current_image_index = 0
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -220,12 +222,22 @@ class HomeScreen(tk.Frame):
             self.config_callbacks
         )
 
-        # Área de imagen principal
-        image_frame = tk.Frame(main_frame, bg="white")
-        image_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        # Área del carrusel de imágenes
+        carousel_frame = tk.Frame(main_frame, bg="white")
+        carousel_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        central_img = self.load_image(image_frame, "assets/central_image.png", (500, 350))
-        central_img.pack(expand=True, padx=5, pady=5)
+        # Frame para la imagen del carrusel (sin bordes)
+        self.image_container = tk.Frame(carousel_frame, bg="white")
+        self.image_container.pack(expand=True, fill=tk.BOTH)
+
+        # Cargar imágenes del carrusel
+        self.load_carousel_images()
+        
+        # Mostrar la primera imagen
+        self.show_current_image()
+
+        # Programar el cambio automático de imágenes (5 segundos)
+        self.after(5000, self.rotate_carousel)
 
         # Pie de página con imágenes
         bottom_frame = tk.Frame(self, bg="white", height=50)
@@ -239,6 +251,69 @@ class HomeScreen(tk.Frame):
         
         # Imagen derecha
         self.load_image(bottom_frame, "assets/universidad.png", (40, 40)).pack(side=tk.RIGHT, padx=10)
+
+    def create_rounded_image(self, image_path, size):
+        """Crea una imagen con bordes redondeados"""
+        img = Image.open(image_path).resize(size, Image.Resampling.LANCZOS)
+        
+        # Crear máscara para bordes redondeados
+        mask = Image.new('L', size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.rounded_rectangle((0, 0) + size, radius=20, fill=255)
+        
+        # Aplicar máscara
+        result = Image.new('RGBA', size)
+        result.paste(img, (0, 0), mask)
+        
+        return ImageTk.PhotoImage(result)
+
+    def load_carousel_images(self):
+        """Carga las imágenes del carrusel desde la carpeta assets/carrusel"""
+        try:
+            for i in range(1, 7):  # Imágenes del 1.png al 6.png
+                img_path = f"assets/carrusel/{i}.png"
+                # Tamaño más grande (650x400) con bordes redondeados
+                photo = self.create_rounded_image(img_path, (650, 400))
+                self.carousel_images.append(photo)
+        except Exception as e:
+            print(f"Error cargando imágenes del carrusel: {e}")
+            # Si hay error, crear imagen de respaldo con bordes redondeados
+            backup_img = Image.new('RGB', (650, 400), color='white')
+            mask = Image.new('L', (650, 400), 0)
+            draw = ImageDraw.Draw(mask)
+            draw.rounded_rectangle((0, 0, 650, 400), radius=20, fill=255)
+            result = Image.new('RGBA', (650, 400))
+            result.paste(backup_img, (0, 0), mask)
+            photo = ImageTk.PhotoImage(result)
+            self.carousel_images = [photo] * 6
+
+    def show_current_image(self):
+        """Muestra la imagen actual del carrusel"""
+        if hasattr(self, 'current_image_label'):
+            self.current_image_label.destroy()
+
+        if not self.carousel_images:
+            return
+
+        self.current_image_label = tk.Label(
+            self.image_container,
+            image=self.carousel_images[self.current_image_index],
+            bg="white",
+            borderwidth=0,
+            highlightthickness=0
+        )
+        self.current_image_label.pack(expand=True, fill=tk.BOTH)
+
+    def rotate_carousel(self):
+        """Rota las imágenes del carrusel automáticamente"""
+        if not self.carousel_images:
+            return
+
+        self.current_image_index = (self.current_image_index + 1) % len(self.carousel_images)
+        self.show_current_image()
+        
+        # Programar el próximo cambio (5 segundos)
+        self.after(5000, self.rotate_carousel)
 
     def create_dropdown_menu(self, parent, title, options, callbacks_dict):
         """Crea un menú desplegable estilo menú contextual"""
