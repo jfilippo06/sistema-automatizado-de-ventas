@@ -11,7 +11,10 @@ class InventoryReport:
         max_stock: Optional[int] = None,
         min_quantity: Optional[int] = None,
         max_quantity: Optional[int] = None,
-        expired_only: bool = False
+        expired_only: bool = False,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        order_by_sales: bool = False
     ) -> List[Dict]:
         """
         Obtiene un reporte completo del inventario con filtros opcionales.
@@ -33,6 +36,7 @@ class InventoryReport:
                 i.price,
                 i.expiration_date,
                 s.company as supplier_company,
+                COUNT(id.id) as sales_count,
                 CASE 
                     WHEN i.expiration_date IS NOT NULL AND DATE(i.expiration_date) < DATE('now') THEN 'Vencido'
                     WHEN i.stock <= i.min_stock THEN 'Bajo stock'
@@ -40,6 +44,7 @@ class InventoryReport:
                 END as status
             FROM inventory i
             LEFT JOIN suppliers s ON i.supplier_id = s.id
+            LEFT JOIN invoice_details id ON i.id = id.product_id
             JOIN status st ON i.status_id = st.id
             WHERE st.name = 'active'
         '''
@@ -77,8 +82,21 @@ class InventoryReport:
             
         if expired_only:
             query += " AND i.expiration_date IS NOT NULL AND DATE(i.expiration_date) < DATE('now')"
+            
+        if start_date:
+            query += " AND DATE(i.expiration_date) >= ?"
+            params.append(start_date)
+            
+        if end_date:
+            query += " AND DATE(i.expiration_date) <= ?"
+            params.append(end_date)
         
-        query += " ORDER BY i.product ASC"
+        query += " GROUP BY i.id"
+        
+        if order_by_sales:
+            query += " ORDER BY sales_count DESC, i.product ASC"
+        else:
+            query += " ORDER BY i.product ASC"
         
         cursor.execute(query, tuple(params))
         items = []
