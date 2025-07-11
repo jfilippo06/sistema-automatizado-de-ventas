@@ -93,8 +93,8 @@ class HomeScreen(tk.Frame):
             self.open_login_screen_callback()
             return
 
-        window_width = 900
-        window_height = 650
+        window_width = 1000  # Aumentado para acomodar imágenes más grandes
+        window_height = 700  # Aumentado para acomodar imágenes más grandes
 
         screen_width = self.parent.winfo_screenwidth()
         screen_height = self.parent.winfo_screenheight()
@@ -114,17 +114,17 @@ class HomeScreen(tk.Frame):
         self.style.configure("Submenu.TButton", padding=3, font=("Arial", 8), width=18)
         
         # Header
-        header_frame = tk.Frame(self, bg="white", height=60)
+        header_frame = tk.Frame(self, bg="white", height=80)  # Aumentado para imagen más grande
         header_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        # Imagen de la empresa (principal)
-        self.load_image(header_frame, "assets/empresa.png", (50, 50)).pack(side=tk.LEFT, padx=10)
+        # Imagen de la empresa (principal) - más grande (80x80)
+        self.load_image(header_frame, "assets/empresa.png", (80, 80)).pack(side=tk.LEFT, padx=10)
         
         # Título
         title = tk.Label(
             header_frame, 
             text="Gestión de Ventas y Servicios",
-            font=("Arial", 14, "bold"), 
+            font=("Arial", 16, "bold"),  # Tamaño de fuente aumentado
             bg="white"
         )
         title.pack(side=tk.LEFT, padx=5, expand=True)
@@ -143,7 +143,7 @@ class HomeScreen(tk.Frame):
         main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Frame para menú
-        menu_frame = tk.Frame(main_frame, bg="#f0f0f0", width=200)
+        menu_frame = tk.Frame(main_frame, bg="#f0f0f0", width=220)  # Ancho aumentado
         menu_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0,5))
 
         # Botones principales del menú
@@ -176,7 +176,7 @@ class HomeScreen(tk.Frame):
             {
                 "Reporte de Ventas": "sales_report",
                 "Reporte de Órdenes de Compra": "purchase_order_report",
-                "Reporte de Inventario": "full_inventory_report"
+                "Reporte de Productos": "full_inventory_report"
             },
             self.reports_callbacks
         )
@@ -236,21 +236,21 @@ class HomeScreen(tk.Frame):
         # Mostrar la primera imagen
         self.show_current_image()
 
-        # Programar el cambio automático de imágenes (5 segundos)
-        self.after(5000, self.rotate_carousel)
+        # Programar el cambio automático de imágenes (8 segundos en lugar de 5)
+        self.after(8000, self.rotate_carousel)
 
         # Pie de página con imágenes
-        bottom_frame = tk.Frame(self, bg="white", height=50)
+        bottom_frame = tk.Frame(self, bg="white", height=70)  # Aumentado para imágenes más grandes
         bottom_frame.pack(fill=tk.X, pady=(0,5))
         
-        # Imagen izquierda
-        self.load_image(bottom_frame, "assets/republica.png", (40, 40)).pack(side=tk.LEFT, padx=10)
+        # Imagen izquierda - más grande (60x60)
+        self.load_image(bottom_frame, "assets/republica.png", (60, 60)).pack(side=tk.LEFT, padx=15)
         
         # Espacio central
         tk.Frame(bottom_frame, bg="white").pack(side=tk.LEFT, expand=True, fill=tk.X)
         
-        # Imagen derecha
-        self.load_image(bottom_frame, "assets/universidad.png", (40, 40)).pack(side=tk.RIGHT, padx=10)
+        # Imagen derecha - más grande (60x60)
+        self.load_image(bottom_frame, "assets/universidad.png", (60, 60)).pack(side=tk.RIGHT, padx=15)
 
     def create_rounded_image(self, image_path, size):
         """Crea una imagen con bordes redondeados"""
@@ -272,17 +272,17 @@ class HomeScreen(tk.Frame):
         try:
             for i in range(1, 7):  # Imágenes del 1.png al 6.png
                 img_path = f"assets/carrusel/{i}.png"
-                # Tamaño más grande (650x400) con bordes redondeados
-                photo = self.create_rounded_image(img_path, (650, 400))
+                # Tamaño más grande (750x450) con bordes redondeados
+                photo = self.create_rounded_image(img_path, (750, 450))
                 self.carousel_images.append(photo)
         except Exception as e:
             print(f"Error cargando imágenes del carrusel: {e}")
             # Si hay error, crear imagen de respaldo con bordes redondeados
-            backup_img = Image.new('RGB', (650, 400), color='white')
-            mask = Image.new('L', (650, 400), 0)
+            backup_img = Image.new('RGB', (750, 450), color='white')
+            mask = Image.new('L', (750, 450), 0)
             draw = ImageDraw.Draw(mask)
-            draw.rounded_rectangle((0, 0, 650, 400), radius=20, fill=255)
-            result = Image.new('RGBA', (650, 400))
+            draw.rounded_rectangle((0, 0, 750, 450), radius=20, fill=255)
+            result = Image.new('RGBA', (750, 450))
             result.paste(backup_img, (0, 0), mask)
             photo = ImageTk.PhotoImage(result)
             self.carousel_images = [photo] * 6
@@ -312,8 +312,8 @@ class HomeScreen(tk.Frame):
         self.current_image_index = (self.current_image_index + 1) % len(self.carousel_images)
         self.show_current_image()
         
-        # Programar el próximo cambio (5 segundos)
-        self.after(5000, self.rotate_carousel)
+        # Programar el próximo cambio (8 segundos en lugar de 5)
+        self.after(8000, self.rotate_carousel)
 
     def create_dropdown_menu(self, parent, title, options, callbacks_dict):
         """Crea un menú desplegable estilo menú contextual"""
