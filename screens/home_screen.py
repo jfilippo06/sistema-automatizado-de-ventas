@@ -150,19 +150,26 @@ class HomeScreen(tk.Frame):
             ("Catálogo", "catalog", "catalogo")
         ]
 
-        # Crear botones principales con iconos
+        # Configuración del estilo para alinear iconos y texto a la izquierda
+        self.style.configure("Menu.TButton", 
+                        padding=(5, 5, 15, 5),  # Más padding a la derecha
+                        font=("Arial", 9),
+                        width=20,
+                        anchor="w")  # Alinear contenido a la izquierda (west)
+
+        # Crear botones principales con iconos alineados a la izquierda
         for label, key, icon_name in main_buttons:
             icon = self.load_button_icon(icon_name)
             btn = ttk.Button(
                 menu_frame, 
-                text=label, 
+                text=f"  {label}",  # Espacio adicional antes del texto
                 image=icon,
-                compound=tk.LEFT,
+                compound=tk.LEFT,   # Icono a la izquierda del texto
                 command=lambda k=key: self.navigate(k),
                 style="Menu.TButton"
             )
-            btn.image = icon  # Mantener referencia
-            btn.pack(pady=3, padx=5, fill=tk.X)
+            btn.image = icon
+            btn.pack(pady=3, padx=5, fill=tk.X, anchor="w")  # Anchor "w" para alinear a la izquierda
             self.menu_buttons[key] = btn
 
         # Menú desplegable para Reportes con icono
@@ -247,13 +254,20 @@ class HomeScreen(tk.Frame):
         # Pie de página con imágenes
         bottom_frame = tk.Frame(self, bg="white", height=70)
         bottom_frame.pack(fill=tk.X, pady=(0,5))
-        
+
         # Imagen izquierda
         self.load_image(bottom_frame, "assets/republica.png", (80, 80)).pack(side=tk.LEFT, padx=15)
-        
-        # Espacio central
-        tk.Frame(bottom_frame, bg="white").pack(side=tk.LEFT, expand=True, fill=tk.X)
-        
+
+        # Texto en el centro
+        footer_text = tk.Label(
+            bottom_frame,
+            text="``Cuando se habla de Servicios integrales empresariales realmente somos la diferencia´´",
+            font=("Arial", 16, "bold"),  # Añadido "bold" para hacerla más gruesa
+            fg="#CC0000",  # Rojo más oscuro (código hexadecimal)
+            bg="white"
+        )
+        footer_text.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
         # Imagen derecha
         self.load_image(bottom_frame, "assets/universidad.png", (80, 80)).pack(side=tk.RIGHT, padx=15)
 
@@ -334,7 +348,7 @@ class HomeScreen(tk.Frame):
         self.show_current_image()
         
         # Programar el próximo cambio
-        self.after(8000, self.rotate_carousel)
+        self.after(10000, self.rotate_carousel)
 
     def create_dropdown_menu(self, parent, title, options, callbacks_dict, icon=None):
         """Crea un menú desplegable estilo menú contextual con icono"""
