@@ -86,6 +86,7 @@ class HomeScreen(tk.Frame):
         self.menu_buttons = {}
         self.carousel_images = []
         self.current_image_index = 0
+        self.button_icons = {}  # Diccionario para almacenar los iconos de los botones
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -93,17 +94,8 @@ class HomeScreen(tk.Frame):
             self.open_login_screen_callback()
             return
 
-        window_width = 1000  # Aumentado para acomodar imágenes más grandes
-        window_height = 700  # Aumentado para acomodar imágenes más grandes
-
-        screen_width = self.parent.winfo_screenwidth()
-        screen_height = self.parent.winfo_screenheight()
-
-        x = (screen_width // 2) - (window_width // 2)
-        y = (screen_height // 2) - (window_height // 2)
-
-        self.parent.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.parent.resizable(False, False)
+        # Maximizar la ventana
+        self.parent.state('zoomed')        
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:
@@ -114,17 +106,17 @@ class HomeScreen(tk.Frame):
         self.style.configure("Submenu.TButton", padding=3, font=("Arial", 8), width=18)
         
         # Header
-        header_frame = tk.Frame(self, bg="white", height=80)  # Aumentado para imagen más grande
+        header_frame = tk.Frame(self, bg="white", height=80)
         header_frame.pack(fill=tk.X, padx=5, pady=5)
         
-        # Imagen de la empresa (principal) - más grande (80x80)
-        self.load_image(header_frame, "assets/empresa.png", (80, 80)).pack(side=tk.LEFT, padx=10)
+        # Imagen de la empresa (principal)
+        self.load_image(header_frame, "assets/empresa.png", (200, 100)).pack(side=tk.LEFT, padx=10)
         
         # Título
         title = tk.Label(
             header_frame, 
             text="Gestión de Ventas y Servicios",
-            font=("Arial", 16, "bold"),  # Tamaño de fuente aumentado
+            font=("Arial", 16, "bold"),
             bg="white"
         )
         title.pack(side=tk.LEFT, padx=5, expand=True)
@@ -143,33 +135,38 @@ class HomeScreen(tk.Frame):
         main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Frame para menú
-        menu_frame = tk.Frame(main_frame, bg="#f0f0f0", width=220)  # Ancho aumentado
+        menu_frame = tk.Frame(main_frame, bg="#f0f0f0", width=220)
         menu_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0,5))
 
-        # Botones principales del menú
+        # Botones principales del menú con iconos
         main_buttons = [
-            ("Proveedores", "suppliers"),
-            ("Productos", "inventory"),
-            ("Orden de compra", "purchase_orders"),
-            ("Ventas", "billing"),
-            ("Clientes", "customers"),
-            ("Solicitudes de servicio", "service_requests"),
-            ("Servicios", "services"),
-            ("Catálogo", "catalog")
+            ("Proveedores", "suppliers", "proveedores"),
+            ("Productos", "inventory", "productos"),
+            ("Orden de compra", "purchase_orders", "orden_de_compra"),
+            ("Ventas", "billing", "ventas"),
+            ("Clientes", "customers", "clientes"),
+            ("Solicitudes de servicios", "service_requests", "solicitudes_de_servicios"),
+            ("Servicios", "services", "servicios"),
+            ("Catálogo", "catalog", "catalogo")
         ]
 
-        # Crear botones principales
-        for label, key in main_buttons:
+        # Crear botones principales con iconos
+        for label, key, icon_name in main_buttons:
+            icon = self.load_button_icon(icon_name)
             btn = ttk.Button(
                 menu_frame, 
                 text=label, 
+                image=icon,
+                compound=tk.LEFT,
                 command=lambda k=key: self.navigate(k),
                 style="Menu.TButton"
             )
+            btn.image = icon  # Mantener referencia
             btn.pack(pady=3, padx=5, fill=tk.X)
             self.menu_buttons[key] = btn
 
-        # Menú desplegable para Reportes
+        # Menú desplegable para Reportes con icono
+        reports_icon = self.load_button_icon("reportes")
         self.create_dropdown_menu(
             menu_frame, 
             "Reportes", 
@@ -178,10 +175,12 @@ class HomeScreen(tk.Frame):
                 "Reporte de Órdenes de Compra": "purchase_order_report",
                 "Reporte de Productos": "full_inventory_report"
             },
-            self.reports_callbacks
+            self.reports_callbacks,
+            reports_icon
         )
 
-        # Menú desplegable para Consultas
+        # Menú desplegable para Consultas con icono
+        queries_icon = self.load_button_icon("consultas")
         self.create_dropdown_menu(
             menu_frame, 
             "Consultas", 
@@ -189,13 +188,16 @@ class HomeScreen(tk.Frame):
                 "Consulta de Productos": "inventory_query",
                 "Consulta de Servicios": "services_query"
             },
-            self.queries_callbacks
+            self.queries_callbacks,
+            queries_icon
         )
 
-        # Menú desplegable para Mantenimiento
-        self.create_maintenance_menu(menu_frame)
+        # Menú desplegable para Mantenimiento con icono
+        maintenance_icon = self.load_button_icon("mantenimiento")
+        self.create_maintenance_menu(menu_frame, maintenance_icon)
 
-        # Menú desplegable para Recuperación
+        # Menú desplegable para Recuperación con icono
+        recovery_icon = self.load_button_icon("recuperacion")
         self.create_dropdown_menu(
             menu_frame, 
             "Recuperación", 
@@ -206,10 +208,12 @@ class HomeScreen(tk.Frame):
                 "Recuperar Servicios": "recovery_services",
                 "Recuperar Usuarios": "recovery_users"
             },
-            self.recovery_callbacks
+            self.recovery_callbacks,
+            recovery_icon
         )
 
-        # Menú desplegable para Configuración
+        # Menú desplegable para Configuración con icono
+        config_icon = self.load_button_icon("configuracion")
         self.create_dropdown_menu(
             menu_frame, 
             "Configuración", 
@@ -219,14 +223,15 @@ class HomeScreen(tk.Frame):
                 "Gestión de Impuestos": "taxes_management",
                 "Información del Sistema": "system_info"
             },
-            self.config_callbacks
+            self.config_callbacks,
+            config_icon
         )
 
         # Área del carrusel de imágenes
         carousel_frame = tk.Frame(main_frame, bg="white")
         carousel_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Frame para la imagen del carrusel (sin bordes)
+        # Frame para la imagen del carrusel
         self.image_container = tk.Frame(carousel_frame, bg="white")
         self.image_container.pack(expand=True, fill=tk.BOTH)
 
@@ -236,21 +241,37 @@ class HomeScreen(tk.Frame):
         # Mostrar la primera imagen
         self.show_current_image()
 
-        # Programar el cambio automático de imágenes (8 segundos en lugar de 5)
-        self.after(8000, self.rotate_carousel)
+        # Programar el cambio automático de imágenes
+        self.after(8000, self.rotate_carousel())
 
         # Pie de página con imágenes
-        bottom_frame = tk.Frame(self, bg="white", height=70)  # Aumentado para imágenes más grandes
+        bottom_frame = tk.Frame(self, bg="white", height=70)
         bottom_frame.pack(fill=tk.X, pady=(0,5))
         
-        # Imagen izquierda - más grande (60x60)
-        self.load_image(bottom_frame, "assets/republica.png", (60, 60)).pack(side=tk.LEFT, padx=15)
+        # Imagen izquierda
+        self.load_image(bottom_frame, "assets/republica.png", (80, 80)).pack(side=tk.LEFT, padx=15)
         
         # Espacio central
         tk.Frame(bottom_frame, bg="white").pack(side=tk.LEFT, expand=True, fill=tk.X)
         
-        # Imagen derecha - más grande (60x60)
-        self.load_image(bottom_frame, "assets/universidad.png", (60, 60)).pack(side=tk.RIGHT, padx=15)
+        # Imagen derecha
+        self.load_image(bottom_frame, "assets/universidad.png", (80, 80)).pack(side=tk.RIGHT, padx=15)
+
+    def load_button_icon(self, icon_name, size=(20, 20)):
+        """Carga un icono para un botón desde assets/iconos"""
+        try:
+            icon_path = f"assets/iconos/{icon_name}.png"
+            img = Image.open(icon_path).resize(size, Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.button_icons[icon_name] = photo  # Guardar referencia
+            return photo
+        except Exception as e:
+            print(f"Error cargando icono {icon_name}: {e}")
+            # Crear un icono vacío como respaldo
+            img = Image.new('RGBA', size, (0, 0, 0, 0))
+            photo = ImageTk.PhotoImage(img)
+            self.button_icons[icon_name] = photo
+            return photo
 
     def create_rounded_image(self, image_path, size):
         """Crea una imagen con bordes redondeados"""
@@ -273,16 +294,16 @@ class HomeScreen(tk.Frame):
             for i in range(1, 7):  # Imágenes del 1.png al 6.png
                 img_path = f"assets/carrusel/{i}.png"
                 # Tamaño más grande (750x450) con bordes redondeados
-                photo = self.create_rounded_image(img_path, (750, 450))
+                photo = self.create_rounded_image(img_path, (1000, 500))
                 self.carousel_images.append(photo)
         except Exception as e:
             print(f"Error cargando imágenes del carrusel: {e}")
             # Si hay error, crear imagen de respaldo con bordes redondeados
-            backup_img = Image.new('RGB', (750, 450), color='white')
-            mask = Image.new('L', (750, 450), 0)
+            backup_img = Image.new('RGB', (1200, 550), color='white')
+            mask = Image.new('L', (1200, 550), 0)
             draw = ImageDraw.Draw(mask)
-            draw.rounded_rectangle((0, 0, 750, 450), radius=20, fill=255)
-            result = Image.new('RGBA', (750, 450))
+            draw.rounded_rectangle((0, 0, 1200, 550), radius=20, fill=255)
+            result = Image.new('RGBA', (1200, 550))
             result.paste(backup_img, (0, 0), mask)
             photo = ImageTk.PhotoImage(result)
             self.carousel_images = [photo] * 6
@@ -312,30 +333,36 @@ class HomeScreen(tk.Frame):
         self.current_image_index = (self.current_image_index + 1) % len(self.carousel_images)
         self.show_current_image()
         
-        # Programar el próximo cambio (8 segundos en lugar de 5)
+        # Programar el próximo cambio
         self.after(8000, self.rotate_carousel)
 
-    def create_dropdown_menu(self, parent, title, options, callbacks_dict):
-        """Crea un menú desplegable estilo menú contextual"""
+    def create_dropdown_menu(self, parent, title, options, callbacks_dict, icon=None):
+        """Crea un menú desplegable estilo menú contextual con icono"""
         # Botón principal del menú
         main_btn = ttk.Button(
             parent,
             text=title,
+            image=icon,
+            compound=tk.LEFT,
             command=lambda: self.show_context_menu(title, options, callbacks_dict, main_btn),
             style="Menu.TButton"
         )
+        main_btn.image = icon  # Mantener referencia
         main_btn.pack(pady=3, padx=5, fill=tk.X)
         self.menu_buttons[title] = main_btn
 
-    def create_maintenance_menu(self, parent):
-        """Menú especial para Mantenimiento con funciones integradas"""
+    def create_maintenance_menu(self, parent, icon=None):
+        """Menú especial para Mantenimiento con funciones integradas y icono"""
         # Botón principal
         main_btn = ttk.Button(
             parent,
             text="Mantenimiento",
+            image=icon,
+            compound=tk.LEFT,
             command=lambda: self.show_maintenance_menu(main_btn),
             style="Menu.TButton"
         )
+        main_btn.image = icon  # Mantener referencia
         main_btn.pack(pady=3, padx=5, fill=tk.X)
         self.menu_buttons["Mantenimiento"] = main_btn
 
