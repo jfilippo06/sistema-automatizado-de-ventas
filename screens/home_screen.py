@@ -193,7 +193,7 @@ class HomeScreen(tk.Frame):
             "Consultas", 
             {
                 "Consulta de Productos": "inventory_query",
-                "Consulta de Servicios": "services_query"
+                "Consulta de Solicitudes de Servicios": "services_query"
             },
             self.queries_callbacks,
             queries_icon

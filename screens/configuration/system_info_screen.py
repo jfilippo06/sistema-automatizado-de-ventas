@@ -16,20 +16,7 @@ class SystemInfoScreen(tk.Frame):
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
-        # Tamaño de la ventana
-        window_width = 560
-        window_height = 400
-        
-        # Calcular posición para centrar
-        screen_width = self.parent.winfo_screenwidth()
-        screen_height = self.parent.winfo_screenheight()
-        
-        x = (screen_width // 2) - (window_width // 2)
-        y = (screen_height // 2) - (window_height // 2)
-        
-        # Configurar geometría centrada
-        self.parent.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        self.parent.resizable(False, False)
+        self.parent.state('zoomed')
         super().pack(fill=tk.BOTH, expand=True)
 
     def configure_ui(self) -> None:

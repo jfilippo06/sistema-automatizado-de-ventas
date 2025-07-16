@@ -22,7 +22,7 @@ from screens.reports.full_inventory_report import FullInventoryReportScreen
 from screens.catalog.catalog_screen import CatalogScreen
 from screens.purchase_orders.purchase_orders import PurchaseOrdersScreen
 from screens.queries.inventory_query_screen import InventoryQueryScreen
-from screens.queries.inventory_movement_query_screen import InventoryMovementQueryScreen
+from screens.queries.services_requests_query_screen import ServiceRequestsQueryScreen
 from utils.session_manager import SessionManager
 
 def main() -> None:
@@ -98,9 +98,9 @@ def main() -> None:
         home_screen.pack_forget()
         inventory_query_screen.pack(fill=tk.BOTH, expand=True)
 
-    def open_services_query() -> None:
+    def open_services_requests_query() -> None:
         home_screen.pack_forget()
-        services_query_screen.pack(fill=tk.BOTH, expand=True)
+        services_requests_query_screen.pack(fill=tk.BOTH, expand=True)
 
     # Callbacks para recuperación
     def open_recovery_suppliers() -> None:
@@ -163,7 +163,7 @@ def main() -> None:
         open_purchase_order_report,
         open_full_inventory_report,
         open_inventory_query,
-        open_services_query,
+        open_services_requests_query,
         open_recovery_suppliers,
         open_recovery_inventory,
         open_recovery_service_requests,
@@ -192,7 +192,7 @@ def main() -> None:
     
     # Pantallas de consultas
     inventory_query_screen = InventoryQueryScreen(app, lambda: open_home_from_current(inventory_query_screen))
-    services_query_screen = InventoryMovementQueryScreen(app, 0, lambda: open_home_from_current(services_query_screen))  # 0 es un ID temporal
+    services_requests_query_screen = ServiceRequestsQueryScreen(app, lambda: open_home_from_current(services_requests_query_screen))
     
     # Pantallas de recuperación
     recovery_suppliers_screen = RecoverySuppliers(app, lambda: open_home_from_current(recovery_suppliers_screen))
@@ -222,7 +222,7 @@ def main() -> None:
         purchase_order_report_screen,
         full_inventory_report_screen,
         inventory_query_screen,
-        services_query_screen,
+        services_requests_query_screen,
         recovery_suppliers_screen,
         recovery_inventory_screen,
         recovery_service_requests_screen,
