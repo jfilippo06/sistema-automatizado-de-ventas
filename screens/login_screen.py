@@ -24,7 +24,7 @@ class LoginScreen(tk.Frame):
         bg_image.place(x=0, y=0, relwidth=1, relheight=1)
 
         overlay = tk.Frame(self, bg="", bd=0)
-        overlay.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.8, relheight=0.7)
+        overlay.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.75, relheight=0.65)
 
         overlay.columnconfigure(0, weight=1)
         overlay.columnconfigure(1, weight=2)

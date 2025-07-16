@@ -443,7 +443,7 @@ class HomeScreen(tk.Frame):
 
     # Funciones de mantenimiento
     def get_db_path(self) -> str:
-        project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         return os.path.join(project_dir, 'sqlite_cli', 'database', 'db.db')
 
     def compress_database(self) -> None:
