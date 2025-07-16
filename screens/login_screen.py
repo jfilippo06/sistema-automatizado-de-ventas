@@ -44,48 +44,60 @@ class LoginScreen(tk.Frame):
         self.load_and_pack_image(left_content, "assets/universidad.png", (100, 100))
 
         # ----- DERECHA -----
-        right_frame = tk.Frame(overlay, bg="#2356a2")
-        right_frame.grid(row=0, column=1, sticky="nsew", padx=(0, 0), pady=0)
-        right_frame.columnconfigure(0, weight=1)
-        right_frame.rowconfigure(0, weight=1)
+        right_frame = tk.Frame(overlay, bg="", highlightthickness=0)
+        right_frame.grid(row=0, column=1, sticky="nsew")
+
+        # Fondo azul translúcido simulado
+        right_overlay = tk.Canvas(right_frame, bg="#2356a2", highlightthickness=0)
+        right_overlay.place(relwidth=1, relheight=1)
 
         login_content = tk.Frame(right_frame, bg="#2356a2")
-        login_content.pack(expand=True)
+        login_content.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
         # Encabezado verde
-        header = tk.Frame(login_content, bg="#009245", height=40)
+        header = tk.Frame(login_content, bg="#2356a2", height=40)
         header.pack(fill=tk.X)
-        tk.Label(header, text="Login", font=("Arial", 20, "bold"), fg="white", bg="#009245").pack(pady=5)
+        tk.Label(
+            header,
+            text="Login",
+            font=("Arial", 20, "bold"),
+            fg="white",
+            bg="#2356a2"
+        ).pack(pady=5)
 
         form_frame = tk.Frame(login_content, bg="#2356a2")
-        form_frame.pack(pady=30)
+        form_frame.pack(pady=40)
 
         self.username_var = tk.StringVar()
         self.password_var = tk.StringVar()
 
         # Usuario
         tk.Label(form_frame, text="Usuario", font=("Arial", 12), fg="white", bg="#2356a2").pack(anchor="w")
-        self.user_entry = tk.Entry(form_frame, textvariable=self.username_var, width=30, font=("Arial", 11))
-        self.user_entry.pack(pady=(0, 10), ipady=3)
+        self.user_entry = tk.Entry(form_frame, textvariable=self.username_var, font=("Arial", 12), fg="white", bg="#2356a2", insertbackground="white", borderwidth=0)
+        self.user_entry.pack(fill=tk.X, padx=5)
+        tk.Frame(form_frame, bg="white", height=1).pack(fill=tk.X, pady=(0, 15), padx=5)
 
         # Contraseña
         tk.Label(form_frame, text="Contraseña", font=("Arial", 12), fg="white", bg="#2356a2").pack(anchor="w")
-        self.password_entry = tk.Entry(form_frame, textvariable=self.password_var, show="*", width=30, font=("Arial", 11))
-        self.password_entry.pack(pady=(0, 20), ipady=3)
+        self.password_entry = tk.Entry(form_frame, textvariable=self.password_var, show="*", font=("Arial", 12), fg="white", bg="#2356a2", insertbackground="white", borderwidth=0)
+        self.password_entry.pack(fill=tk.X, padx=5)
+        tk.Frame(form_frame, bg="white", height=1).pack(fill=tk.X, pady=(0, 25), padx=5)
 
         # Botón Iniciar Sesión
         login_btn = tk.Button(
             login_content,
             text="Iniciar Sesión",
             command=self.authenticate,
-            width=20,
-            font=("Arial", 11, "bold"),
+            font=("Arial", 12, "bold"),
             bg="#2356a2",
             fg="white",
             activebackground="#1b417a",
-            highlightbackground="#00FF00",  # borde verde
+            activeforeground="white",
+            highlightbackground="#00FF00",
             highlightthickness=2,
-            bd=0
+            bd=0,
+            padx=20,
+            pady=5
         )
         login_btn.pack()
 
