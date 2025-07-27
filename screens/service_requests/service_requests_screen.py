@@ -148,6 +148,9 @@ class ServiceRequestsScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -178,7 +181,8 @@ class ServiceRequestsScreen(tk.Frame):
             "completed": "Completado",
         }
         
-        for item in items:
+        for i, item in enumerate(items):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             status = item['request_status_name']
             status_es = status_mapping.get(status, status)
             
@@ -192,7 +196,7 @@ class ServiceRequestsScreen(tk.Frame):
                 item['quantity'],
                 f"{item['total']:.2f}",
                 status_es
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(items)} solicitudes")
 

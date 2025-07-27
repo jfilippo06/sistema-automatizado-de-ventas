@@ -140,6 +140,9 @@ class ServicesScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -166,14 +169,15 @@ class ServicesScreen(tk.Frame):
             
         items = Service.search_active(search_term, field if field != "Todos los campos" else None)
         
-        for item in items:
+        for i, item in enumerate(items):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 item['id'],
                 item['code'],
                 item['name'],
                 f"{item['price']:.2f}",
                 item.get('description', '')
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(items)} servicios")
 

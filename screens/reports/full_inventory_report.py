@@ -292,6 +292,9 @@ class FullInventoryReportScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         self.tree.pack(fill=tk.BOTH, expand=True)
         h_scroll.config(command=self.tree.xview)
         v_scroll.config(command=self.tree.yview)
@@ -378,7 +381,8 @@ class FullInventoryReportScreen(tk.Frame):
     def update_table(self, items):
         """Actualiza la tabla"""
         self.tree.delete(*self.tree.get_children())
-        for item in items:
+        for i, item in enumerate(items):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 item['id'],
                 item['code'],
@@ -393,7 +397,7 @@ class FullInventoryReportScreen(tk.Frame):
                 item.get('supplier_company', ''),
                 item.get('expiration_date', ''),
                 item.get('sales_count', 0)
-            ))
+            ), tags=(tag,))
         self.count_label.config(text=f"{len(items)} productos encontrados")
         self.current_items = items
 

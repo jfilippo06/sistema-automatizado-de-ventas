@@ -122,6 +122,9 @@ class RecoveryServices(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -148,15 +151,16 @@ class RecoveryServices(tk.Frame):
             
         services = Service.search_inactive(search_term, field if field != "Todos los campos" else None)
         
-        for service in services:
+        for i, service in enumerate(services):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 service['id'],
                 service['code'],
                 service['name'],
-                f"${service['price']:.2f}",  # Formato de precio mejorado
+                f"${service['price']:.2f}",
                 service.get('description', ''),
                 "Inactivo"
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(services)} servicios deshabilitados")
 

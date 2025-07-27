@@ -552,6 +552,9 @@ class PurchaseOrdersScreen(tk.Frame):
         for col, width, anchor in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
+
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
         
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
@@ -607,7 +610,8 @@ class PurchaseOrdersScreen(tk.Frame):
             
         suppliers = PurchaseOrder.get_suppliers(search_term)
         
-        for supplier in suppliers:
+        for i, supplier in enumerate(suppliers):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 supplier['id'],
                 supplier['code'],
@@ -618,7 +622,7 @@ class PurchaseOrdersScreen(tk.Frame):
                 supplier['phone'],
                 supplier['email'],
                 supplier['tax_id']
-            ))
+            ), tags=(tag,))
     
     def select_supplier(self, window: tk.Toplevel) -> None:
         """Select supplier and fill fields in main screen"""
@@ -884,6 +888,9 @@ class PurchaseOrdersScreen(tk.Frame):
         for col, width, anchor in columns:
             self.product_tree.heading(col, text=col)
             self.product_tree.column(col, width=width, anchor=anchor)
+
+        self.product_tree.tag_configure('evenrow', background='#ffffff')
+        self.product_tree.tag_configure('oddrow', background='#f0f0f0')
         
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.product_tree.yview)
         self.product_tree.configure(yscroll=scrollbar.set)
@@ -946,7 +953,8 @@ class PurchaseOrdersScreen(tk.Frame):
         products = InventoryItem.search_active(search_term, field if field != "Todos los campos" else None)
         supplier_products = [p for p in products if p.get('supplier_id') == self.current_supplier_id]
         
-        for product in supplier_products:
+        for i, product in enumerate(supplier_products):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.product_tree.insert("", tk.END, values=(
                 product['id'],
                 product['code'],
@@ -955,7 +963,7 @@ class PurchaseOrdersScreen(tk.Frame):
                 product['quantity'],
                 product['cost'],
                 product['price']
-            ))
+            ), tags=(tag,))
     
     def select_product(self, window: tk.Toplevel) -> None:
         """Select product and fill fields in products tab"""

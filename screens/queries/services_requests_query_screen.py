@@ -112,6 +112,9 @@ class ServiceRequestsQueryScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -162,7 +165,8 @@ class ServiceRequestsQueryScreen(tk.Frame):
             }
         ]
         
-        for item in example_data:
+        for i, item in enumerate(example_data):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 item['id'],
                 item['request_number'],
@@ -173,7 +177,7 @@ class ServiceRequestsQueryScreen(tk.Frame):
                 item['quantity'],
                 f"{item['total']:.2f}",
                 item['status']
-            ))
+            ), tags=(tag,))
 
     def show_details(self) -> None:
         """Muestra los detalles de la solicitud seleccionada"""

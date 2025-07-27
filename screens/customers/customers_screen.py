@@ -126,6 +126,9 @@ class CustomersScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -152,7 +155,8 @@ class CustomersScreen(tk.Frame):
             
         customers = Customer.search_active(search_term, field if field != "Todos los campos" else None)
         
-        for customer in customers:
+        for i, customer in enumerate(customers):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 customer['id'],
                 customer['first_name'],
@@ -161,7 +165,7 @@ class CustomersScreen(tk.Frame):
                 customer.get('email', ''),
                 customer.get('phone', ''),
                 customer.get('address', '')
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(customers)} clientes")
 

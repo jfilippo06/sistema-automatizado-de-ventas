@@ -203,6 +203,9 @@ class BillingScreen(tk.Frame):
             self.products_tree.heading(col, text=col)
             self.products_tree.column(col, width=width, anchor=anchor)
 
+        self.products_tree.tag_configure('evenrow', background='#ffffff')
+        self.products_tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(
             products_frame, 
             orient=tk.VERTICAL, 
@@ -245,6 +248,9 @@ class BillingScreen(tk.Frame):
         for col, width, anchor in service_columns:
             self.services_tree.heading(col, text=col)
             self.services_tree.column(col, width=width, anchor=anchor)
+
+        self.services_tree.tag_configure('evenrow', background='#ffffff')
+        self.services_tree.tag_configure('oddrow', background='#f0f0f0')
 
         service_scrollbar = ttk.Scrollbar(
             services_frame, 
@@ -290,6 +296,9 @@ class BillingScreen(tk.Frame):
         for col, width, anchor in cart_columns:
             self.cart_tree.heading(col, text=col)
             self.cart_tree.column(col, width=width, anchor=anchor)
+
+        self.cart_tree.tag_configure('evenrow', background='#ffffff')
+        self.cart_tree.tag_configure('oddrow', background='#f0f0f0')
 
         cart_scrollbar = ttk.Scrollbar(
             cart_frame, 
@@ -390,7 +399,8 @@ class BillingScreen(tk.Frame):
             field if field != "Todos los campos" else None
         )
         
-        for item in products:
+        for i, item in enumerate(products):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.products_tree.insert("", tk.END, values=(
                 item['id'],
                 item['code'],
@@ -399,7 +409,7 @@ class BillingScreen(tk.Frame):
                 item['min_stock'],
                 item['max_stock'],
                 f"{float(item['price']):.2f}" if item['price'] else "0.00"
-            ))
+            ), tags=(tag,))
         
         # Search services
         services = Service.search_active(
@@ -407,14 +417,15 @@ class BillingScreen(tk.Frame):
             field if field != "Todos los campos" else None
         )
         
-        for service in services:
+        for i, service in enumerate(services):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.services_tree.insert("", tk.END, values=(
                 service['id'],
                 service['code'],
                 service['name'],
                 f"{service['price']:.2f}",
                 service.get('description', '')[:50] + "..." if service.get('description') else ""
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(
             text=f"Mostrando {len(products)} productos y {len(services)} servicios disponibles"
@@ -682,6 +693,9 @@ class BillingScreen(tk.Frame):
         for col, width, anchor in payments_columns:
             self.payments_tree.heading(col, text=col)
             self.payments_tree.column(col, width=width, anchor=anchor)
+
+        self.payments_tree.tag_configure('evenrow', background='#ffffff')
+        self.payments_tree.tag_configure('oddrow', background='#f0f0f0')
         
         payments_scrollbar = ttk.Scrollbar(payments_tree_frame, orient=tk.VERTICAL, command=self.payments_tree.yview)
         self.payments_tree.configure(yscroll=payments_scrollbar.set)
@@ -773,12 +787,15 @@ class BillingScreen(tk.Frame):
                 "transferencia": "Transferencia"
             }.get(method, "Desconocido")
             
+            # Determinar tag para fila alterna
+            tag = 'evenrow' if len(self.payment_details) % 2 == 0 else 'oddrow'
+            
             self.payments_tree.insert("", tk.END, values=(
                 method_name,
                 bank_name if method != "efectivo" else "N/A",
                 f"{amount:.2f}",
                 reference if method != "efectivo" else "N/A"
-            ))
+            ), tags=(tag,))
             
             # Actualizar total pagado y saldo
             self.paid_amount += amount
@@ -812,6 +829,11 @@ class BillingScreen(tk.Frame):
         # Actualizar total pagado y saldo
         self.paid_amount -= amount
         self.update_payment_summary()
+        
+        # Reaplicar tags a las filas restantes para mantener el patrón alternado
+        for i, child in enumerate(self.payments_tree.get_children()):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            self.payments_tree.item(child, tags=(tag,))
 
     def update_payment_summary(self) -> None:
         """Actualiza los labels de resumen de pagos"""
@@ -1205,7 +1227,8 @@ class BillingScreen(tk.Frame):
         for item in self.cart_tree.get_children():
             self.cart_tree.delete(item)
             
-        for item in self.cart_items:
+        for i, item in enumerate(self.cart_items):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             item_type = "Servicio" if item.get('is_service', False) else "Producto"
             self.cart_tree.insert("", tk.END, values=(
                 item['id'],
@@ -1215,7 +1238,7 @@ class BillingScreen(tk.Frame):
                 f"{item['unit_price']:.2f}",
                 f"{item['total']:.2f}",
                 "Eliminar"
-            ))
+            ), tags=(tag,))
         
         # Configurar evento para el botón eliminar
         self.cart_tree.bind("<Button-1>", self.on_cart_item_click)

@@ -125,6 +125,9 @@ class RecoveryUsers(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -151,7 +154,8 @@ class RecoveryUsers(tk.Frame):
             
         users = User.search_inactive(search_term, field if field != "Todos los campos" else None)
         
-        for user in users:
+        for i, user in enumerate(users):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 user['id'],
                 user['username'],
@@ -159,7 +163,7 @@ class RecoveryUsers(tk.Frame):
                 user['email'],
                 user['role_name'],
                 user['status_name']
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(users)} usuarios deshabilitados")
 

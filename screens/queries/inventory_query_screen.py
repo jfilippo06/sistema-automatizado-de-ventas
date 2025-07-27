@@ -118,6 +118,9 @@ class InventoryQueryScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -140,7 +143,8 @@ class InventoryQueryScreen(tk.Frame):
             
         items = InventoryReport.get_inventory_report(search_term=search_term if search_term else None)
         
-        for item in items:
+        for i, item in enumerate(items):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             expiration_date = item['expiration_date'] if item['expiration_date'] != "None" else "None"
             supplier = item['supplier_company'] if item['supplier_company'] != "None" else "None"
             self.tree.insert("", tk.END, values=(
@@ -156,7 +160,7 @@ class InventoryQueryScreen(tk.Frame):
                 f"{item['price']:.2f}",
                 supplier,
                 expiration_date
-            ))
+            ), tags=(tag,))
 
     def open_movement_query(self) -> None:
         """Abre la pantalla de consulta de movimientos para el producto seleccionado"""

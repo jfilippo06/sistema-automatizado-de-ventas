@@ -192,6 +192,9 @@ class SalesReportScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -221,7 +224,8 @@ class SalesReportScreen(tk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
             
-        for sale in sales:
+        for i, sale in enumerate(sales):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 sale['invoice_id'],
                 sale['issue_date'],
@@ -231,7 +235,7 @@ class SalesReportScreen(tk.Frame):
                 sale['product_count'],
                 sale['service_count'],
                 f"Bs. {sale['total']:,.2f}"
-            ))
+            ), tags=(tag,))
 
     def view_invoice(self, event=None) -> None:
         """Muestra el recibo de la venta seleccionada"""

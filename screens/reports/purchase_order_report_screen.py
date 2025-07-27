@@ -190,6 +190,9 @@ class PurchaseOrderReportScreen(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -219,7 +222,8 @@ class PurchaseOrderReportScreen(tk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
             
-        for order in orders:
+        for i, order in enumerate(orders):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 order['id'],
                 order['order_number'],
@@ -230,7 +234,7 @@ class PurchaseOrderReportScreen(tk.Frame):
                 f"Bs. {order['taxes']:,.2f}",
                 f"Bs. {order['total']:,.2f}",
                 order['expected_delivery_date']
-            ))
+            ), tags=(tag,))
 
     def view_order(self) -> None:
         """Muestra la orden de compra seleccionada"""

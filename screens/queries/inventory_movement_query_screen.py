@@ -183,6 +183,9 @@ class InventoryMovementQueryScreen(tk.Frame):
         for col, width, anchor in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
+
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
         
         self.tree.pack(fill=tk.BOTH, expand=True)
         
@@ -239,7 +242,8 @@ class InventoryMovementQueryScreen(tk.Frame):
             movement_type=movement_type
         )
         
-        for movement in movements:
+        for i, movement in enumerate(movements):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             notes = movement['notes'] if movement['notes'] != "None" else "None"
             reference = f"{movement['reference_type']} #{movement['reference_id']}" if movement['reference_type'] != "None" else "None"
             self.tree.insert("", tk.END, values=(
@@ -254,7 +258,7 @@ class InventoryMovementQueryScreen(tk.Frame):
                 movement['user'],
                 reference,
                 notes
-            ))
+            ), tags=(tag,))
         
         self.count_label.config(text=f"{len(movements)} movimientos encontrados")
         self.current_movements = movements

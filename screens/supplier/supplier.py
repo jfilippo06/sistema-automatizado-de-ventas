@@ -152,6 +152,10 @@ class Suppliers(tk.Frame):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor=anchor)
 
+        # Configurar tags para filas alternas
+        self.tree.tag_configure('evenrow', background='#ffffff')
+        self.tree.tag_configure('oddrow', background='#f0f0f0')
+
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -178,7 +182,8 @@ class Suppliers(tk.Frame):
             
         suppliers = Supplier.search_active(search_term, field if field != "Todos los campos" else None)
         
-        for supplier in suppliers:
+        for i, supplier in enumerate(suppliers):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
                 supplier['id'],
                 supplier['code'],
@@ -190,7 +195,7 @@ class Suppliers(tk.Frame):
                 supplier['email'],
                 supplier['tax_id'],
                 supplier['company']
-            ))
+            ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(suppliers)} proveedores")
 
