@@ -54,6 +54,14 @@ class CrudUser(tk.Toplevel):
         self.position_var = tk.StringVar()
         self.role_var = tk.StringVar()
         
+        # Diccionarios para traducción de roles
+        self.role_translation = {
+            'admin': 'Administrador',
+            'employee': 'Empleado',
+            'client': 'Cliente'
+        }
+        self.reverse_role_translation = {v: k for k, v in self.role_translation.items()}
+        
         self.entries = {}
         self.configure_ui()
         
@@ -131,7 +139,9 @@ class CrudUser(tk.Toplevel):
                 
                 if label == "Rol:":
                     roles = Role.all()
-                    values = [role['name'] for role in roles]
+                    # Traducimos los nombres de los roles al español para mostrar
+                    values = [self.role_translation.get(role['name'].lower(), role['name']) 
+                             for role in roles]
                     
                     combobox = CustomCombobox(
                         field_frame,
@@ -233,13 +243,19 @@ class CrudUser(tk.Toplevel):
         roles = Role.all()
         role = next((r for r in roles if r['id'] == user['role_id']), None)
         if role:
-            self.role_var.set(role['name'])
+            # Traducimos el rol al español para mostrar
+            translated_role = self.role_translation.get(role['name'].lower(), role['name'])
+            self.role_var.set(translated_role)
 
     def create_user(self) -> None:
         if not self.validate_required_fields():
             return
             
         try:
+            # Obtenemos el rol en inglés para guardar en la base de datos
+            selected_role_es = self.role_var.get()
+            role_name_en = self.reverse_role_translation.get(selected_role_es, selected_role_es)
+            
             person_id = Person.create(
                 first_name=self.first_name_var.get(),
                 last_name=self.last_name_var.get(),
@@ -251,7 +267,7 @@ class CrudUser(tk.Toplevel):
                 position=self.position_var.get() or None
             )
             
-            role = next((r for r in Role.all() if r['name'] == self.role_var.get()), None)
+            role = next((r for r in Role.all() if r['name'].lower() == role_name_en.lower()), None)
             if not role:
                 raise ValueError("Rol seleccionado no válido")
             
@@ -282,6 +298,10 @@ class CrudUser(tk.Toplevel):
             if not user:
                 raise ValueError("Usuario no encontrado")
             
+            # Obtenemos el rol en inglés para guardar en la base de datos
+            selected_role_es = self.role_var.get()
+            role_name_en = self.reverse_role_translation.get(selected_role_es, selected_role_es)
+            
             Person.update(
                 person_id=user['person_id'],
                 first_name=self.first_name_var.get(),
@@ -294,7 +314,7 @@ class CrudUser(tk.Toplevel):
                 position=self.position_var.get() or None
             )
             
-            role = next((r for r in Role.all() if r['name'] == self.role_var.get()), None)
+            role = next((r for r in Role.all() if r['name'].lower() == role_name_en.lower()), None)
             if not role:
                 raise ValueError("Rol seleccionado no válido")
             

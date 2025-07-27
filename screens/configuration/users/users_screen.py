@@ -171,14 +171,24 @@ class UsersScreen(tk.Frame):
             
         users = User.search_active(search_term, field if field != "Todos los campos" else None)
         
+        # Diccionario de traducción de roles
+        role_translation = {
+            'admin': 'Administrador',
+            'employee': 'Empleado',
+            'client': 'Cliente'
+        }
+        
         for i, user in enumerate(users):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            # Traducir el rol si existe en el diccionario, sino dejar el original
+            translated_role = role_translation.get(user['role_name'].lower(), user['role_name'])
+            
             self.tree.insert("", tk.END, values=(
                 user['id'],
                 user['username'],
                 f"{user['first_name']} {user['last_name']}",
                 user['email'],
-                user['role_name']
+                translated_role  # Usamos la versión traducida
             ), tags=(tag,))
         
         self.status_bar.configure(text=f"Mostrando {len(users)} usuarios")
