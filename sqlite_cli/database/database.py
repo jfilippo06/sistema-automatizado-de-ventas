@@ -221,6 +221,40 @@ def init_db() -> None:
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS service_request_movement_types (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS service_request_movements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id INTEGER NOT NULL,
+            movement_type_id INTEGER NOT NULL,
+            previous_employee_id INTEGER,
+            new_employee_id INTEGER,
+            previous_status_id INTEGER,
+            new_status_id INTEGER,
+            previous_request_status_id INTEGER,
+            new_request_status_id INTEGER,
+            user_id INTEGER NOT NULL,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
+            FOREIGN KEY (movement_type_id) REFERENCES service_request_movement_types(id),
+            FOREIGN KEY (previous_employee_id) REFERENCES users(id),
+            FOREIGN KEY (new_employee_id) REFERENCES users(id),
+            FOREIGN KEY (previous_status_id) REFERENCES status(id),
+            FOREIGN KEY (new_status_id) REFERENCES status(id),
+            FOREIGN KEY (previous_request_status_id) REFERENCES request_status(id),
+            FOREIGN KEY (new_request_status_id) REFERENCES request_status(id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
     # Tabla de monedas
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS currencies (

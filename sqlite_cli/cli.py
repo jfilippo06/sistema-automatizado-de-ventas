@@ -18,6 +18,7 @@ from seeds.movement_type_seeds import seed_movement_types
 from seeds.invoice_type_seeds import seed_invoice_types
 from seeds.purchase_order_status_seed import seed_purchase_order_statuses
 from seeds.bank_seeds import seed_banks
+from seeds.service_request_movement_type_seeds import seed_service_request_movement_types
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CLI para gestionar el inventario.")
@@ -42,6 +43,7 @@ def main() -> None:
         seed_movement_types()
         seed_purchase_order_statuses()
         seed_banks()
+        seed_service_request_movement_types()
         
         # Semillas de entidades
         seed_suppliers()
@@ -58,21 +60,20 @@ def main() -> None:
         
         print("Datos iniciales insertados.")
     elif args.command == 'reset':
-        # Reinicialización completa
-        init_db()
-        
         # Semillas básicas
         seed_status()
         seed_roles()
         seed_persons()
         seed_users()
-        seed_banks()
         
         # Semillas de configuración
         seed_request_status()
         seed_invoice_status()
         seed_invoice_types()
-        seed_movement_types()  # Nueva semilla
+        seed_movement_types()
+        seed_purchase_order_statuses()
+        seed_banks()
+        seed_service_request_movement_types()
         
         # Semillas de entidades
         seed_suppliers()
