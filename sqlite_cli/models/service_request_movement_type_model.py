@@ -1,5 +1,5 @@
 # models/service_request_movement_type_model.py
-from database.database import get_db_connection
+from sqlite_cli.database.database import get_db_connection
 
 class ServiceRequestMovementType:
     @classmethod
