@@ -135,25 +135,31 @@ def init_db() -> None:
 
     # Tabla de movimientos (registra cambios en quantity/stock por separado)
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS inventory_movements (
+        CREATE TABLE IF NOT EXISTS service_request_movements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            inventory_id INTEGER NOT NULL,
+            request_id INTEGER NOT NULL,
             movement_type_id INTEGER NOT NULL,
-            quantity_change INTEGER DEFAULT 0,   -- Cambio en existencia física
-            stock_change INTEGER DEFAULT 0,      -- Cambio en disponible para venta
-            previous_quantity INTEGER NOT NULL,
-            new_quantity INTEGER NOT NULL,
-            previous_stock INTEGER NOT NULL,
-            new_stock INTEGER NOT NULL,
-            reference_id INTEGER NULL,           -- ID de factura/compra (ahora nullable)
-            reference_type TEXT,                 -- Tipo de referencia (invoice, purchase, adjustment)
+            previous_employee_id INTEGER,
+            new_employee_id INTEGER,
+            previous_status_id INTEGER,
+            new_status_id INTEGER,
+            previous_request_status_id INTEGER,
+            new_request_status_id INTEGER,
+            reference_id INTEGER NULL,           -- ID de referencia (factura/orden)
+            reference_type TEXT,                 -- Tipo de referencia (invoice, order, etc)
             user_id INTEGER NOT NULL,
             notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (inventory_id) REFERENCES inventory(id),
-            FOREIGN KEY (movement_type_id) REFERENCES movement_types(id),
+            FOREIGN KEY (request_id) REFERENCES service_requests(id) ON DELETE CASCADE,
+            FOREIGN KEY (movement_type_id) REFERENCES service_request_movement_types(id),
+            FOREIGN KEY (previous_employee_id) REFERENCES users(id),
+            FOREIGN KEY (new_employee_id) REFERENCES users(id),
+            FOREIGN KEY (previous_status_id) REFERENCES status(id),
+            FOREIGN KEY (new_status_id) REFERENCES status(id),
+            FOREIGN KEY (previous_request_status_id) REFERENCES request_status(id),
+            FOREIGN KEY (new_request_status_id) REFERENCES request_status(id),
             FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (reference_id) REFERENCES invoices(id) ON DELETE SET NULL  -- Relación opcional
+            FOREIGN KEY (reference_id) REFERENCES invoices(id) ON DELETE SET NULL
         )
     ''')
 
