@@ -198,7 +198,7 @@ class RecoveryServiceRequests(tk.Frame):
             try:
                 status_active = next((s for s in Status.all() if s['name'] == 'active'), None)
                 if status_active:
-                    ServiceRequest.update_request_status(request_id, status_active['id'])
+                    ServiceRequest.update_status(request_id, status_active['id'])
                     messagebox.showinfo("Éxito", "Solicitud habilitada correctamente", parent=self)
                     self.refresh_data()
                 else:

@@ -3,6 +3,8 @@ from tkinter import messagebox
 from typing import Callable, Optional, Dict, Any, List
 from sqlite_cli.models.service_request_model import ServiceRequest
 from sqlite_cli.models.user_model import User
+from sqlite_cli.models.service_request_movement_type_model import ServiceRequestMovementType
+from utils.session_manager import SessionManager
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_combobox import CustomCombobox
@@ -150,9 +152,24 @@ class CrudServiceRequest(tk.Toplevel):
             if not employee:
                 raise ValueError("Debe seleccionar un empleado válido")
             
+            # Obtener datos actuales antes de cambiar
+            request = ServiceRequest.get_by_id(self.item_id)
+            if not request:
+                raise ValueError("Solicitud no encontrada")
+            
+            # Actualizar empleado
             ServiceRequest.update_employee(
                 request_id=self.item_id,
                 employee_id=employee['id']
+            )
+            
+            # Registrar movimiento en el historial
+            ServiceRequestMovementType.record_movement(
+                request_id=self.item_id,
+                movement_type_name="ASIGNACION_EMPLEADO",
+                previous_employee_id=request['employee_id'],
+                new_employee_id=employee['id'],
+                notes=f"Empleado asignado: {employee_name}"
             )
             
             messagebox.showinfo("Éxito", "Empleado asignado correctamente", parent=self)

@@ -182,6 +182,17 @@ class ServiceRequest:
         conn.close()
 
     @staticmethod
+    def update_status(request_id: int, request_status_id: int) -> None:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'UPDATE service_requests SET status_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            (request_status_id, request_id)
+        )
+        conn.commit()
+        conn.close()
+
+    @staticmethod
     def update_request_status(request_id: int, request_status_id: int) -> None:
         conn = get_db_connection()
         cursor = conn.cursor()

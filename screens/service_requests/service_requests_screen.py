@@ -4,6 +4,8 @@ from typing import Callable, List, Dict, Any
 from screens.service_requests.crud_service_request import CrudServiceRequest
 from sqlite_cli.models.request_status_model import RequestStatus
 from sqlite_cli.models.service_request_model import ServiceRequest
+from sqlite_cli.models.service_request_movement_type_model import ServiceRequestMovementType
+from utils.session_manager import SessionManager
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
@@ -251,8 +253,19 @@ class ServiceRequestsScreen(tk.Frame):
         )
         
         if response:
-            try:
+            try:               
+                # Deshabilitar la solicitud
                 ServiceRequest.deactivate(item_id)
+                
+                # Registrar movimiento en el historial
+                ServiceRequestMovementType.record_movement(
+                    request_id=item_id,
+                    movement_type_name="CAMBIO_ESTADO",
+                    previous_status_id=1,
+                    new_status_id=2,
+                    notes=f"Solicitud deshabilitada"
+                )
+                
                 messagebox.showinfo("Éxito", "Solicitud deshabilitada correctamente", parent=self)
                 self.refresh_data()
             except Exception as e:
@@ -336,11 +349,27 @@ class ServiceRequestsScreen(tk.Frame):
                 return
                 
             try:
+                # Obtener datos actuales antes de cambiar
+                request = ServiceRequest.get_by_id(item_id)
+                if not request:
+                    raise ValueError("Solicitud no encontrada")
+                
                 status_english = status_options.get(new_status)
                 if status_english:
                     status = RequestStatus.get_by_name(status_english)
                     if status:
+                        # Cambiar el estado
                         ServiceRequest.update_request_status(item_id, status['id'])
+                        
+                        # Registrar movimiento en el historial
+                        ServiceRequestMovementType.record_movement(
+                            request_id=item_id,
+                            movement_type_name="ACTUALIZACION_ESTADO",
+                            previous_request_status_id=request['status_id'],
+                            new_request_status_id=status['id'],
+                            notes=f"Estado cambiado a {new_status}"
+                        )
+                        
                         messagebox.showinfo("Éxito", "Estado actualizado correctamente", parent=status_window)
                         self.refresh_data()
                         status_window.destroy()
