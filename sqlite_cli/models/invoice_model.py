@@ -8,6 +8,7 @@ from sqlite_cli.models.inventory_movement_model import InventoryMovement
 from sqlite_cli.models.movement_type_model import MovementType
 from sqlite_cli.models.service_request_model import ServiceRequest
 from sqlite_cli.models.service_model import Service
+from sqlite_cli.models.service_request_movement_type_model import ServiceRequestMovementType
 from utils.session_manager import SessionManager
 
 class Invoice:
@@ -140,6 +141,35 @@ class Invoice:
                     service_id=item['id'],
                     description=f"Servicio vendido en factura #{invoice_id}",
                     quantity=item['quantity']
+                )
+                
+                # Registrar movimiento en el historial de servicios
+                movement_type = ServiceRequestMovementType.get_by_name("CREACION")
+                if not movement_type:
+                    raise ValueError("Tipo de movimiento 'CREACION' no encontrado")
+
+                user_id = SessionManager.get_user_id()
+                if not user_id:
+                    raise ValueError("Usuario no autenticado")
+
+                # Insertar en service_request_movements
+                Invoice._execute_sql(
+                    '''
+                    INSERT INTO service_request_movements (
+                        request_id, movement_type_id, new_employee_id,
+                        new_status_id, new_request_status_id, reference_id,
+                        reference_type, user_id, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''',
+                    (
+                        service_request_id, movement_type['id'], user_id,
+                        1,  # ID del estado inicial (por ejemplo, 1 para "Pendiente")
+                        1,  # ID del estado de solicitud inicial (por ejemplo, 1 para "Nuevo")
+                        invoice_id,
+                        'invoice',
+                        user_id,
+                        f"Servicio creado desde factura #{invoice_id}"
+                    )
                 )
                 
                 # Registrar detalle de servicio (con service_request_id y product_id=NULL)

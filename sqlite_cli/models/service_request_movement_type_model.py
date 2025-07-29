@@ -1,5 +1,6 @@
 # models/service_request_movement_type_model.py
 from sqlite_cli.database.database import get_db_connection
+from typing import Dict, Optional
 
 class ServiceRequestMovementType:
     @classmethod
@@ -23,3 +24,16 @@ class ServiceRequestMovementType:
         types = cursor.fetchall()
         conn.close()
         return types
+
+    @classmethod
+    def get_by_name(cls, name: str) -> Optional[Dict]:
+        """Obtiene un tipo de movimiento por su nombre."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM service_request_movement_types WHERE name = ? LIMIT 1",
+            (name,)
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return dict(result) if result else None
