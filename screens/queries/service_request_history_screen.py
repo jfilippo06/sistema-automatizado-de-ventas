@@ -1,11 +1,12 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Callable, Any
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_combobox import CustomCombobox
 from widgets.custom_entry import CustomEntry
 from utils.field_formatter import FieldFormatter
+from sqlite_cli.models.service_request_query import ServiceRequestQuery
 
 class ServiceRequestHistoryScreen(tk.Frame):
     def __init__(
@@ -190,18 +191,11 @@ class ServiceRequestHistoryScreen(tk.Frame):
         self.count_label.pack(side=tk.BOTTOM, fill=tk.X, pady=(5, 0))
 
     def load_request_info(self):
-        """Carga la información básica de la solicitud"""
-        # Aquí iría la lógica para obtener los datos reales
-        request_info = {
-            'request_number': f"SR-2023-{self.service_request_id:03d}",
-            'customer': "Cliente Ejemplo",
-            'service': "Mantenimiento Preventivo",
-            'status': "En progreso"
-        }
-        
-        self.info_label.config(
-            text=f"Solicitud: {request_info['request_number']} - Cliente: {request_info['customer']} - Servicio: {request_info['service']} - Estado: {request_info['status']}"
-        )
+        request = ServiceRequestQuery.get_service_request_details(self.service_request_id)
+        if request:
+            self.info_label.config(
+                text=f"Solicitud: {request['request_number']} - Cliente: {request['customer']} - Servicio: {request['service']} - Estado: {request['request_status']}"
+            )
 
     def refresh_data(self):
         """Actualiza los datos del historial según los filtros"""
@@ -213,50 +207,25 @@ class ServiceRequestHistoryScreen(tk.Frame):
         end_date = self.end_date_var.get().replace("/", "-") if self.end_date_var.get() else None
         event_type = self.event_type_var.get() if self.event_type_var.get() != "Todos" else None
         
-        # Aquí iría la lógica para obtener el historial real
-        # Datos de ejemplo:
-        example_data = [
-            {
-                'created_at': "2023-01-15 10:00:00",
-                'event_type': "Creación",
-                'user': "admin",
-                'previous_status': "",
-                'new_status': "Pendiente",
-                'comments': "Solicitud creada"
-            },
-            {
-                'created_at': "2023-01-16 14:30:00",
-                'event_type': "Actualización",
-                'user': "tecnico1",
-                'previous_status': "Pendiente",
-                'new_status': "En progreso",
-                'comments': "Asignado a técnico"
-            }
-        ]
+        movements = ServiceRequestQuery.get_service_request_movements_report(
+            request_id=self.service_request_id,
+            start_date=start_date,
+            end_date=end_date,
+            movement_type=event_type
+        )
         
-        # Filtrar datos de ejemplo según los filtros
-        filtered_data = []
-        for event in example_data:
-            if start_date and event['created_at'] < start_date:
-                continue
-            if end_date and event['created_at'] > end_date:
-                continue
-            if event_type and event['event_type'] != event_type:
-                continue
-            filtered_data.append(event)
-        
-        for i, event in enumerate(filtered_data):
+        for i, movement in enumerate(movements):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=(
-                event['created_at'],
-                event['event_type'],
-                event['user'],
-                event['previous_status'],
-                event['new_status'],
-                event['comments']
+                movement['created_at'],
+                movement['movement_type'],
+                movement['user'],
+                movement['previous_request_status'],
+                movement['new_request_status'],
+                movement['notes']
             ), tags=(tag,))
         
-        self.count_label.config(text=f"{len(filtered_data)} eventos encontrados")
+        self.count_label.config(text=f"{len(movements)} eventos encontrados")
 
     def clear_filters(self):
         """Limpia todos los filtros aplicados"""

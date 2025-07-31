@@ -1,11 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from typing import Callable, Any
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
-from .service_request_history_screen import ServiceRequestHistoryScreen  # Importar la pantalla de historial
+from sqlite_cli.models.service_request_query import ServiceRequestQuery
 
 class ServiceRequestsQueryScreen(tk.Frame):
     def __init__(
@@ -74,16 +73,16 @@ class ServiceRequestsQueryScreen(tk.Frame):
         search_entry.pack(side=tk.LEFT, padx=5)
         search_entry.bind("<KeyRelease>", lambda e: self.refresh_data())
 
-        # Botón de detalles
-        btn_details = CustomButton(
+        # Botón de historial
+        btn_history = CustomButton(
             filters_frame,
             text="Ver Historial",
-            command=self.open_movement_query,
+            command=self.open_history_screen,
             padding=6,
             width=15
         )
-        btn_details.pack(side=tk.RIGHT, padx=5)
-        self.btn_details = btn_details
+        btn_history.pack(side=tk.RIGHT, padx=5)
+        self.btn_history = btn_history
 
         # Treeview para mostrar las solicitudes
         tree_frame = tk.Frame(self, bg="#f5f5f5", padx=20)
@@ -91,7 +90,7 @@ class ServiceRequestsQueryScreen(tk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Número", "Cliente", "Servicio", "Estado", "Fecha Creación"),
+            columns=("ID", "Número", "Empleado", "Cliente", "Servicio", "Estado", "Fecha"),
             show="headings",
             height=20
         )
@@ -99,10 +98,11 @@ class ServiceRequestsQueryScreen(tk.Frame):
         columns = [
             ("ID", 50, tk.CENTER),
             ("Número", 120, tk.CENTER),
-            ("Cliente", 200, tk.W),
-            ("Servicio", 150, tk.W),
+            ("Empleado", 150, tk.W),
+            ("Cliente", 150, tk.W),
+            ("Servicio", 120, tk.W),
             ("Estado", 120, tk.CENTER),
-            ("Fecha Creación", 120, tk.CENTER)
+            ("Fecha", 120, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -121,44 +121,46 @@ class ServiceRequestsQueryScreen(tk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
     def on_item_selected(self, event):
-        """Manejador de selección de item en el treeview"""
         selected = self.tree.selection()
         if selected:
             self.selected_item_id = self.tree.item(selected[0])['values'][0]
 
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
-        # Limpiar el treeview
+        search_term = self.search_var.get()
+        
         for item in self.tree.get_children():
             self.tree.delete(item)
+            
+        requests = ServiceRequestQuery.get_service_requests_report(
+            search_term=search_term if search_term else None
+        )
         
-        # Aquí iría la lógica para cargar los datos reales
-        # Datos de ejemplo:
-        example_data = [
-            (1, "SR-2023-001", "Cliente Ejemplo 1", "Mantenimiento", "Pendiente", "2023-01-15"),
-            (2, "SR-2023-002", "Cliente Ejemplo 2", "Reparación", "Completado", "2023-01-20")
-        ]
-        
-        for i, item in enumerate(example_data):
+        for i, req in enumerate(requests):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
-            self.tree.insert("", tk.END, values=item, tags=(tag,))
+            self.tree.insert("", tk.END, values=(
+                req['id'],
+                req['request_number'],
+                req['employee'],
+                req['customer'],
+                req['service'],
+                req['request_status'],
+                req['created_at']
+            ), tags=(tag,))
 
-    def open_movement_query(self) -> None:
-        """Muestra el historial de la solicitud seleccionada"""
+    def open_history_screen(self) -> None:
+        """Abre la pantalla de historial para la solicitud seleccionada"""
         if not self.selected_item_id:
             messagebox.showwarning("Advertencia", "Por favor seleccione una solicitud", parent=self)
             return
         
-        # Ocultar la pantalla actual
+        from .service_request_history_screen import ServiceRequestHistoryScreen
         self.pack_forget()
-        
-        # Crear y mostrar la pantalla de historial
-        history_screen = ServiceRequestHistoryScreen(
-            parent=self.parent,
-            service_request_id=self.selected_item_id,
-            open_previous_screen_callback=lambda: self.pack()  # Callback para volver a esta pantalla
-        )
-        history_screen.pack()
+        ServiceRequestHistoryScreen(
+            self.parent,
+            self.selected_item_id,
+            lambda: self.pack(fill=tk.BOTH, expand=True)
+        ).pack(fill=tk.BOTH, expand=True)
 
     def go_back(self) -> None:
         """Regresa a la pantalla anterior"""
