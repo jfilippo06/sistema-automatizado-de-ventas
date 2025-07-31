@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from typing import Callable, Any
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
@@ -101,12 +101,13 @@ class ServiceRequestHistoryScreen(tk.Frame):
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
-        event_types = ["Todos", "Creación", "Actualización", "Asignación", "Completado", "Cancelado"]
+        event_types = ["Todos", "Asignación de empleado", "Cambio de estado", 
+                      "Actualización de estado", "Creación", "Cancelación"]
         event_combobox = CustomCombobox(
             row1_frame,
             textvariable=self.event_type_var,
             values=event_types,
-            width=15,
+            width=20,
             font=("Arial", 10)
         )
         event_combobox.pack(side=tk.LEFT, padx=5)
@@ -162,10 +163,10 @@ class ServiceRequestHistoryScreen(tk.Frame):
         
         columns = [
             ("Fecha", 150, tk.CENTER),
-            ("Evento", 120, tk.CENTER),
+            ("Evento", 150, tk.CENTER),
             ("Usuario", 120, tk.CENTER),
-            ("Estado Anterior", 120, tk.CENTER),
-            ("Estado Nuevo", 120, tk.CENTER),
+            ("Estado Anterior", 150, tk.CENTER),
+            ("Estado Nuevo", 150, tk.CENTER),
             ("Comentarios", 250, tk.W)
         ]
         
@@ -191,6 +192,7 @@ class ServiceRequestHistoryScreen(tk.Frame):
         self.count_label.pack(side=tk.BOTTOM, fill=tk.X, pady=(5, 0))
 
     def load_request_info(self):
+        """Carga la información básica de la solicitud"""
         request = ServiceRequestQuery.get_service_request_details(self.service_request_id)
         if request:
             self.info_label.config(

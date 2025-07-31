@@ -107,10 +107,23 @@ class ServiceRequestQuery:
     ) -> List[Dict]:
         """
         Obtiene un reporte de movimientos de solicitudes de servicio con filtros opcionales.
-        Basado exactamente en la estructura de la tabla service_request_movements.
         """
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Traducción de tipos de movimiento
+        movement_type_translations = {
+            'ASIGNACION_EMPLEADO': 'Asignación de empleado',
+            'CAMBIO_ESTADO': 'Cambio de estado',
+            'ACTUALIZACION_ESTADO': 'Actualización de estado',
+            'CREACION': 'Creación',
+            'CANCELACION': 'Cancelación',
+            'Todos': None
+        }
+        
+        # Convertir tipo de movimiento de español a inglés si es necesario
+        reverse_translation = {v: k for k, v in movement_type_translations.items()}
+        db_movement_type = reverse_translation.get(movement_type, movement_type)
         
         query = '''
             SELECT 
@@ -153,9 +166,9 @@ class ServiceRequestQuery:
             query += " AND DATE(srm.created_at) <= ?"
             params.append(end_date.replace("/", "-"))
             
-        if movement_type:
+        if db_movement_type and db_movement_type != "Todos":
             query += " AND mt.name = ?"
-            params.append(movement_type)
+            params.append(db_movement_type)
             
         if user_id:
             query += " AND srm.user_id = ?"
@@ -175,10 +188,21 @@ class ServiceRequestQuery:
                 except ValueError:
                     pass
             
-            # Reemplazar None por "None" en campos relevantes
+            # Traducir tipos de movimiento
+            if movement['movement_type'] in movement_type_translations:
+                movement['movement_type'] = movement_type_translations[movement['movement_type']]
+            
+            # Manejar valores nulos
             for key in movement:
                 if movement[key] is None:
-                    movement[key] = "None"
+                    if key in ['previous_request_status', 'new_request_status', 'previous_status', 'new_status']:
+                        movement[key] = "N/A"
+                    elif key == 'notes':
+                        movement[key] = "Sin comentarios"
+                    elif key in ['previous_employee', 'new_employee']:
+                        movement[key] = "N/A"
+                    else:
+                        movement[key] = ""
                     
             movements.append(movement)
         
