@@ -78,7 +78,7 @@ class ServiceRequestsQueryScreen(tk.Frame):
         btn_details = CustomButton(
             filters_frame,
             text="Ver Historial",
-            command=self.show_details,
+            command=self.open_movement_query,
             padding=6,
             width=15
         )
@@ -143,7 +143,7 @@ class ServiceRequestsQueryScreen(tk.Frame):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             self.tree.insert("", tk.END, values=item, tags=(tag,))
 
-    def show_details(self) -> None:
+    def open_movement_query(self) -> None:
         """Muestra el historial de la solicitud seleccionada"""
         if not self.selected_item_id:
             messagebox.showwarning("Advertencia", "Por favor seleccione una solicitud", parent=self)

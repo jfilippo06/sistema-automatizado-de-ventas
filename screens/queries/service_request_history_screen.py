@@ -3,7 +3,9 @@ from tkinter import ttk
 from typing import Callable, Any
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
+from widgets.custom_combobox import CustomCombobox
 from widgets.custom_entry import CustomEntry
+from utils.field_formatter import FieldFormatter
 
 class ServiceRequestHistoryScreen(tk.Frame):
     def __init__(
@@ -19,6 +21,7 @@ class ServiceRequestHistoryScreen(tk.Frame):
         self.configure(bg="#f5f5f5")
         
         # Variables
+        self.event_type_var = tk.StringVar(value="Todos")
         self.start_date_var = tk.StringVar()
         self.end_date_var = tk.StringVar()
         
@@ -36,27 +39,14 @@ class ServiceRequestHistoryScreen(tk.Frame):
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Header
-        header_frame = tk.Frame(main_frame, bg="#4a6fa5")
-        header_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        title_label = CustomLabel(
-            header_frame,
-            text=f"Historial de Solicitud de Servicio #{self.service_request_id}",
-            font=("Arial", 16, "bold"),
-            fg="white",
-            bg="#4a6fa5"
-        )
-        title_label.pack(side=tk.LEFT, padx=20, pady=10)
-
         # Información de la solicitud
         info_frame = tk.Frame(main_frame, bg="#f5f5f5", pady=10)
         info_frame.pack(fill=tk.X)
         
         self.info_label = CustomLabel(
             info_frame,
-            text="Cargando información...",
-            font=("Arial", 10),
+            text="",
+            font=("Arial", 12, "bold"),
             bg="#f5f5f5"
         )
         self.info_label.pack(anchor=tk.W)
@@ -65,64 +55,84 @@ class ServiceRequestHistoryScreen(tk.Frame):
         filters_frame = tk.Frame(main_frame, bg="#f5f5f5", pady=10)
         filters_frame.pack(fill=tk.X)
         
-        # Filtros de fecha
-        filter_row = tk.Frame(filters_frame, bg="#f5f5f5")
-        filter_row.pack(fill=tk.X, pady=5)
+        # Fila 1 de filtros
+        row1_frame = tk.Frame(filters_frame, bg="#f5f5f5")
+        row1_frame.pack(fill=tk.X, pady=5)
         
+        # Filtros de fecha
         CustomLabel(
-            filter_row,
+            row1_frame,
             text="Desde:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT)
         
         start_date_entry = CustomEntry(
-            filter_row,
+            row1_frame,
             textvariable=self.start_date_var,
             width=12,
             font=("Arial", 10)
         )
         start_date_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(start_date_entry, 'date')
         
         CustomLabel(
-            filter_row,
+            row1_frame,
             text="Hasta:",
             font=("Arial", 10),
             bg="#f5f5f5"
         ).pack(side=tk.LEFT, padx=(10, 0))
         
         end_date_entry = CustomEntry(
-            filter_row,
+            row1_frame,
             textvariable=self.end_date_var,
             width=12,
             font=("Arial", 10)
         )
         end_date_entry.pack(side=tk.LEFT, padx=5)
+        FieldFormatter.bind_validation(end_date_entry, 'date')
         
-        # Botones
-        btn_frame = tk.Frame(filter_row, bg="#f5f5f5")
-        btn_frame.pack(side=tk.RIGHT)
+        # Filtro de tipo de evento
+        CustomLabel(
+            row1_frame,
+            text="Tipo:",
+            font=("Arial", 10),
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT, padx=(10, 0))
         
+        event_types = ["Todos", "Creación", "Actualización", "Asignación", "Completado", "Cancelado"]
+        event_combobox = CustomCombobox(
+            row1_frame,
+            textvariable=self.event_type_var,
+            values=event_types,
+            width=15,
+            font=("Arial", 10)
+        )
+        event_combobox.pack(side=tk.LEFT, padx=5)
+        event_combobox.current(0)
+        
+        # Botones Filtrar y Limpiar
         btn_filter = CustomButton(
-            filter_row,
+            row1_frame,
             text="Filtrar",
             command=self.refresh_data,
             padding=6,
             width=10
         )
-        btn_filter.pack(side=tk.LEFT, padx=(20, 5))
+        btn_filter.pack(side=tk.LEFT, padx=(10, 5))
         
         btn_clear = CustomButton(
-            filter_row,
+            row1_frame,
             text="Limpiar",
             command=self.clear_filters,
             padding=6,
             width=10
         )
-        btn_clear.pack(side=tk.LEFT, padx=5)
+        btn_clear.pack(side=tk.LEFT)
         
+        # Botón de regreso (a la derecha)
         btn_back = CustomButton(
-            filter_row,
+            row1_frame,
             text="Regresar",
             command=self.go_back,
             padding=6,
@@ -130,20 +140,23 @@ class ServiceRequestHistoryScreen(tk.Frame):
         )
         btn_back.pack(side=tk.RIGHT)
         
-        # Treeview para mostrar el historial
-        tree_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        tree_frame.pack(fill=tk.BOTH, expand=True)
+        # Treeview y scrollbars
+        tree_container = tk.Frame(main_frame, bg="#f5f5f5")
+        tree_container.pack(fill=tk.BOTH, expand=True)
         
-        scroll_y = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
-        scroll_x = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL)
+        xscrollbar = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL)
+        xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        yscrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL)
+        yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.tree = ttk.Treeview(
-            tree_frame,
+            tree_container,
             columns=("Fecha", "Evento", "Usuario", "Estado Anterior", "Estado Nuevo", "Comentarios"),
             show="headings",
             height=15,
-            yscrollcommand=scroll_y.set,
-            xscrollcommand=scroll_x.set
+            xscrollcommand=xscrollbar.set,
+            yscrollcommand=yscrollbar.set
         )
         
         columns = [
@@ -162,12 +175,10 @@ class ServiceRequestHistoryScreen(tk.Frame):
         self.tree.tag_configure('evenrow', background='#ffffff')
         self.tree.tag_configure('oddrow', background='#f0f0f0')
         
-        scroll_y.config(command=self.tree.yview)
-        scroll_x.config(command=self.tree.xview)
-        
-        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
-        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
         self.tree.pack(fill=tk.BOTH, expand=True)
+        
+        xscrollbar.config(command=self.tree.xview)
+        yscrollbar.config(command=self.tree.yview)
         
         # Contador de registros
         self.count_label = CustomLabel(
@@ -180,34 +191,78 @@ class ServiceRequestHistoryScreen(tk.Frame):
 
     def load_request_info(self):
         """Carga la información básica de la solicitud"""
-        # Aquí iría la lógica para cargar la información de la solicitud
+        # Aquí iría la lógica para obtener los datos reales
+        request_info = {
+            'request_number': f"SR-2023-{self.service_request_id:03d}",
+            'customer': "Cliente Ejemplo",
+            'service': "Mantenimiento Preventivo",
+            'status': "En progreso"
+        }
+        
         self.info_label.config(
-            text=f"Solicitud #{self.service_request_id} - Cliente: Ejemplo Cliente - Servicio: Mantenimiento"
+            text=f"Solicitud: {request_info['request_number']} - Cliente: {request_info['customer']} - Servicio: {request_info['service']} - Estado: {request_info['status']}"
         )
 
     def refresh_data(self):
         """Actualiza los datos del historial según los filtros"""
         for item in self.tree.get_children():
             self.tree.delete(item)
+            
+        # Obtener valores de los filtros
+        start_date = self.start_date_var.get().replace("/", "-") if self.start_date_var.get() else None
+        end_date = self.end_date_var.get().replace("/", "-") if self.end_date_var.get() else None
+        event_type = self.event_type_var.get() if self.event_type_var.get() != "Todos" else None
         
-        # Aquí iría la lógica para cargar el historial real
+        # Aquí iría la lógica para obtener el historial real
         # Datos de ejemplo:
         example_data = [
-            ("2023-01-15 10:00", "Creación", "Admin", "", "Pendiente", "Solicitud creada"),
-            ("2023-01-16 14:30", "Actualización", "Técnico", "Pendiente", "En Proceso", "Asignado a técnico"),
-            ("2023-01-18 16:45", "Completado", "Técnico", "En Proceso", "Completado", "Servicio realizado")
+            {
+                'created_at': "2023-01-15 10:00:00",
+                'event_type': "Creación",
+                'user': "admin",
+                'previous_status': "",
+                'new_status': "Pendiente",
+                'comments': "Solicitud creada"
+            },
+            {
+                'created_at': "2023-01-16 14:30:00",
+                'event_type': "Actualización",
+                'user': "tecnico1",
+                'previous_status': "Pendiente",
+                'new_status': "En progreso",
+                'comments': "Asignado a técnico"
+            }
         ]
         
-        for i, item in enumerate(example_data):
-            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
-            self.tree.insert("", tk.END, values=item, tags=(tag,))
+        # Filtrar datos de ejemplo según los filtros
+        filtered_data = []
+        for event in example_data:
+            if start_date and event['created_at'] < start_date:
+                continue
+            if end_date and event['created_at'] > end_date:
+                continue
+            if event_type and event['event_type'] != event_type:
+                continue
+            filtered_data.append(event)
         
-        self.count_label.config(text=f"{len(example_data)} eventos encontrados")
+        for i, event in enumerate(filtered_data):
+            tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            self.tree.insert("", tk.END, values=(
+                event['created_at'],
+                event['event_type'],
+                event['user'],
+                event['previous_status'],
+                event['new_status'],
+                event['comments']
+            ), tags=(tag,))
+        
+        self.count_label.config(text=f"{len(filtered_data)} eventos encontrados")
 
     def clear_filters(self):
         """Limpia todos los filtros aplicados"""
         self.start_date_var.set("")
         self.end_date_var.set("")
+        self.event_type_var.set("Todos")
         self.refresh_data()
 
     def go_back(self) -> None:
