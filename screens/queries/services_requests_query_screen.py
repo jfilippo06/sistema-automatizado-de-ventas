@@ -1,9 +1,11 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
+from tkinter import messagebox
 from typing import Callable, Any
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from widgets.custom_entry import CustomEntry
+from .service_request_history_screen import ServiceRequestHistoryScreen  # Importar la pantalla de historial
 
 class ServiceRequestsQueryScreen(tk.Frame):
     def __init__(
@@ -75,7 +77,7 @@ class ServiceRequestsQueryScreen(tk.Frame):
         # Botón de detalles
         btn_details = CustomButton(
             filters_frame,
-            text="Ver Detalles",
+            text="Ver Historial",
             command=self.show_details,
             padding=6,
             width=15
@@ -89,23 +91,18 @@ class ServiceRequestsQueryScreen(tk.Frame):
 
         self.tree = ttk.Treeview(
             tree_frame,
-            columns=("ID", "Número de solicitud", "Empleado", "Cliente", "Servicio", 
-                    "Descripción", "Cantidad", "Total", "Estado Solicitud"),
+            columns=("ID", "Número", "Cliente", "Servicio", "Estado", "Fecha Creación"),
             show="headings",
-            height=20,
-            style="Custom.Treeview"
+            height=20
         )
 
         columns = [
             ("ID", 50, tk.CENTER),
-            ("Número de solicitud", 120, tk.CENTER),
-            ("Empleado", 150, tk.W),
-            ("Cliente", 150, tk.W),
-            ("Servicio", 120, tk.W),
-            ("Descripción", 180, tk.W),
-            ("Cantidad", 70, tk.CENTER),
-            ("Total", 90, tk.CENTER),
-            ("Estado Solicitud", 120, tk.CENTER)
+            ("Número", 120, tk.CENTER),
+            ("Cliente", 200, tk.W),
+            ("Servicio", 150, tk.W),
+            ("Estado", 120, tk.CENTER),
+            ("Fecha Creación", 120, tk.CENTER)
         ]
 
         for col, width, anchor in columns:
@@ -124,76 +121,46 @@ class ServiceRequestsQueryScreen(tk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
     def on_item_selected(self, event):
+        """Manejador de selección de item en el treeview"""
         selected = self.tree.selection()
         if selected:
             self.selected_item_id = self.tree.item(selected[0])['values'][0]
 
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
-        search_term = self.search_var.get()
-        
         # Limpiar el treeview
         for item in self.tree.get_children():
             self.tree.delete(item)
-            
-        # Aquí iría la lógica para obtener las solicitudes de servicio
-        # Por ahora dejamos esta función vacía
         
-        # Datos de ejemplo (eliminar esto cuando implementes la conexión real)
+        # Aquí iría la lógica para cargar los datos reales
+        # Datos de ejemplo:
         example_data = [
-            {
-                'id': 1,
-                'request_number': 'SR-2023-001',
-                'employee': 'Juan Pérez',
-                'customer': 'Cliente Ejemplo 1',
-                'service': 'Mantenimiento Preventivo',
-                'description': 'Servicio de mantenimiento programado',
-                'quantity': 1,
-                'total': 150.00,
-                'status': 'En progreso'
-            },
-            {
-                'id': 2,
-                'request_number': 'SR-2023-002',
-                'employee': 'María Gómez',
-                'customer': 'Cliente Ejemplo 2',
-                'service': 'Reparación de Equipo',
-                'description': 'Reparación de laptop dañada',
-                'quantity': 1,
-                'total': 250.00,
-                'status': 'Completado'
-            }
+            (1, "SR-2023-001", "Cliente Ejemplo 1", "Mantenimiento", "Pendiente", "2023-01-15"),
+            (2, "SR-2023-002", "Cliente Ejemplo 2", "Reparación", "Completado", "2023-01-20")
         ]
         
         for i, item in enumerate(example_data):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
-            self.tree.insert("", tk.END, values=(
-                item['id'],
-                item['request_number'],
-                item['employee'],
-                item['customer'],
-                item['service'],
-                item['description'],
-                item['quantity'],
-                f"{item['total']:.2f}",
-                item['status']
-            ), tags=(tag,))
+            self.tree.insert("", tk.END, values=item, tags=(tag,))
 
     def show_details(self) -> None:
-        """Muestra los detalles de la solicitud seleccionada"""
-        if self.selected_item_id:
-            # Aquí iría la lógica para mostrar los detalles
-            # Por ahora mostramos un mensaje
-            messagebox.showinfo(
-                "Detalles de Solicitud", 
-                f"Mostraría detalles para solicitud ID: {self.selected_item_id}",
-                parent=self
-            )
-        else:
+        """Muestra el historial de la solicitud seleccionada"""
+        if not self.selected_item_id:
             messagebox.showwarning("Advertencia", "Por favor seleccione una solicitud", parent=self)
+            return
+        
+        # Ocultar la pantalla actual
+        self.pack_forget()
+        
+        # Crear y mostrar la pantalla de historial
+        history_screen = ServiceRequestHistoryScreen(
+            parent=self.parent,
+            service_request_id=self.selected_item_id,
+            open_previous_screen_callback=lambda: self.pack()  # Callback para volver a esta pantalla
+        )
+        history_screen.pack()
 
     def go_back(self) -> None:
         """Regresa a la pantalla anterior"""
         self.pack_forget()
-        self.parent.state('normal')  # Reset window state before going back
         self.open_previous_screen_callback()
