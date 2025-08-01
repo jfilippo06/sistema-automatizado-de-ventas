@@ -138,33 +138,36 @@ class ServiceRequest:
         conn.close()
         return items
 
-    @staticmethod
-    def get_by_id(request_id: int) -> Optional[Dict]:
+    @classmethod
+    def get_by_id(cls, request_id: int) -> Optional[Dict]:
+        """Obtiene una solicitud de servicio por su ID"""
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            SELECT sr.*, 
-                   c.first_name, c.last_name, c.id_number,
-                   s.name as service_name,
-                   rs.name as request_status_name,
-                   sr.employee_id,
-                   CASE 
-                       WHEN u.id IS NULL THEN 'Sin asignar'
-                       ELSE p.first_name || ' ' || p.last_name 
-                   END as employee_name,
-                   u.username as employee_username
+        
+        query = '''
+            SELECT 
+                sr.*,
+                rs.name as request_status_name,
+                s.name as status_name,
+                c.first_name || ' ' || c.last_name as customer_name,
+                sv.name as service_name,
+                u.username as employee_name
             FROM service_requests sr
-            JOIN customers c ON sr.customer_id = c.id
-            JOIN services s ON sr.service_id = s.id
             JOIN request_status rs ON sr.request_status_id = rs.id
-            JOIN status st ON sr.status_id = st.id
+            JOIN status s ON sr.status_id = s.id
+            JOIN customers c ON sr.customer_id = c.id
+            JOIN services sv ON sr.service_id = sv.id
             LEFT JOIN users u ON sr.employee_id = u.id
-            LEFT JOIN person p ON u.person_id = p.id
-            WHERE sr.id = ? AND st.name = 'active'
-        ''', (request_id,))
-        item = cursor.fetchone()
+            WHERE sr.id = ?
+        '''
+        
+        cursor.execute(query, (request_id,))
+        result = cursor.fetchone()
         conn.close()
-        return dict(item) if item else None
+        
+        if result:
+            return dict(result)
+        return None
 
     @staticmethod
     def update_employee(request_id: int, employee_id: int) -> None:

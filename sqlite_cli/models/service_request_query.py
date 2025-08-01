@@ -37,7 +37,6 @@ class ServiceRequestQuery:
             JOIN services s ON sr.service_id = s.id
             JOIN users u ON sr.employee_id = u.id
             JOIN request_status rs ON sr.request_status_id = rs.id
-            WHERE sr.status_id = 1  -- Solo activos
         '''
         
         params = []

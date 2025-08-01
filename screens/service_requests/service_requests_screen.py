@@ -365,7 +365,7 @@ class ServiceRequestsScreen(tk.Frame):
                         ServiceRequestMovementType.record_movement(
                             request_id=item_id,
                             movement_type_name="ACTUALIZACION_ESTADO",
-                            previous_request_status_id=request['status_id'],
+                            previous_request_status_id=request['request_status_id'],
                             new_request_status_id=status['id'],
                             notes=f"Estado cambiado a {new_status}"
                         )
