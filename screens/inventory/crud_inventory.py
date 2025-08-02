@@ -229,19 +229,19 @@ class CrudInventory(tk.Toplevel):
     def validate_required_fields(self) -> bool:
         if self.from_sales:
             required_fields = {
-                "Código:": (self.entries["Código:"][0], self.code_var.get()),
-                "Producto:": (self.entries["Producto:"][0], self.product_var.get()),
-                "Cantidad:": (self.entries["Cantidad:"][0], self.quantity_var.get()),
-                "Precio de venta:": (self.entries["Precio de venta:"][0], self.price_var.get())
+                "Código:": (self.entries["Código:"], self.code_var.get()),
+                "Producto:": (self.entries["Producto:"], self.product_var.get()),
+                "Cantidad:": (self.entries["Cantidad:"], self.quantity_var.get()),
+                "Precio de venta:": (self.entries["Precio de venta:"], self.price_var.get())
             }
         else:
             required_fields = {
-                "Código:": (self.entries["Código:"][0], self.code_var.get()),
-                "Producto:": (self.entries["Producto:"][0], self.product_var.get()),
-                "Cantidad:": (self.entries["Cantidad:"][0], self.quantity_var.get()),
-                "Existencias:": (self.entries["Existencias:"][0], self.stock_var.get()),
-                "Precio de compra:": (self.entries["Precio de compra:"][0], self.cost_var.get()),
-                "Precio de venta:": (self.entries["Precio de venta:"][0], self.price_var.get())
+                "Código:": (self.entries["Código:"], self.code_var.get()),
+                "Producto:": (self.entries["Producto:"], self.product_var.get()),
+                "Cantidad:": (self.entries["Cantidad:"], self.quantity_var.get()),
+                "Existencias:": (self.entries["Existencias:"], self.stock_var.get()),
+                "Precio de compra:": (self.entries["Precio de compra:"], self.cost_var.get()),
+                "Precio de venta:": (self.entries["Precio de venta:"], self.price_var.get())
             }
             
         return FieldFormatter.validate_required_fields(required_fields, self)
