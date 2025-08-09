@@ -162,21 +162,38 @@ class BillingScreen(tk.Frame):
 
         # Products tab
         products_tab = tk.Frame(self.catalog_notebook, bg="#f5f5f5")
-        self.catalog_notebook.add(products_tab, text="Productos")
+        products_icon = tk.PhotoImage(file="assets/iconos/comercio_electronico.png").subsample(20, 20)  # Reducir tamaño
+        self.catalog_notebook.add(products_tab, text=" Productos", image=products_icon, compound=tk.LEFT)  # Espacio antes del texto
 
         # Services tab
         services_tab = tk.Frame(self.catalog_notebook, bg="#f5f5f5")
-        self.catalog_notebook.add(services_tab, text="Servicios")
+        services_icon = tk.PhotoImage(file="assets/iconos/gestion_de_productos.png").subsample(20, 20)  # Reducir tamaño
+        self.catalog_notebook.add(services_tab, text=" Servicios", image=services_icon, compound=tk.LEFT)  # Espacio antes del texto
+
+        # Guardar referencias a las imágenes
+        self.products_icon = products_icon
+        self.services_icon = services_icon
 
         # Treeview para productos disponibles
-        lbl_products = CustomLabel(
-            products_tab,
+        products_available_icon = tk.PhotoImage(file="assets/iconos/comercio_electronico.png").subsample(20, 20)
+        lbl_products = tk.Frame(products_tab, bg="#f5f5f5")
+        lbl_products.pack(anchor=tk.W)
+
+        tk.Label(
+            lbl_products,
+            image=products_available_icon,
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+
+        CustomLabel(
+            lbl_products,
             text="Productos Disponibles",
             font=("Arial", 14),
             fg="#333",
             bg="#f5f5f5"
-        )
-        lbl_products.pack(anchor=tk.W)
+        ).pack(side=tk.LEFT)
+
+        self.products_available_icon = products_available_icon
 
         products_frame = tk.Frame(products_tab)
         products_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
@@ -217,14 +234,25 @@ class BillingScreen(tk.Frame):
         self.products_tree.bind("<Button-1>", self.on_product_click)
 
         # Treeview para servicios disponibles
-        lbl_services = CustomLabel(
-            services_tab,
+        services_available_icon = tk.PhotoImage(file="assets/iconos/gestion_de_productos.png").subsample(20, 20)
+        lbl_services = tk.Frame(services_tab, bg="#f5f5f5")
+        lbl_services.pack(anchor=tk.W)
+
+        tk.Label(
+            lbl_services,
+            image=services_available_icon,
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+
+        CustomLabel(
+            lbl_services,
             text="Servicios Disponibles",
             font=("Arial", 14),
             fg="#333",
             bg="#f5f5f5"
-        )
-        lbl_services.pack(anchor=tk.W)
+        ).pack(side=tk.LEFT)
+
+        self.services_available_icon = services_available_icon
 
         services_frame = tk.Frame(services_tab)
         services_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
@@ -263,14 +291,26 @@ class BillingScreen(tk.Frame):
         self.services_tree.bind("<Button-1>", self.on_service_click)
 
         # Treeview para carrito de compras (más ancha)
-        lbl_cart = CustomLabel(
-            tables_frame,
+        cart_icon = tk.PhotoImage(file="assets/iconos/carrito_de_supermercado.png").subsample(18, 18)
+        lbl_cart_frame = tk.Frame(tables_frame, bg="#f5f5f5")
+        lbl_cart_frame.pack(anchor=tk.W)
+
+        tk.Label(
+            lbl_cart_frame,
+            image=cart_icon,
+            bg="#f5f5f5"
+        ).pack(side=tk.LEFT)
+
+        CustomLabel(
+            lbl_cart_frame,
             text="Carrito de Compras",
             font=("Arial", 14),
             fg="#333",
             bg="#f5f5f5"
-        )
-        lbl_cart.pack(anchor=tk.W)
+        ).pack(side=tk.LEFT)
+
+        # Guardar referencia a la imagen
+        self.cart_icon = cart_icon
 
         cart_frame = tk.Frame(tables_frame)
         cart_frame.pack(fill=tk.BOTH, expand=True)
@@ -347,12 +387,26 @@ class BillingScreen(tk.Frame):
             bg="#4a6fa5"
         )
         
+        self.lbl_dollar = CustomLabel(
+            totals_frame,
+            text="Dólares: $0.00",
+            font=("Arial", 12),
+            fg="white",
+            bg="#4a6fa5",
+            image_path="assets/iconos/dolares.png",
+            image_size=(18, 18),
+            compound=tk.LEFT
+        )
+        
         self.lbl_euro = CustomLabel(
             totals_frame,
             text="Euros: €0.00",
             font=("Arial", 12),
             fg="white",
-            bg="#4a6fa5"
+            bg="#4a6fa5",
+            image_path="assets/iconos/euros.png",
+            image_size=(18, 18),
+            compound=tk.LEFT
         )
         
         # Verificar qué impuestos/divisas están activos y mostrar los labels correspondientes

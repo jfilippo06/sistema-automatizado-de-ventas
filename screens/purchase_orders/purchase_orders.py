@@ -380,7 +380,10 @@ class PurchaseOrdersScreen(tk.Frame):
             text="Dólares: $0.00",
             font=("Arial", 12),
             fg="white",
-            bg="#4a6fa5"
+            bg="#4a6fa5",
+            image_path="assets/iconos/dolares.png",
+            image_size=(18, 18),
+            compound=tk.LEFT
         )
         
         self.lbl_euro = CustomLabel(
@@ -388,7 +391,10 @@ class PurchaseOrdersScreen(tk.Frame):
             text="Euros: €0.00",
             font=("Arial", 12),
             fg="white",
-            bg="#4a6fa5"
+            bg="#4a6fa5",
+            image_path="assets/iconos/euros.png",
+            image_size=(18, 18),
+            compound=tk.LEFT
         )
 
         # Show labels according to active taxes/currencies
