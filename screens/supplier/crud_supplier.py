@@ -27,7 +27,7 @@ class CrudSupplier(tk.Toplevel):
         
         # Configuración de la ventana
         self.title("Guardar Proveedor" if mode == "create" else "Editar Proveedor")
-        self.geometry("360x500")
+        self.geometry("350x500")
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
         
@@ -56,16 +56,33 @@ class CrudSupplier(tk.Toplevel):
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Título
+        # Título centrado
         title_text = "Nuevo Proveedor" if self.mode == "create" else "Editar Proveedor"
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+        
         title_label = CustomLabel(
-            main_frame,
+            title_frame,
             text=title_text,
             font=("Arial", 16, "bold"),
             fg="#333",
             bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.pack(expand=True)
+        
+        # Marco para los campos del formulario con borde
+        form_frame = tk.LabelFrame(
+            main_frame,
+            text="Información del Proveedor",
+            font=("Arial", 12),
+            bg="#f5f5f5",
+            fg="#555",
+            padx=10,
+            pady=10,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        form_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(0, 10))
         
         # Configuración de campos editables
         if self.mode == "create":
@@ -88,23 +105,29 @@ class CrudSupplier(tk.Toplevel):
             ("Empresa:", self.company_var, 'company', True)
         ]
         
-        for i, (label, var, field_type, editable) in enumerate(fields, start=1):
+        for i, (label, var, field_type, editable) in enumerate(fields, start=0):
+            # Frame para cada fila del formulario
+            row_frame = tk.Frame(form_frame, bg="#f5f5f5")
+            row_frame.grid(row=i, column=0, sticky="ew", pady=3)
+            
             # Etiqueta del campo
             field_label = CustomLabel(
-                main_frame,
+                row_frame,
                 text=label,
                 font=("Arial", 12),
                 fg="#555",
-                bg="#f5f5f5"
+                bg="#f5f5f5",
+                width=12,
+                anchor="w"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.pack(side=tk.LEFT, padx=(0, 5))
             
             # Campo de entrada
             entry = CustomEntry(
-                main_frame,
+                row_frame,
                 textvariable=var,
                 font=("Arial", 12),
-                width=35,
+                width=25,
                 state="normal" if editable else "readonly"
             )
             
@@ -112,32 +135,43 @@ class CrudSupplier(tk.Toplevel):
             if editable:
                 FieldFormatter.bind_validation(entry, field_type)
             
-            entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+            entry.pack(side=tk.RIGHT, expand=True, fill=tk.X)
             self.entries[label] = (entry, field_type)
         
-        # Frame para botones
-        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 0))
+        # Frame para botones con borde
+        btn_frame = tk.LabelFrame(
+            main_frame,
+            bg="#f5f5f5",
+            relief=tk.GROOVE,
+            borderwidth=2,
+            padx=10,
+            pady=8
+        )
+        btn_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        
+        # Contenedor interno para centrar los botones
+        btn_container = tk.Frame(btn_frame, bg="#f5f5f5")
+        btn_container.pack(expand=True)
         
         # Botón principal
         btn_action = CustomButton(
-            btn_frame, 
+            btn_container, 
             text="Guardar" if self.mode == "create" else "Actualizar", 
             command=self.create_supplier if self.mode == "create" else self.update_supplier,
             padding=10,
             width=15
         )
-        btn_action.pack(side=tk.LEFT, padx=5)
+        btn_action.pack(side=tk.LEFT, padx=10)
         
         # Botón Cancelar
         btn_cancel = CustomButton(
-            btn_frame, 
+            btn_container, 
             text="Cancelar", 
             command=self.destroy,
             padding=10,
             width=15
         )
-        btn_cancel.pack(side=tk.LEFT, padx=5)
+        btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def validate_required_fields(self) -> bool:
         """Valida que todos los campos requeridos estén completos"""

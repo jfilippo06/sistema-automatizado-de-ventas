@@ -224,7 +224,7 @@ class Suppliers(tk.Frame):
             refresh_callback=self.refresh_data,
             lock_id_number=False
         )
-        self._center_window(crud, 360, 500)
+        self._center_window(crud, 350, 520)
 
     def edit_supplier(self) -> None:
         """Abre el formulario para editar proveedor centrado en pantalla"""
@@ -240,7 +240,7 @@ class Suppliers(tk.Frame):
             supplier_id=supplier_id,
             refresh_callback=self.refresh_data
         )
-        self._center_window(crud, 360, 500)
+        self._center_window(crud, 350, 520)
 
     def disable_supplier(self) -> None:
         selected = self.tree.selection()
