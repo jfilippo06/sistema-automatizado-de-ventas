@@ -24,7 +24,7 @@ class CrudUser(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Crear Usuario" if mode == "create" else "Editar Usuario")
-        self.geometry("500x700")
+        self.geometry("450x700")
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
         
@@ -183,14 +183,24 @@ class CrudUser(tk.Toplevel):
                     entry.pack(side=tk.RIGHT, expand=True, fill=tk.X)
                     self.entries[label] = entry
 
-        # Frame para botones al final del formulario
-        btn_frame = tk.Frame(scrollable_frame, bg="#f5f5f5", pady=20)
-        btn_frame.pack(fill=tk.X)
-        
+        # Frame para botones con borde al final del formulario
+        btn_frame = tk.LabelFrame(
+            scrollable_frame,
+            text="Acciones",
+            font=("Arial", 12, "bold"),
+            bg="#f5f5f5",
+            fg="#555",
+            padx=10,
+            pady=10,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        btn_frame.pack(fill=tk.X, pady=(20, 0))
+
         # Contenedor interno para centrar botones
         btn_container = tk.Frame(btn_frame, bg="#f5f5f5")
         btn_container.pack(expand=True)
-        
+
         if self.mode == "create":
             btn_action = CustomButton(
                 btn_container, 
