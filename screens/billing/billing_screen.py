@@ -999,8 +999,8 @@ class BillingScreen(tk.Frame):
             refresh_callback=on_customer_created
         )
         
-        window_width = 380 
-        window_height = 400 
+        window_width = 400 
+        window_height = 450 
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         

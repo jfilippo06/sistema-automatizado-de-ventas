@@ -24,16 +24,7 @@ class CrudUser(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Crear Usuario" if mode == "create" else "Editar Usuario")
-        
-        # Configuración de tamaño y posición centrada
-        window_width = 400
-        window_height = 680
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        x = (screen_width // 2) - (window_width // 2)
-        y = (screen_height // 2) - (window_height // 2)
-        
-        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        self.geometry("500x700")
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
         
@@ -69,13 +60,15 @@ class CrudUser(tk.Toplevel):
             self.load_user_data()
 
     def configure_ui(self) -> None:
-        main_frame = tk.Frame(self, bg="#f5f5f5", padx=25, pady=20)
+        """Configura la interfaz de usuario con el nuevo diseño"""
+        main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky="ew")
-        
+        # Título centrado
         title_text = "Nuevo Usuario" if self.mode == "create" else "Editar Usuario"
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.pack(pady=(0, 15))
+        
         title_label = CustomLabel(
             title_frame,
             text=title_text,
@@ -83,8 +76,26 @@ class CrudUser(tk.Toplevel):
             fg="#333",
             bg="#f5f5f5"
         )
-        title_label.pack(pady=10, padx=10, anchor="w")
+        title_label.pack(expand=True)
         
+        # Contenedor principal con scroll
+        canvas = tk.Canvas(main_frame, bg="#f5f5f5", highlightthickness=0)
+        scrollbar = tk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#f5f5f5")
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
         # Definición de secciones y campos con sus tipos de formateo
         sections = [
             ("Información de Acceso", [
@@ -97,7 +108,7 @@ class CrudUser(tk.Toplevel):
                 ("Nombres:", self.first_name_var, 'name', True),
                 ("Apellidos:", self.last_name_var, 'name', True),
                 ("Cédula:", self.id_number_var, 'integer', True),
-                ("Dirección:", self.address_var, 'first_name', True),
+                ("Dirección:", self.address_var, 'address', True),
                 ("Teléfono:", self.phone_var, 'phone', True),
                 ("Correo:", self.email_var, 'email', True)
             ]),
@@ -107,30 +118,33 @@ class CrudUser(tk.Toplevel):
             ])
         ]
         
-        row_counter = 1
         for section_title, fields in sections:
-            section_label = CustomLabel(
-                main_frame,
+            # Marco para cada sección con borde
+            section_frame = tk.LabelFrame(
+                scrollable_frame,
                 text=section_title,
                 font=("Arial", 12, "bold"),
-                fg="#333",
-                bg="#f5f5f5"
+                bg="#f5f5f5",
+                fg="#555",
+                padx=10,
+                pady=10,
+                relief=tk.GROOVE,
+                borderwidth=2
             )
-            section_label.grid(row=row_counter, column=0, columnspan=2, pady=(10, 5), sticky="w")
-            row_counter += 1
+            section_frame.pack(fill=tk.X, pady=10, padx=5)
             
-            for field in fields:
-                label, var, field_type, editable, *extra = field
+            for label, var, field_type, editable, *extra in fields:
                 is_password = len(extra) > 0 and extra[0]
                 
-                field_frame = tk.Frame(main_frame, bg="#f5f5f5")
-                field_frame.grid(row=row_counter, column=0, columnspan=2, sticky="ew", pady=3)
+                # Frame para cada campo
+                field_frame = tk.Frame(section_frame, bg="#f5f5f5")
+                field_frame.pack(fill=tk.X, pady=5)
                 
                 field_label = CustomLabel(
                     field_frame,
                     text=label,
-                    font=("Arial", 10),
-                    fg="#333",
+                    font=("Arial", 12),
+                    fg="#555",
                     bg="#f5f5f5",
                     width=20,
                     anchor="w"
@@ -148,16 +162,17 @@ class CrudUser(tk.Toplevel):
                         textvariable=var,
                         values=values,
                         state="readonly",
+                        font=("Arial", 12),
                         width=25
                     )
-                    combobox.pack(side=tk.LEFT, expand=True, fill=tk.X)
+                    combobox.pack(side=tk.RIGHT, expand=True, fill=tk.X)
                     self.entries[label] = combobox
                 else:
                     entry = CustomEntry(
                         field_frame,
                         textvariable=var,
-                        font=("Arial", 10),
-                        width=30,
+                        font=("Arial", 12),
+                        width=25,
                         state="normal" if editable else "readonly",
                         show="*" if is_password else None
                     )
@@ -165,42 +180,46 @@ class CrudUser(tk.Toplevel):
                     if field_type and editable:
                         FieldFormatter.bind_validation(entry, field_type)
                     
-                    entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
+                    entry.pack(side=tk.RIGHT, expand=True, fill=tk.X)
                     self.entries[label] = entry
-                
-                row_counter += 1
 
-        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        btn_frame.grid(row=row_counter, column=0, columnspan=2, pady=(20, 0), sticky="e")
+        # Frame para botones al final del formulario
+        btn_frame = tk.Frame(scrollable_frame, bg="#f5f5f5", pady=20)
+        btn_frame.pack(fill=tk.X)
         
-        btn_cancel = CustomButton(
-            btn_frame, 
-            text="Cancelar", 
-            command=self.destroy,
-            padding=8,
-            width=12
-        )
-        btn_cancel.pack(side=tk.RIGHT, padx=5)
+        # Contenedor interno para centrar botones
+        btn_container = tk.Frame(btn_frame, bg="#f5f5f5")
+        btn_container.pack(expand=True)
         
         if self.mode == "create":
             btn_action = CustomButton(
-                btn_frame, 
+                btn_container, 
                 text="Guardar", 
                 command=self.create_user,
-                padding=8,
-                width=12
+                padding=10,
+                width=15
             )
         else:
             btn_action = CustomButton(
-                btn_frame, 
+                btn_container, 
                 text="Actualizar", 
                 command=self.update_user,
-                padding=8,
-                width=12
+                padding=10,
+                width=15
             )
-        btn_action.pack(side=tk.RIGHT, padx=5)
+        btn_action.pack(side=tk.LEFT, padx=10)
+        
+        btn_cancel = CustomButton(
+            btn_container, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=10,
+            width=15
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def validate_required_fields(self) -> bool:
+        """Valida que todos los campos requeridos estén completos"""
         required_fields = {
             "Usuario:": (self.entries["Usuario:"], self.username_var.get()),
             "Nombres:": (self.entries["Nombres:"], self.first_name_var.get()),
@@ -224,6 +243,7 @@ class CrudUser(tk.Toplevel):
         return True
 
     def load_user_data(self) -> None:
+        """Carga los datos del usuario para edición"""
         user = User.get_by_id(self.user_id)
         if not user:
             messagebox.showerror("Error", "No se pudo cargar el usuario", parent=self)
@@ -248,6 +268,7 @@ class CrudUser(tk.Toplevel):
             self.role_var.set(translated_role)
 
     def create_user(self) -> None:
+        """Crea un nuevo usuario"""
         if not self.validate_required_fields():
             return
             
@@ -287,6 +308,7 @@ class CrudUser(tk.Toplevel):
             messagebox.showerror("Error", f"No se pudo crear el usuario: {str(e)}", parent=self)
 
     def update_user(self) -> None:
+        """Actualiza un usuario existente"""
         if not self.validate_required_fields():
             return
             

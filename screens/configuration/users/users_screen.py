@@ -203,7 +203,8 @@ class UsersScreen(tk.Frame):
         self.open_previous_screen_callback()
 
     def add_user(self) -> None:
-        CrudUser(self, mode="create", refresh_callback=self.refresh_data)
+        crud = CrudUser(self, mode="create", refresh_callback=self.refresh_data)
+        self._center_window(crud, 500, 700)
 
     def edit_user(self) -> None:
         selected = self.tree.selection()
@@ -212,7 +213,8 @@ class UsersScreen(tk.Frame):
             return
             
         user_id = self.tree.item(selected[0])['values'][0]
-        CrudUser(self, mode="edit", user_id=user_id, refresh_callback=self.refresh_data)
+        crud = CrudUser(self, mode="edit", user_id=user_id, refresh_callback=self.refresh_data)
+        self._center_window(crud, 500, 700)
 
     def disable_user(self) -> None:
         selected = self.tree.selection()
@@ -240,3 +242,11 @@ class UsersScreen(tk.Frame):
                     messagebox.showerror("Error", "No se encontró el estado 'inactivo'", parent=self)
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo desactivar el usuario: {str(e)}", parent=self)
+    
+    def _center_window(self, window, width, height):
+        """Centra una ventana en la pantalla"""
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        window.geometry(f"{width}x{height}+{x}+{y}")

@@ -22,7 +22,7 @@ class CrudCustomer(tk.Toplevel):
         self.refresh_callback = refresh_callback
         
         self.title("Nuevo Cliente" if mode == "create" else "Editar Cliente")
-        self.geometry("380x400")
+        self.geometry("400x450")
         self.resizable(False, False)
         self.configure(bg="#f5f5f5")
         
@@ -44,13 +44,15 @@ class CrudCustomer(tk.Toplevel):
             self.load_customer_data()
 
     def configure_ui(self) -> None:
+        """Configura la interfaz de usuario con el nuevo diseño"""
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
-        
+        # Título centrado
         title_text = "Nuevo Cliente" if self.mode == "create" else "Editar Cliente"
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.pack(pady=(0, 15))
+        
         title_label = CustomLabel(
             title_frame,
             text=title_text,
@@ -58,7 +60,21 @@ class CrudCustomer(tk.Toplevel):
             fg="#333",
             bg="#f5f5f5"
         )
-        title_label.pack(pady=10, padx=10, anchor="w")
+        title_label.pack(expand=True)
+        
+        # Marco principal con borde
+        form_frame = tk.LabelFrame(
+            main_frame,
+            text="Información del Cliente",
+            font=("Arial", 12),
+            bg="#f5f5f5",
+            fg="#555",
+            padx=15,
+            pady=15,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        form_frame.pack(fill=tk.BOTH, expand=True)
         
         # Definición de campos con sus tipos de formateo
         fields = [
@@ -67,53 +83,57 @@ class CrudCustomer(tk.Toplevel):
             ("Cédula:", self.id_number_var, 'integer', self.mode == "create"),
             ("Email:", self.email_var, 'email', True),
             ("Teléfono:", self.phone_var, 'phone', True),
-            ("Dirección:", self.address_var, 'first_name', True)
+            ("Dirección:", self.address_var, 'address', True)
         ]
         
-        for i, (label, var, field_type, editable) in enumerate(fields, start=1):
-            field_frame = tk.Frame(main_frame, bg="#f5f5f5")
-            field_frame.grid(row=i, column=0, columnspan=2, sticky="ew", pady=5)
+        for i, (label, var, field_type, editable) in enumerate(fields):
+            # Frame para cada fila
+            row_frame = tk.Frame(form_frame, bg="#f5f5f5")
+            row_frame.grid(row=i, column=0, sticky="ew", pady=5)
             
             field_label = CustomLabel(
-                field_frame,
+                row_frame,
                 text=label,
-                font=("Arial", 10),
-                fg="#333",
+                font=("Arial", 12),
+                fg="#555",
                 bg="#f5f5f5",
-                width=15,
+                width=12,
                 anchor="w"
             )
             field_label.pack(side=tk.LEFT, padx=(0, 10))
             
             entry = CustomEntry(
-                field_frame,
+                row_frame,
                 textvariable=var,
-                font=("Arial", 10),
-                width=30,
+                font=("Arial", 12),
+                width=25,
                 state="normal" if editable else "readonly"
             )
             
             if editable:
                 FieldFormatter.bind_validation(entry, field_type)
             
-            entry.pack(side=tk.LEFT, expand=True, fill=tk.X)
+            entry.pack(side=tk.RIGHT, expand=True, fill=tk.X)
             self.entries[label] = entry
         
-        btn_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(30, 10), sticky="e")
-        
-        btn_cancel = CustomButton(
-            btn_frame, 
-            text="Cancelar", 
-            command=self.destroy,
-            padding=8,
-            width=12
+        # Frame para botones con borde
+        btn_frame = tk.LabelFrame(
+            main_frame,
+            bg="#f5f5f5",
+            relief=tk.GROOVE,
+            borderwidth=2,
+            padx=10,
+            pady=8
         )
-        btn_cancel.pack(side=tk.RIGHT, padx=5)
+        btn_frame.pack(fill=tk.X, pady=(15, 0))
+        
+        # Contenedor interno para centrar botones
+        btn_container = tk.Frame(btn_frame, bg="#f5f5f5")
+        btn_container.pack(expand=True)
         
         if self.mode == "create":
             btn_action = CustomButton(
-                btn_frame, 
+                btn_container, 
                 text="Guardar", 
                 command=self.create_customer,
                 padding=8,
@@ -121,13 +141,22 @@ class CrudCustomer(tk.Toplevel):
             )
         else:
             btn_action = CustomButton(
-                btn_frame, 
+                btn_container, 
                 text="Actualizar", 
                 command=self.update_customer,
                 padding=8,
                 width=12
             )
-        btn_action.pack(side=tk.RIGHT, padx=5)
+        btn_action.pack(side=tk.LEFT, padx=10)
+        
+        btn_cancel = CustomButton(
+            btn_container, 
+            text="Cancelar", 
+            command=self.destroy,
+            padding=8,
+            width=12
+        )
+        btn_cancel.pack(side=tk.LEFT, padx=10)
 
     def validate_required_fields(self) -> bool:
         """Valida que todos los campos requeridos estén completos"""
@@ -176,8 +205,8 @@ class CrudCustomer(tk.Toplevel):
             existing_customer = Customer.get_by_id_number(self.id_number_var.get())
             if existing_customer:
                 messagebox.showwarning("Cédula existente", 
-                                     "Ya existe un cliente con esta cédula", 
-                                     parent=self)
+                                    "Ya existe un cliente con esta cédula", 
+                                    parent=self)
                 return
             
             Customer.create(

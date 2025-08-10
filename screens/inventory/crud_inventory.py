@@ -64,20 +64,42 @@ class CrudInventory(tk.Toplevel):
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        form_frame = tk.Frame(main_frame, bg="#f5f5f5")
-        form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10)
-        
+        # Título centrado
         title_text = "Agregar Nuevo Producto al Carrito" if self.from_sales else (
             "Nuevo Producto" if self.mode == "create" else "Editar Producto"
         )
+        title_frame = tk.Frame(main_frame, bg="#f5f5f5")
+        title_frame.pack(pady=(0, 15))
+        
         title_label = CustomLabel(
-            form_frame,
+            title_frame,
             text=title_text,
             font=("Arial", 16, "bold"),
             fg="#333",
             bg="#f5f5f5"
         )
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="w")
+        title_label.pack(expand=True)
+        
+        # Frame principal con bordes
+        border_frame = tk.LabelFrame(
+            main_frame,
+            text="Información del Producto",
+            font=("Arial", 12),
+            bg="#f5f5f5",
+            fg="#555",
+            padx=10,
+            pady=10,
+            relief=tk.GROOVE,
+            borderwidth=2
+        )
+        border_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Frame para el formulario e imagen
+        content_frame = tk.Frame(border_frame, bg="#f5f5f5")
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        form_frame = tk.Frame(content_frame, bg="#f5f5f5", padx=10)
+        form_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # Definición de campos con sus tipos de formateo
         fields = [
@@ -95,47 +117,64 @@ class CrudInventory(tk.Toplevel):
         ]
         
         for i, (label, var, field_type, editable) in enumerate(fields, start=1):
+            # Frame para cada fila
+            row_frame = tk.Frame(form_frame, bg="#f5f5f5")
+            row_frame.grid(row=i, column=0, sticky="ew", pady=3)
+            
             field_label = CustomLabel(
-                form_frame,
+                row_frame,
                 text=label,
                 font=("Arial", 12),
                 fg="#555",
-                bg="#f5f5f5"
+                bg="#f5f5f5",
+                width=15,
+                anchor="w"
             )
-            field_label.grid(row=i, column=0, sticky="w", pady=5)
+            field_label.pack(side=tk.LEFT, padx=(0, 5))
             
             if label == "Proveedor:":
                 suppliers = Supplier.search_active()
                 values = [f"{supplier['company']} ({supplier['code']})" for supplier in suppliers]
                 
                 combobox = CustomCombobox(
-                    form_frame,
+                    row_frame,
                     textvariable=var,
                     values=values,
                     state="readonly",
                     width=30,
                     font=("Arial", 12)
                 )
-                combobox.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                combobox.pack(side=tk.RIGHT, expand=True, fill=tk.X)
                 self.entries[label] = combobox
             else:
                 entry = CustomEntry(
-                    form_frame,
+                    row_frame,
                     textvariable=var,
                     font=("Arial", 12),
-                    width=32,
+                    width=25,
                     state="normal" if editable else "readonly"
                 )
                 
                 if field_type and editable:
                     FieldFormatter.bind_validation(entry, field_type)
                 
-                entry.grid(row=i, column=1, sticky="ew", pady=5, padx=5)
+                entry.pack(side=tk.RIGHT, expand=True, fill=tk.X)
                 self.entries[label] = entry
         
-        # Frame para botones
-        btn_frame = tk.Frame(form_frame, bg="#f5f5f5")
-        btn_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=(20, 10))
+        # Frame para botones con bordes
+        btn_frame = tk.LabelFrame(
+            form_frame,
+            bg="#f5f5f5",
+            relief=tk.GROOVE,
+            borderwidth=2,
+            padx=10,
+            pady=8
+        )
+        btn_frame.grid(row=len(fields)+1, column=0, sticky="ew", pady=(15, 0))
+        
+        # Contenedor interno para centrar los botones
+        btn_container = tk.Frame(btn_frame, bg="#f5f5f5")
+        btn_container.pack(expand=True)
         
         # Botón principal
         if self.from_sales:
@@ -146,7 +185,7 @@ class CrudInventory(tk.Toplevel):
             btn_command = self.create_item if self.mode == "create" else self.update_item
         
         btn_action = CustomButton(
-            btn_frame, 
+            btn_container, 
             text=btn_text, 
             command=btn_command,
             padding=10,
@@ -156,7 +195,7 @@ class CrudInventory(tk.Toplevel):
         
         if not self.from_sales:
             btn_load_image = CustomButton(
-                btn_frame,
+                btn_container,
                 text="Cargar Imagen",
                 command=self.load_image,
                 padding=10,
@@ -165,7 +204,7 @@ class CrudInventory(tk.Toplevel):
             btn_load_image.pack(side=tk.LEFT, padx=5)
         
         btn_cancel = CustomButton(
-            btn_frame, 
+            btn_container, 
             text="Cancelar", 
             command=self.destroy,
             padding=10,
@@ -173,29 +212,29 @@ class CrudInventory(tk.Toplevel):
         )
         btn_cancel.pack(side=tk.LEFT, padx=5)
 
-        # Frame para la imagen
-        image_frame = tk.Frame(main_frame, bg="#f5f5f5", padx=20, pady=20)
-        image_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        img_container = tk.LabelFrame(
-            image_frame, 
+        # Frame para la imagen con bordes
+        image_frame = tk.LabelFrame(
+            content_frame, 
             text="Imagen del Producto", 
             font=("Arial", 12),
             bg="#f5f5f5",
+            fg="#555",
             padx=10, 
-            pady=10
+            pady=10,
+            relief=tk.GROOVE,
+            borderwidth=2
         )
-        img_container.pack(fill=tk.BOTH, expand=True)
+        image_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
         self.image_label = tk.Label(
-            img_container, 
+            image_frame, 
             bg='white', 
             width=300, 
             height=300,
             relief=tk.GROOVE,
             borderwidth=2
         )
-        self.image_label.pack(fill=tk.BOTH, expand=True)
+        self.image_label.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         if self.mode == "edit" and not self.from_sales:
             info_frame = tk.Frame(form_frame, bg="#f5f5f5")

@@ -191,7 +191,8 @@ class ServicesScreen(tk.Frame):
         self.open_previous_screen_callback()
 
     def add_item(self) -> None:
-        CrudService(self, mode="create", refresh_callback=self.refresh_data)
+        crud = CrudService(self, mode="create", refresh_callback=self.refresh_data)
+        self._center_window(crud, 400, 400)
 
     def edit_item(self) -> None:
         selected = self.tree.selection()
@@ -200,7 +201,8 @@ class ServicesScreen(tk.Frame):
             return
             
         item_id = self.tree.item(selected[0])['values'][0]
-        CrudService(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
+        crud = CrudService(self, mode="edit", item_id=item_id, refresh_callback=self.refresh_data)
+        self._center_window(crud, 400, 400)
 
     def disable_item(self) -> None:
         selected = self.tree.selection()
@@ -224,3 +226,11 @@ class ServicesScreen(tk.Frame):
                 self.refresh_data()
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo deshabilitar el servicio: {str(e)}", parent=self)
+        
+    def _center_window(self, window, width, height):
+        """Centra una ventana en la pantalla"""
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = (screen_width // 2) - (width // 2)
+        y = (screen_height // 2) - (height // 2)
+        window.geometry(f"{width}x{height}+{x}+{y}")
