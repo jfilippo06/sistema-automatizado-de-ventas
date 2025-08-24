@@ -223,6 +223,7 @@ class FullInventoryReportScreen(tk.Frame):
             row3_frame,
             text="Mostrar más vendidos primero",
             variable=self.most_sold_var,
+            width=28,
         )
         most_sold_check.pack(side=tk.LEFT, padx=10)
 
