@@ -283,28 +283,36 @@ class CatalogScreen(tk.Frame):
             no_products_label.pack(pady=20)
             return
 
-        # Mostrar productos en un grid
+        # Crear un frame para contener el grid de productos
+        grid_container = tk.Frame(self.products_scrollable_frame, bg="#f5f5f5")
+        grid_container.pack(fill=tk.BOTH, expand=True)
+
+        # Mostrar productos en un grid 3x3
+        max_cols = 3
         row = 0
         col = 0
-        max_cols = 3
 
         for i, product in enumerate(products):
+            # Crear frame para cada producto
             product_frame = tk.Frame(
-                self.products_scrollable_frame,
+                grid_container,
                 bg="white",
                 bd=1,
                 relief=tk.RAISED,
                 padx=10,
-                pady=10
+                pady=10,
+                width=200,  # Ancho fijo
+                height=250  # Alto fijo
             )
             product_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            product_frame.grid_propagate(False)  # Mantener tamaño fijo
             product_frame.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
             # Mostrar imagen si existe
             if product.get('image_path') and os.path.exists(product['image_path']):
                 try:
                     img = Image.open(product['image_path'])
-                    img.thumbnail((150, 150))
+                    img.thumbnail((120, 120))  # Tamaño más pequeño para el grid
                     photo = ImageTk.PhotoImage(img)
                     
                     img_label = tk.Label(product_frame, image=photo, bg="white")
@@ -316,7 +324,7 @@ class CatalogScreen(tk.Frame):
                     no_img_label = CustomLabel(
                         product_frame,
                         text="Imagen no disponible",
-                        font=("Arial", 10),
+                        font=("Arial", 8),
                         fg="#999",
                         bg="white"
                     )
@@ -326,7 +334,7 @@ class CatalogScreen(tk.Frame):
                 no_img_label = CustomLabel(
                     product_frame,
                     text="Imagen no disponible",
-                    font=("Arial", 10),
+                    font=("Arial", 8),
                     fg="#999",
                     bg="white"
                 )
@@ -337,9 +345,10 @@ class CatalogScreen(tk.Frame):
             name_label = CustomLabel(
                 product_frame,
                 text=product['product'],
-                font=("Arial", 12, "bold"),
+                font=("Arial", 10, "bold"),
                 fg="#333",
-                bg="white"
+                bg="white",
+                wraplength=180  # Ajustar texto largo
             )
             name_label.pack()
             name_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
@@ -348,7 +357,7 @@ class CatalogScreen(tk.Frame):
             price_label = CustomLabel(
                 product_frame,
                 text=f"Precio: {product['price']:.2f}",
-                font=("Arial", 11),
+                font=("Arial", 9),
                 fg="#2ecc71",
                 bg="white"
             )
@@ -358,7 +367,7 @@ class CatalogScreen(tk.Frame):
             stock_label = CustomLabel(
                 product_frame,
                 text=f"Disponibles: {product['stock']}",
-                font=("Arial", 10),
+                font=("Arial", 8),
                 fg="#666",
                 bg="white"
             )
@@ -369,24 +378,24 @@ class CatalogScreen(tk.Frame):
                 exp_label = CustomLabel(
                     product_frame,
                     text=f"Vence: {product['expiration_date']}",
-                    font=("Arial", 9),
+                    font=("Arial", 7),
                     fg="#e74c3c",
                     bg="white"
                 )
                 exp_label.pack()
                 exp_label.bind("<Button-1>", lambda e, p=product: self.show_product_details(p))
 
-            # Actualizar grid
+            # Actualizar grid (3 columnas máximo)
             col += 1
             if col >= max_cols:
                 col = 0
                 row += 1
 
-        # Configurar grid
+        # Configurar grid para que se expanda correctamente
         for i in range(row + 1):
-            self.products_scrollable_frame.grid_rowconfigure(i, weight=1)
+            grid_container.grid_rowconfigure(i, weight=1)
         for i in range(max_cols):
-            self.products_scrollable_frame.grid_columnconfigure(i, weight=1)
+            grid_container.grid_columnconfigure(i, weight=1)
 
     def display_services(self, services: List[Dict]) -> None:
         # Limpiar frame de servicios
@@ -404,28 +413,35 @@ class CatalogScreen(tk.Frame):
             no_services_label.pack(pady=20)
             return
 
-        # Mostrar servicios en un grid
+        # Crear un frame para contener el grid de servicios
+        grid_container = tk.Frame(self.services_scrollable_frame, bg="#f5f5f5")
+        grid_container.pack(fill=tk.BOTH, expand=True)
+
+        # Mostrar servicios en un grid 3x3
+        max_cols = 3
         row = 0
         col = 0
-        max_cols = 3
 
         for i, service in enumerate(services):
             service_frame = tk.Frame(
-                self.services_scrollable_frame,
+                grid_container,
                 bg="white",
                 bd=1,
                 relief=tk.RAISED,
                 padx=15,
-                pady=15
+                pady=15,
+                width=200,  # Ancho fijo
+                height=200  # Alto fijo
             )
             service_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            service_frame.grid_propagate(False)  # Mantener tamaño fijo
             service_frame.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
             # Mostrar icono de servicio
             service_icon = CustomLabel(
                 service_frame,
                 text="⚙️",
-                font=("Arial", 24),
+                font=("Arial", 20),  # Tamaño más pequeño
                 bg="white"
             )
             service_icon.pack(pady=(0, 10))
@@ -435,9 +451,10 @@ class CatalogScreen(tk.Frame):
             name_label = CustomLabel(
                 service_frame,
                 text=service['name'],
-                font=("Arial", 12, "bold"),
+                font=("Arial", 10, "bold"),
                 fg="#333",
-                bg="white"
+                bg="white",
+                wraplength=180  # Ajustar texto largo
             )
             name_label.pack()
             name_label.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
@@ -446,7 +463,7 @@ class CatalogScreen(tk.Frame):
             price_label = CustomLabel(
                 service_frame,
                 text=f"Precio: {service['price']:.2f}",
-                font=("Arial", 11),
+                font=("Arial", 9),
                 fg="#2ecc71",
                 bg="white"
             )
@@ -456,26 +473,26 @@ class CatalogScreen(tk.Frame):
             if service.get('description'):
                 desc_label = CustomLabel(
                     service_frame,
-                    text=service['description'],
-                    font=("Arial", 10),
+                    text=service['description'][:50] + "..." if len(service['description']) > 50 else service['description'],
+                    font=("Arial", 8),
                     fg="#666",
                     bg="white",
-                    wraplength=200
+                    wraplength=180  # Ajustar texto largo
                 )
                 desc_label.pack()
                 desc_label.bind("<Button-1>", lambda e, s=service: self.show_service_details(s))
 
-            # Actualizar grid
+            # Actualizar grid (3 columnas máximo)
             col += 1
             if col >= max_cols:
                 col = 0
                 row += 1
 
-        # Configurar grid
+        # Configurar grid para que se expanda correctamente
         for i in range(row + 1):
-            self.services_scrollable_frame.grid_rowconfigure(i, weight=1)
+            grid_container.grid_rowconfigure(i, weight=1)
         for i in range(max_cols):
-            self.services_scrollable_frame.grid_columnconfigure(i, weight=1)
+            grid_container.grid_columnconfigure(i, weight=1)
 
     def show_product_details(self, product: Dict) -> None:
         """Muestra los detalles del producto seleccionado en el panel derecho"""
