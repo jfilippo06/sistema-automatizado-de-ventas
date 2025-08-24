@@ -125,6 +125,15 @@ class ServiceRequestsQueryScreen(tk.Frame):
         if selected:
             self.selected_item_id = self.tree.item(selected[0])['values'][0]
 
+    def translate_status(self, status: str) -> str:
+        """Traduce el estado del inglés al español"""
+        status_translations = {
+            "in_progress": "En Progreso",
+            "started": "Iniciado",
+            "completed": "Completado"
+        }
+        return status_translations.get(status, status)
+
     def refresh_data(self) -> None:
         """Actualiza los datos del reporte según los filtros"""
         search_term = self.search_var.get()
@@ -138,13 +147,16 @@ class ServiceRequestsQueryScreen(tk.Frame):
         
         for i, req in enumerate(requests):
             tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+            # Traducir el estado al español
+            translated_status = self.translate_status(req['request_status'])
+            
             self.tree.insert("", tk.END, values=(
                 req['id'],
                 req['request_number'],
                 req['employee'],
                 req['customer'],
                 req['service'],
-                req['request_status'],
+                translated_status,  # Usar el estado traducido
                 req['created_at']
             ), tags=(tag,))
 
