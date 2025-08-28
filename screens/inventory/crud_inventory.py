@@ -59,6 +59,18 @@ class CrudInventory(tk.Toplevel):
         if mode == "edit" and item_id:
             self.load_item_data()
 
+    def validate_code(self, value):
+        """Valida el campo código (máximo 10 caracteres)"""
+        return len(value) <= 10
+
+    def validate_product(self, value):
+        """Valida el campo producto (máximo 28 caracteres)"""
+        return len(value) <= 28
+
+    def validate_description(self, value):
+        """Valida el campo descripción (máximo 40 caracteres)"""
+        return len(value) <= 40
+
     def configure_ui(self) -> None:
         """Configura la interfaz de usuario"""
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
@@ -154,6 +166,17 @@ class CrudInventory(tk.Toplevel):
                     width=25,
                     state="normal" if editable else "readonly"
                 )
+                
+                # Agregar validación de longitud según el campo
+                if label == "Código:":
+                    entry.configure(validate="key", 
+                                   validatecommand=(self.register(self.validate_code), '%P'))
+                elif label == "Producto:":
+                    entry.configure(validate="key", 
+                                   validatecommand=(self.register(self.validate_product), '%P'))
+                elif label == "Descripción:":
+                    entry.configure(validate="key", 
+                                   validatecommand=(self.register(self.validate_description), '%P'))
                 
                 if field_type and editable:
                     FieldFormatter.bind_validation(entry, field_type)

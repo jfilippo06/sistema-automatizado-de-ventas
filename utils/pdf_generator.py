@@ -122,7 +122,7 @@ class PDFGenerator:
             # Anchos de columna ajustados para horizontal
             col_widths = [
                 0.8*inch,  # Código
-                1.2*inch,  # Producto
+                2.0*inch,  # Producto
                 2.5*inch,  # Descripción
                 0.5*inch,  # Cantidad
                 0.5*inch,  # Stock

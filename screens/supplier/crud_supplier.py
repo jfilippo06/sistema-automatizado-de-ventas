@@ -51,6 +51,10 @@ class CrudSupplier(tk.Toplevel):
         if mode == "edit" and supplier_id:
             self.load_supplier_data()
 
+    def validate_first_name(self, value):
+        """Valida el campo nombres (máximo 26 caracteres)"""
+        return len(value) <= 26
+
     def configure_ui(self) -> None:
         """Configura la interfaz de usuario"""
         main_frame = tk.Frame(self, bg="#f5f5f5", padx=20, pady=20)
@@ -134,6 +138,11 @@ class CrudSupplier(tk.Toplevel):
             # Configurar validación y formateo
             if editable:
                 FieldFormatter.bind_validation(entry, field_type)
+                
+                # Agregar validación de longitud para el campo Nombres
+                if label == "Nombres:":
+                    entry.configure(validate="key", 
+                                   validatecommand=(self.register(self.validate_first_name), '%P'))
             
             entry.pack(side=tk.RIGHT, expand=True, fill=tk.X)
             self.entries[label] = (entry, field_type)
