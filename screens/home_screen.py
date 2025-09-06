@@ -106,7 +106,7 @@ class HomeScreen(tk.Frame):
         self.style.configure("Submenu.TButton", padding=3, font=("Arial", 8), width=18)
         
         # Header
-        header_frame = tk.Frame(self, bg="white", height=80)
+        header_frame = tk.Frame(self, bg="#FFF04E", height=80)
         header_frame.pack(fill=tk.X, padx=5, pady=5)
         
         # Imagen de la empresa (principal)
@@ -116,8 +116,8 @@ class HomeScreen(tk.Frame):
         title = tk.Label(
             header_frame, 
             text="Gestión de Ventas y Servicios",
-            font=("Arial", 16, "bold"),
-            bg="white"
+            font=("Arial", 18, "bold"),
+            bg="#FFF04E"
         )
         title.pack(side=tk.LEFT, padx=5, expand=True)
         
@@ -252,11 +252,11 @@ class HomeScreen(tk.Frame):
         self.after(8000, self.rotate_carousel())
 
         # Pie de página con imágenes
-        bottom_frame = tk.Frame(self, bg="white", height=70)
+        bottom_frame = tk.Frame(self, bg="white", height=120)
         bottom_frame.pack(fill=tk.X, pady=(0,5))
 
         # Imagen izquierda
-        self.load_image(bottom_frame, "assets/republica.png", (80, 80)).pack(side=tk.LEFT, padx=15)
+        self.load_image(bottom_frame, "assets/republica.png", (100, 100)).pack(side=tk.LEFT, padx=15)
 
         # Texto en el centro
         footer_text = tk.Label(
@@ -269,7 +269,7 @@ class HomeScreen(tk.Frame):
         footer_text.pack(side=tk.LEFT, expand=True, fill=tk.X)
 
         # Imagen derecha
-        self.load_image(bottom_frame, "assets/universidad.png", (80, 80)).pack(side=tk.RIGHT, padx=15)
+        self.load_image(bottom_frame, "assets/universidad.png", (100, 100)).pack(side=tk.RIGHT, padx=15)
 
     def load_button_icon(self, icon_name, size=(20, 20)):
         """Carga un icono para un botón desde assets/iconos"""
