@@ -414,24 +414,6 @@ class PurchaseOrdersScreen(tk.Frame):
         controls_frame = tk.Frame(self, bg="#f5f5f5")
         controls_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        action_frame = tk.Frame(controls_frame, bg="#f5f5f5")
-        action_frame.pack(side=tk.RIGHT)
-
-        buttons = [
-            ("Crear Orden", self.create_order),
-            ("Limpiar", self.clear_form)
-        ]
-
-        for text, command in buttons:
-            btn = CustomButton(
-                action_frame,
-                text=text,
-                command=command,
-                padding=8,
-                width=12,
-            )
-            btn.pack(side=tk.LEFT, padx=5)
-
         # Status bar
         self.status_bar = CustomLabel(
             self,
@@ -1028,7 +1010,7 @@ class PurchaseOrdersScreen(tk.Frame):
             frame = tk.Frame(row_frame, bg="white", bd=1, relief=tk.SOLID)
             frame.pack(side=tk.LEFT)
             frame.pack_propagate(False)
-            frame.configure(width=width, height=30)
+            frame.configure(width=width, height=40)
             
             CustomLabel(
                 frame,
@@ -1041,8 +1023,8 @@ class PurchaseOrdersScreen(tk.Frame):
         frame = tk.Frame(row_frame, bg="white", bd=1, relief=tk.SOLID)
         frame.pack(side=tk.LEFT)
         frame.pack_propagate(False)
-        frame.configure(width=100, height=30)
-        
+        frame.configure(width=100, height=40)
+
         btn_remove = CustomButton(
             frame,
             text="Eliminar",
