@@ -106,7 +106,7 @@ class HomeScreen(tk.Frame):
         self.style.configure("Submenu.TButton", padding=3, font=("Arial", 8), width=18)
         
         # Header
-        header_frame = tk.Frame(self, bg="#FFF04E", height=80)
+        header_frame = tk.Frame(self, bg="#4a6fa5", height=80)
         header_frame.pack(fill=tk.X, padx=5, pady=5)
         
         # Imagen de la empresa (principal)
@@ -117,7 +117,8 @@ class HomeScreen(tk.Frame):
             header_frame, 
             text="Gestión de Ventas y Servicios",
             font=("Arial", 18, "bold"),
-            bg="#FFF04E"
+            bg="#4a6fa5",
+            fg="white"
         )
         title.pack(side=tk.LEFT, padx=5, expand=True)
         
