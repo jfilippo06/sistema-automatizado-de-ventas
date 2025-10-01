@@ -144,9 +144,9 @@ class HomeScreen(tk.Frame):
             ("Proveedores", "suppliers", "proveedores"),
             ("Productos", "inventory", "productos"),
             ("Orden de compra", "purchase_orders", "orden_de_compra"),
-            ("Ventas", "billing", "ventas"),
             ("Clientes", "customers", "clientes"),
             ("Solicitudes de servicios", "service_requests", "solicitudes_de_servicios"),
+            ("Ventas", "billing", "ventas"),
             ("Servicios", "services", "servicios"),
             ("Catálogo", "catalog", "catalogo")
         ]
