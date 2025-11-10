@@ -1,23 +1,73 @@
 # database/database.py
 import sqlite3
 import os
+import sys
+from pathlib import Path
 from typing import Optional
 
 def get_db_connection() -> sqlite3.Connection:
     """
     Obtiene una conexión a la base de datos SQLite.
+    Funciona tanto en desarrollo como en ejecutable.
     
     :return: Una conexión a la base de datos SQLite.
     """
-    # Obtener la ruta del directorio actual del script
-    current_dir: str = os.path.dirname(os.path.abspath(__file__))
-    # Construir la ruta completa a la base de datos
-    db_path: str = os.path.join(current_dir, "db.db")
+    db_path = find_database()
+    
+    # Crear directorio si no existe
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Conectar a la base de datos
-    conn: sqlite3.Connection = sqlite3.connect(db_path)
+    conn: sqlite3.Connection = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row  # Para acceder a las filas como diccionarios
     return conn
+
+def find_database() -> Path:
+    """
+    Encuentra la base de datos en diferentes ubicaciones posibles.
+    
+    :return: Ruta Path a la base de datos
+    """
+    # Posibles ubicaciones en orden de prioridad
+    possible_paths = []
+    
+    # 1. Directorio del ejecutable (para distribución)
+    if getattr(sys, 'frozen', False):
+        # Si estamos en un ejecutable
+        base_dir = Path(sys.executable).parent
+        possible_paths.append(base_dir / "database" / "db.db")
+        possible_paths.append(base_dir / "db.db")
+    
+    # 2. Directorio temporal del ejecutable (para PyInstaller)
+    if hasattr(sys, '_MEIPASS'):
+        meipass_path = Path(sys._MEIPASS)
+        possible_paths.append(meipass_path / "database" / "db.db")
+        possible_paths.append(meipass_path / "db.db")
+    
+    # 3. Directorio de desarrollo (script normal)
+    script_dir = Path(__file__).parent
+    possible_paths.append(script_dir / "db.db")
+    
+    # 4. Directorio de trabajo actual
+    possible_paths.append(Path.cwd() / "database" / "db.db")
+    possible_paths.append(Path.cwd() / "db.db")
+    
+    # Buscar la primera base de datos que exista
+    for db_path in possible_paths:
+        if db_path.exists():
+            print(f"Base de datos encontrada en: {db_path}")
+            return db_path
+    
+    # Si no existe, crear una nueva en el directorio del ejecutable o script
+    if getattr(sys, 'frozen', False):
+        # En ejecutable, usar directorio del ejecutable
+        default_path = Path(sys.executable).parent / "database" / "db.db"
+    else:
+        # En desarrollo, usar directorio del script
+        default_path = Path(__file__).parent / "db.db"
+    
+    print(f"Creando nueva base de datos en: {default_path}")
+    return default_path
 
 def init_db() -> None:
     """

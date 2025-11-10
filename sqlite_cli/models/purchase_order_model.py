@@ -7,6 +7,7 @@ from sqlite_cli.models.supplier_model import Supplier
 from sqlite_cli.models.inventory_model import InventoryItem
 from sqlite_cli.models.purchase_order_status_model import PurchaseOrderStatus
 from utils.session_manager import SessionManager
+from sqlite_cli.database.database import get_db_connection
 
 class PurchaseOrder:
     BUSY_TIMEOUT = 5000  # 5 segundos (en milisegundos)
@@ -14,20 +15,8 @@ class PurchaseOrder:
 
     @staticmethod
     def get_db_connection() -> sqlite3.Connection:
-        """Crea una conexión a la base de datos con configuración optimizada."""
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        db_path = os.path.join(current_dir, "..", "database", "db.db")
-
-        conn = sqlite3.connect(
-            db_path,
-            timeout=PurchaseOrder.BUSY_TIMEOUT / 1000,
-            isolation_level=None,
-            check_same_thread=False
-        )
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute(f"PRAGMA busy_timeout={PurchaseOrder.BUSY_TIMEOUT}")
-        conn.row_factory = sqlite3.Row
-        return conn
+        """Usa la conexión unificada de database.py"""
+        return get_db_connection()
 
     @staticmethod
     def _execute_sql(
