@@ -5,10 +5,8 @@ from PIL import Image, ImageTk, ImageDraw
 from typing import Callable, Any
 from utils.session_manager import SessionManager
 import tkinter.messagebox as messagebox
-import os
-import shutil
 from datetime import datetime
-import sqlite3
+from sqlite_cli.database.database import compress_database, export_database, import_database
 
 class HomeScreen(tk.Frame):
     def __init__(
@@ -443,10 +441,6 @@ class HomeScreen(tk.Frame):
         self.open_login_screen_callback()
 
     # Funciones de mantenimiento
-    def get_db_path(self) -> str:
-        project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        return os.path.join(project_dir, 'sqlite_cli', 'database', 'db.db')
-
     def compress_database(self) -> None:
         confirm = messagebox.askyesno(
             "Compactar Base de Datos",
@@ -458,21 +452,16 @@ class HomeScreen(tk.Frame):
         if not confirm:
             return
 
-        try:
-            db_path = self.get_db_path()
-            conn = sqlite3.connect(db_path)
-            conn.execute("VACUUM")
-            conn.close()
-            
+        if compress_database():
             messagebox.showinfo(
                 "Éxito",
                 "Base de datos comprimida exitosamente",
                 parent=self
             )
-        except Exception as e:
+        else:
             messagebox.showerror(
                 "Error",
-                f"No se pudo comprimir la base de datos:\n{str(e)}",
+                "No se pudo comprimir la base de datos",
                 parent=self
             )
 
@@ -489,19 +478,16 @@ class HomeScreen(tk.Frame):
         if not file_path:
             return
 
-        try:
-            db_path = self.get_db_path()
-            shutil.copyfile(db_path, file_path)
-            
+        if export_database(file_path):
             messagebox.showinfo(
                 "Éxito",
                 f"Base de datos exportada exitosamente a:\n{file_path}",
                 parent=self
             )
-        except Exception as e:
+        else:
             messagebox.showerror(
                 "Error",
-                f"No se pudo exportar la base de datos:\n{str(e)}",
+                "No se pudo exportar la base de datos",
                 parent=self
             )
 
@@ -524,24 +510,15 @@ class HomeScreen(tk.Frame):
         if not file_path:
             return
 
-        try:
-            db_path = self.get_db_path()
-            backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
-            os.makedirs(backup_dir, exist_ok=True)
-            backup_filename = f"db_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-            backup_path = os.path.join(backup_dir, backup_filename)
-            shutil.copyfile(db_path, backup_path)
-            shutil.copyfile(file_path, db_path)
-            
+        if import_database(file_path):
             messagebox.showinfo(
                 "Éxito",
-                f"Base de datos importada exitosamente desde:\n{file_path}\n\n"
-                f"Se creó un backup en:\n{backup_path}",
+                f"Base de datos importada exitosamente desde:\n{file_path}",
                 parent=self
             )
-        except Exception as e:
+        else:
             messagebox.showerror(
                 "Error",
-                f"No se pudo importar la base de datos:\n{str(e)}",
+                "No se pudo importar la base de datos",
                 parent=self
             )

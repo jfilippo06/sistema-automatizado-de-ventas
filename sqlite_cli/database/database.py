@@ -69,6 +69,60 @@ def find_database() -> Path:
     print(f"Creando nueva base de datos en: {default_path}")
     return default_path
 
+def compress_database() -> bool:
+    """
+    Compacta la base de datos usando VACUUM.
+    Retorna True si fue exitoso, False si hubo error.
+    """
+    try:
+        conn = get_db_connection()
+        conn.execute("VACUUM")
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error comprimiendo base de datos: {e}")
+        return False
+
+def export_database(export_path: str) -> bool:
+    """
+    Exporta la base de datos a una ubicación específica.
+    """
+    try:
+        db_path = find_database()
+        import shutil
+        shutil.copyfile(str(db_path), export_path)
+        return True
+    except Exception as e:
+        print(f"Error exportando base de datos: {e}")
+        return False
+
+def import_database(import_path: str) -> bool:
+    """
+    Importa una base de datos desde una ubicación específica.
+    Crea un backup antes de importar.
+    """
+    try:
+        db_path = find_database()
+        import shutil
+        from datetime import datetime
+        
+        # Crear backup
+        backup_dir = db_path.parent / 'backups'
+        backup_dir.mkdir(exist_ok=True)
+        backup_filename = f"db_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        backup_path = backup_dir / backup_filename
+        
+        # Hacer backup de la base de datos actual
+        if db_path.exists():
+            shutil.copyfile(str(db_path), str(backup_path))
+        
+        # Importar nueva base de datos
+        shutil.copyfile(import_path, str(db_path))
+        return True
+    except Exception as e:
+        print(f"Error importando base de datos: {e}")
+        return False
+
 def init_db() -> None:
     """
     Inicializa la base de datos y crea todas las tablas si no existen.
