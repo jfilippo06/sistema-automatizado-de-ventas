@@ -675,6 +675,8 @@ class BillingScreen(tk.Frame):
         ).pack(side=tk.LEFT)
         
         self.payment_amount = tk.DoubleVar()
+        self.payment_amount.set(0.00)
+        
         amount_entry = tk.Entry(
             amount_frame,
             textvariable=self.payment_amount,
@@ -792,14 +794,40 @@ class BillingScreen(tk.Frame):
     def add_payment(self) -> None:
         """Agrega un pago a la lista de pagos registrados"""
         try:
-            amount = float(self.payment_amount.get())
+            amount_text = str(self.payment_amount.get()).strip()
+            
+            # Validar que no esté vacío
+            if not amount_text:
+                messagebox.showwarning("Error", "El monto no puede estar vacío", parent=self.payment_window)
+                return
+                
+            # Convertir a float con manejo seguro
+            try:
+                amount = float(amount_text)
+            except ValueError:
+                messagebox.showwarning("Error", "Ingrese un monto válido", parent=self.payment_window)
+                return
+                
+            # Validar que sea un número positivo
             if amount <= 0:
                 messagebox.showwarning("Error", "El monto debe ser mayor a cero", parent=self.payment_window)
                 return
                 
-            # Validar que no se exceda el total
-            if (self.paid_amount + amount) > self.total:
-                messagebox.showwarning("Error", "El monto excede el total a pagar", parent=self.payment_window)
+            # Redondear a 2 decimales para consistencia
+            amount = round(amount, 2)
+            
+            # Validar que no se exceda el total (con redondeo)
+            new_paid_amount = round(self.paid_amount + amount, 2)
+            total_rounded = round(self.total, 2)
+            
+            if new_paid_amount > total_rounded:
+                max_allowed = round(total_rounded - self.paid_amount, 2)
+                messagebox.showwarning(
+                    "Error", 
+                    f"El monto excede el total a pagar\n"
+                    f"Monto máximo permitido: {max_allowed:.2f}",
+                    parent=self.payment_window
+                )
                 return
                 
             method = self.payment_method.get()
@@ -823,7 +851,7 @@ class BillingScreen(tk.Frame):
                     messagebox.showwarning("Error", "La referencia es obligatoria", parent=self.payment_window)
                     return
             
-            # Agregar a la lista de pagos
+            # Agregar a la lista de pagos (con el monto redondeado)
             self.payment_details.append({
                 "method": method,
                 "amount": amount,
@@ -852,15 +880,15 @@ class BillingScreen(tk.Frame):
             ), tags=(tag,))
             
             # Actualizar total pagado y saldo
-            self.paid_amount += amount
+            self.paid_amount = new_paid_amount
             self.update_payment_summary()
             
             # Limpiar campos
             self.payment_amount.set(0.0)
             self.payment_reference.set("")
             
-        except ValueError:
-            messagebox.showwarning("Error", "Ingrese un monto válido", parent=self.payment_window)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al agregar pago: {str(e)}", parent=self.payment_window)
 
     def remove_payment(self, event) -> None:
         """Elimina un pago seleccionado de la lista"""
