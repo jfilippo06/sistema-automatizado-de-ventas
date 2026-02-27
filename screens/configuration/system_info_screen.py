@@ -2,6 +2,7 @@ import tkinter as tk
 from widgets.custom_button import CustomButton
 from widgets.custom_label import CustomLabel
 from typing import Any, Callable
+from PIL import Image, ImageTk
 
 class SystemInfoScreen(tk.Frame):
     def __init__(
@@ -13,6 +14,7 @@ class SystemInfoScreen(tk.Frame):
         self.parent = parent
         self.open_previous_screen_callback = open_previous_screen_callback
         self.configure(bg="#f0f0f0")
+        self.images = {}  # Diccionario para almacenar las imágenes
         self.configure_ui()
 
     def pack(self, **kwargs: Any) -> None:
@@ -23,14 +25,44 @@ class SystemInfoScreen(tk.Frame):
         main_frame = tk.Frame(self, bg="#f0f0f0")
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
+        # Frame superior para las imágenes y el título en la misma línea
+        top_frame = tk.Frame(main_frame, bg="#f0f0f0")
+        top_frame.pack(fill=tk.X, pady=(0, 20))
+
+        # Imagen de la empresa (izquierda)
+        try:
+            img = Image.open("assets/empresa.png").resize((150, 70), Image.Resampling.LANCZOS)
+            self.images["empresa"] = ImageTk.PhotoImage(img)
+            img_label = tk.Label(top_frame, image=self.images["empresa"], bg="#f0f0f0")
+            img_label.pack(side="left", anchor="w")
+        except Exception as e:
+            print(f"Error cargando imagen de empresa: {e}")
+            # Fallback a texto si no se puede cargar la imagen
+            company_frame = tk.Frame(top_frame, bg="#f0f0f0")
+            company_frame.pack(side="left", anchor="w")
+            tk.Label(company_frame, text="RN&M SERVICIOS INTEGRALES, C.A", 
+                    font=("Arial", 10, "bold"), bg="#f0f0f0", fg="#333").pack(anchor="w")
+            tk.Label(company_frame, text="RIF: J-40339817-8", 
+                    font=("Arial", 9), bg="#f0f0f0", fg="#555").pack(anchor="w")
+
+        # Título centrado
         title = CustomLabel(
-            main_frame,
+            top_frame,
             text="Información del Sistema",
             font=("Arial", 20, "bold"),
             fg="#333",
             bg="#f0f0f0"
         )
-        title.pack(pady=(10, 20))
+        title.pack(side="left", expand=True, padx=10)
+
+        # Imagen de la universidad (derecha)
+        try:
+            uni_img = Image.open("assets/universidad.png").resize((100, 50), Image.Resampling.LANCZOS)
+            self.images["universidad"] = ImageTk.PhotoImage(uni_img)
+            uni_label = tk.Label(top_frame, image=self.images["universidad"], bg="#f0f0f0")
+            uni_label.pack(side="right", anchor="e")
+        except Exception as e:
+            print(f"Error cargando imagen de universidad: {e}")
 
         info_frame = tk.Frame(main_frame, bg="#f0f0f0")
         info_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))

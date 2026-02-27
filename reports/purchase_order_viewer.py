@@ -83,6 +83,18 @@ class PurchaseOrderViewer(tk.Toplevel):
             tk.Label(company_frame, text="Av. Principal, Edif. Empresarial", 
                     font=("Arial", 10), bg="white").pack(anchor="w")
         
+        # Imagen universidad (centro)
+        university_frame = tk.Frame(header_frame, bg="white")
+        university_frame.pack(side="left", expand=True)
+        
+        try:
+            uni_img = Image.open("assets/universidad.png").resize((150, 70), Image.Resampling.LANCZOS)
+            self.images["universidad"] = ImageTk.PhotoImage(uni_img)
+            uni_label = tk.Label(university_frame, image=self.images["universidad"], bg="white")
+            uni_label.pack()
+        except Exception as e:
+            print(f"Error cargando imagen de universidad: {e}")
+        
         # Número de orden y fecha (derecha)
         order_frame = tk.Frame(header_frame, bg="white")
         order_frame.pack(side="right", anchor="ne")

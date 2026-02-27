@@ -25,7 +25,7 @@ class PDFGenerator:
         items: List[Dict],
         filters: str
     ) -> None:
-        """Genera un reporte de inventario en PDF en orientación horizontal con imagen de empresa"""
+        """Genera un reporte de inventario en PDF en orientación horizontal con imágenes"""
         # Mostrar diálogo para guardar el archivo
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
@@ -58,37 +58,38 @@ class PDFGenerator:
             # Contenido del PDF
             elements = []
             
-            # Encabezado con imagen
+            # Encabezado con imágenes
             try:
-                # Intentar cargar la imagen de la empresa
-                logo_path = "assets/empresa.png"
-                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                # Intentar cargar las imágenes
+                empresa_logo = Image("assets/empresa.png", width=1.5*inch, height=0.7*inch)
+                universidad_logo = Image("assets/universidad.png", width=1.5*inch, height=0.7*inch)
                 
                 header_table = Table([
-                    [logo, "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
+                    [empresa_logo, universidad_logo, Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
                     ["", Paragraph(title, style_heading), Paragraph(f"Filtros: {filters}", style_normal)]
-                ], colWidths=[3*inch, 3*inch, 3*inch])
+                ], colWidths=[2.5*inch, 2.5*inch, 3*inch])
                 
                 header_table.setStyle(TableStyle([
-                    ('SPAN', (0,0), (0,1)),  # Combinar celdas para el logo
-                    ('SPAN', (1,1), (1,1)),  # Título centrado
-                    ('ALIGN', (1,1), (1,1), 'CENTER'),
-                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+                    ('SPAN', (0,0), (0,1)),  # Combinar celdas para el logo empresa
+                    ('SPAN', (1,0), (1,0)),  # Universidad solo en fila 0
+                    ('ALIGN', (0,0), (0,0), 'LEFT'),
+                    ('ALIGN', (1,0), (1,0), 'CENTER'),
                     ('ALIGN', (2,0), (2,0), 'RIGHT'),
+                    ('ALIGN', (1,1), (1,1), 'CENTER'),
                     ('ALIGN', (2,1), (2,1), 'RIGHT'),
+                    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                 ]))
                 
             except Exception as e:
-                print(f"Error cargando imagen de empresa: {e}")
-                # Fallback a texto si no se puede cargar la imagen
+                print(f"Error cargando imágenes: {e}")
+                # Fallback a texto si no se pueden cargar las imágenes
                 header_table = Table([
                     [Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title), "", Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}", style_normal)],
                     [Paragraph("RIF: J-40339817-8", style_normal), Paragraph(title, style_heading), Paragraph(f"Filtros: {filters}", style_normal)]
-                ], colWidths=[3*inch, 3*inch, 3*inch])
+                ], colWidths=[2.5*inch, 2.5*inch, 3*inch])
                 
                 header_table.setStyle(TableStyle([
                     ('SPAN', (0,0), (0,1)),  # Combinar celdas para company info
-                    ('SPAN', (1,1), (1,1)),  # Título centrado
                     ('ALIGN', (1,1), (1,1), 'CENTER'),
                     ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
                     ('ALIGN', (2,0), (2,0), 'RIGHT'),
@@ -214,7 +215,7 @@ class PDFGenerator:
         delivery_date: str,
         created_by: str
     ) -> None:
-        """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer con imagen de empresa"""
+        """Genera una orden de compra en PDF idéntica a PurchaseOrderViewer con imágenes"""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("Archivos PDF", "*.pdf")],
@@ -257,14 +258,14 @@ class PDFGenerator:
             
             elements = []
             
-            # Encabezado con imagen
+            # Encabezado con imágenes
             try:
-                # Intentar cargar la imagen de la empresa
-                logo_path = "assets/empresa.png"
-                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                # Intentar cargar las imágenes
+                empresa_logo = Image("assets/empresa.png", width=1.5*inch, height=0.7*inch)
+                universidad_logo = Image("assets/universidad.png", width=1.5*inch, height=0.7*inch)
                 
                 header_data = [
-                    [logo, "", Paragraph(
+                    [empresa_logo, universidad_logo, Paragraph(
                         f"<b>ORDEN DE COMPRA N°:</b> {order_number}<br/>"
                         f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}<br/>"
                         f"<b>Fecha Entrega:</b> {delivery_date}",
@@ -272,15 +273,18 @@ class PDFGenerator:
                     )]
                 ]
                 
-                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table = Table(header_data, colWidths=[2.5*inch, 2.5*inch, 3*inch])
                 header_table.setStyle(TableStyle([
                     ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('ALIGN', (0,0), (0,0), 'LEFT'),
+                    ('ALIGN', (1,0), (1,0), 'CENTER'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
                     ('BOTTOMPADDING', (0,0), (-1,-1), 12),
                 ]))
                 
             except Exception as e:
-                print(f"Error cargando imagen de empresa: {e}")
-                # Fallback a texto si no se puede cargar la imagen
+                print(f"Error cargando imágenes: {e}")
+                # Fallback a texto si no se pueden cargar las imágenes
                 header_data = [
                     [
                         Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title),
@@ -304,9 +308,11 @@ class PDFGenerator:
                     ]
                 ]
                 
-                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table = Table(header_data, colWidths=[2.5*inch, 2.5*inch, 3*inch])
                 header_table.setStyle(TableStyle([
                     ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('ALIGN', (0,0), (0,0), 'LEFT'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
                     ('BOTTOMPADDING', (0,0), (-1,-1), 12),
                     ('SPAN', (0,1), (1,1)),
                     ('SPAN', (0,2), (1,2)),
@@ -484,29 +490,38 @@ class PDFGenerator:
             
             elements = []
             
-            # Encabezado con imagen
+            # Encabezado con imágenes
             try:
-                # Intentar cargar la imagen de la empresa
-                logo_path = "assets/empresa.png"
-                logo = Image(logo_path, width=1.5*inch, height=0.7*inch)
+                # Intentar cargar la imagen de la empresa (izquierda)
+                empresa_logo = Image("assets/empresa.png", width=1.5*inch, height=0.7*inch)
+                
+                # Intentar cargar la imagen de la universidad (centro)
+                universidad_logo = Image("assets/universidad.png", width=1.5*inch, height=0.7*inch)
                 
                 header_data = [
-                    [logo, "", Paragraph(
-                        f"<b>RECIBO N°:</b> {invoice_id}<br/>"
-                        f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}",
-                        style_normal
-                    )]
+                    [
+                        empresa_logo, 
+                        universidad_logo, 
+                        Paragraph(
+                            f"<b>RECIBO N°:</b> {invoice_id}<br/>"
+                            f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+                            style_normal
+                        )
+                    ]
                 ]
                 
-                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table = Table(header_data, colWidths=[2.5*inch, 2.5*inch, 2.5*inch])
                 header_table.setStyle(TableStyle([
                     ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('ALIGN', (0,0), (0,0), 'LEFT'),
+                    ('ALIGN', (1,0), (1,0), 'CENTER'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
                     ('BOTTOMPADDING', (0,0), (-1,-1), 12),
                 ]))
                 
             except Exception as e:
-                print(f"Error cargando imagen de empresa: {e}")
-                # Fallback a texto si no se puede cargar la imagen
+                print(f"Error cargando imágenes: {e}")
+                # Fallback a texto si no se pueden cargar las imágenes
                 header_data = [
                     [
                         Paragraph("RN&M SERVICIOS INTEGRALES, C.A", style_title),
@@ -524,9 +539,11 @@ class PDFGenerator:
                     ]
                 ]
                 
-                header_table = Table(header_data, colWidths=[3.5*inch, 0.5*inch, 3*inch])
+                header_table = Table(header_data, colWidths=[2.5*inch, 2.5*inch, 2.5*inch])
                 header_table.setStyle(TableStyle([
                     ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                    ('ALIGN', (0,0), (0,0), 'LEFT'),
+                    ('ALIGN', (2,0), (2,0), 'RIGHT'),
                     ('BOTTOMPADDING', (0,0), (-1,-1), 12),
                     ('SPAN', (0,1), (1,1)),
                 ]))
